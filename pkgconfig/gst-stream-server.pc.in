@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@/gst-@GST_MAJORMINOR@
+toolsdir=${exec_prefix}/bin
+
+
+Name: gst-stream-server-@GST_MAJORMINOR@
+Description: GStreamer Streaming Server Library
+Version: @VERSION@
+Requires: gstreamer-0.10 gstreamer-base-0.10 gstreamer-controller-0.10 gstreamer-pbutils-0.10
+Libs: -L${libdir} -lgss-@ORC_MAJORMINOR@
+Cflags: -I${includedir}

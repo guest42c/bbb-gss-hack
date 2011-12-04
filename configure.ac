@@ -99,6 +99,9 @@ AS_HOST_DEFINES()
 AC_CONFIG_FILES([
 Makefile 
 gst-stream-server/Makefile
+pkgconfig/Makefile
+pkgconfig/gst-stream-server-uninstalled.pc
+pkgconfig/gst-stream-server.pc
 tools/Makefile
 ])
 AC_OUTPUT
