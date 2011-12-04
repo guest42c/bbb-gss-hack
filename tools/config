@@ -2,4 +2,5 @@ server_name=10.0.2.23
 server_port=80
 max_bandwidth=100000
 max_connections=10000
+admin_token=5fb50a9baa7563e13a10ab50a17a1b87
 
