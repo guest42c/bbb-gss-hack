@@ -4,14 +4,15 @@ bin_PROGRAMS = \
 	ew-stream-server2
 
 
-ew_stream_server_CFLAGS = $(EWAPPS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) -I../ew-stream-server
-ew_stream_server_LDADD = $(GST_LIBS) $(SOUP_LIBS) ../ew-stream-server/libess.la
+ew_stream_server_CFLAGS = $(EWAPPS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) -I$(top_srcdir)
+ew_stream_server_LDADD = $(GST_LIBS) $(SOUP_LIBS) ../gst-stream-server/libgss.la
 ew_stream_server_SOURCES = ew-stream-server.c
 
-ew_stream_server2_CFLAGS = $(EWAPPS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) -I../ew-stream-server
-ew_stream_server2_LDADD = $(GST_LIBS) $(SOUP_LIBS) ../ew-stream-server/libess.la
+ew_stream_server2_CFLAGS = $(EWAPPS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) -I$(top_srcdir)
+ew_stream_server2_LDADD = $(GST_LIBS) $(SOUP_LIBS) ../gst-stream-server/libgss.la
 ew_stream_server2_SOURCES = \
 	ew-stream-server2.c \
+	ew-stream-server2.h \
 	ew-config-stream-server.c
 
 

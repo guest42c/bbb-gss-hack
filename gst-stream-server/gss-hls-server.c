@@ -1,14 +1,16 @@
 
-//#include "config.h"
+#include "config.h"
 
-#include "ew-server.h"
+#include "gss-server.h"
 
+#if 0
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#endif
 
 
 enum {

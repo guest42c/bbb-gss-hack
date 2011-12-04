@@ -1,16 +1,18 @@
 
-//#include "config.h"
+#include "config.h"
 
 #include <gst/gst.h>
 #include <libsoup/soup.h>
-#include "ew-server.h"
+#include <gst-stream-server/gss-server.h>
 
+#if 0
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#endif
 
 #define GETTEXT_PACKAGE NULL
 

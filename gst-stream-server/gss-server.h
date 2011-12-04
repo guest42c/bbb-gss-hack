@@ -1,11 +1,11 @@
 
-#ifndef EW_SERVER_H
-#define EW_SERVER_H
+#ifndef _GSS_SERVER_H
+#define _GSS_SERVER_H
 
 #include <gst/gst.h>
 #include <gst/base/gstadapter.h>
 #include <libsoup/soup.h>
-#include "ew-config.h"
+#include "gss-config.h"
 
 #define DEFAULT_PORT 80
 

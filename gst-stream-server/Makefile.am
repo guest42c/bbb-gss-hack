@@ -1,19 +1,20 @@
 
-lib_LTLIBRARIES = libess.la
+lib_LTLIBRARIES = libgss.la
 
-libess_la_CFLAGS = $(EWAPPS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) -Wall -Werror
-libess_la_LIBS = $(GST_LIBS) $(SOUP_LIBS)
-libess_la_SOURCES = \
-	ew-hls-server.c \
-	ew-hls-server.h \
-	ew-server.c \
-	ew-server.h \
-	ew-session.c \
-	ew-session.h \
-	ew-config.c \
-	ew-config.h \
-	ew-config-form.c \
-	ew-html.c \
-	ew-html.h
+libgss_la_CFLAGS = $(EWAPPS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) -Wall -Werror
+libgss_la_LIBS = $(GST_LIBS) $(SOUP_LIBS)
+libgss_la_SOURCES = \
+	gss-hls-server.c \
+	gss-hls-server.h \
+	gss-server.c \
+	gss-server.h \
+	gss-session.c \
+	gss-session.h \
+	gss-config.c \
+	gss-config.h \
+	gss-form.c \
+	gss-form.h \
+	gss-html.c \
+	gss-html.h
 
 

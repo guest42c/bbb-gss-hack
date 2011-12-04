@@ -1,12 +1,12 @@
 
-#ifndef _EW_ENCODER_H_
-#define _EW_ENCODER_H_
+#ifndef _EW_STREAM_SERVER2_H_
+#define _EW_STREAM_SERVER2_H_
 
 #include <gst/gst.h>
 #include <gst/interfaces/tuner.h>
 #include <gst/interfaces/colorbalance.h>
 
-#include "ew-server.h"
+#include <gst-stream-server/gss-server.h>
 
 #define MAX_RATIO 0.9
 #define MAX_STREAMS 50

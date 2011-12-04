@@ -1,8 +1,10 @@
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
-#include "ew-server.h"
-#include "ew-config.h"
+#include "gss-server.h"
+#include "gss-config.h"
 
 #include <glib/gstdio.h>
 

@@ -1,6 +1,6 @@
 
-#ifndef EW_HTML_H
-#define EW_HTML_H
+#ifndef _GSS_HTML_H
+#define _GSS_HTML_H
 
 #include <glib.h>
 #include <libsoup/soup.h>

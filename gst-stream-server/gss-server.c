@@ -1,9 +1,9 @@
 
-//#include "config.h"
+#include "config.h"
 
-#include "ew-server.h"
-#include "ew-html.h"
-#include "ew-session.h"
+#include "gss-server.h"
+#include "gss-html.h"
+#include "gss-session.h"
 
 #include <glib/gstdio.h>
 

@@ -1,6 +1,6 @@
 
-#ifndef _EW_CONFIG_H_
-#define _EW_CONFIG_H_
+#ifndef _ESS_CONFIG_H_
+#define _ESS_CONFIG_H_
 
 #include <glib.h>
 #include <stdlib.h>

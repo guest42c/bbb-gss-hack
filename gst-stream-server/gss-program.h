@@ -1,6 +1,6 @@
 
-#ifndef EW_PROGRAM_H
-#define EW_PROGRAM_H
+#ifndef _GSS_PROGRAM_H
+#define _GSS_PROGRAM_H
 
 #include <gst/gst.h>
 #include <libsoup/soup.h>

@@ -1,6 +1,6 @@
 
-#ifndef EW_HLS_SERVER_H
-#define EW_HLS_SERVER_H
+#ifndef _GSS_HLS_SERVER_H
+#define _GSS_HLS_SERVER_H
 
 #include <gst/gst.h>
 #include <libsoup/soup.h>

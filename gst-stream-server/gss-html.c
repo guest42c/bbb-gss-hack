@@ -1,7 +1,7 @@
 
 #include "config.h"
 
-#include "ew-html.h"
+#include "gss-html.h"
 
 #include <string.h>
 

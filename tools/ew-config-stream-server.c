@@ -1,10 +1,10 @@
 
 #include "config.h"
 
-#include "ew-server.h"
-#include "ew-config.h"
-#include "ew-config-form.h"
-#include "ew-html.h"
+#include <gst-stream-server/gss-server.h>
+#include <gst-stream-server/gss-config.h>
+#include <gst-stream-server/gss-form.h>
+#include <gst-stream-server/gss-html.h>
 
 #include <glib/gstdio.h>
 #include <glib-object.h>

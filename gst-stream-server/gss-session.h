@@ -1,6 +1,6 @@
 
-#ifndef _EW_SESSION_H_
-#define _EW_SESSION_H_
+#ifndef _GSS_SESSION_H_
+#define _GSS_SESSION_H_
 
 #include <glib.h>
 #include <libsoup/soup.h>

@@ -1,7 +1,7 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = ew-stream-server tools
+SUBDIRS = gst-stream-server tools
 
 ACLOCAL_AMFLAGS = -I m4
 

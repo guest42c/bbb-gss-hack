@@ -1,10 +1,10 @@
 
-#ifndef _EW_CONFIG_FORM_H_
-#define _EW_CONFIG_FORM_H_
+#ifndef _EW_FORM_H_
+#define _EW_FORM_H_
 
 #include <glib.h>
 
-#include "ew-session.h"
+#include "gss-session.h"
 
 
 G_BEGIN_DECLS

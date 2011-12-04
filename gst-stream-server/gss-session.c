@@ -1,24 +1,26 @@
 
 #include "config.h"
 
-#include "ew-server.h"
-#include "ew-config.h"
-#include "ew-config-form.h"
-#include "ew-html.h"
+#include "gss-server.h"
+#include "gss-config.h"
+#include "gss-form.h"
+#include "gss-html.h"
 
 #include <glib/gstdio.h>
 #include <glib-object.h>
 
+#include <fcntl.h>
+#if 0
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <string.h>
+#endif
 
 
 #define REALM "Entropy Wave E1000"
