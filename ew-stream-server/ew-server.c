@@ -3,23 +3,14 @@
 
 #include "ew-server.h"
 #include "ew-html.h"
+#include "ew-session.h"
 
 #include <glib/gstdio.h>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/ioctl.h>
-#include <netinet/in.h>
 #include <net/if.h>
-#include <string.h>
 
-//gboolean verbose = FALSE;
 
-#define REALM "Entropy Wave E1000"
 #define BASE "/"
 
 #define enable_video_tag TRUE
@@ -303,7 +294,8 @@ ew_server_new (void)
 static void
 setup_paths (EwServer *server, SoupServer *soupserver)
 {
-  //ew_server_add_admin_callbacks (server, soupserver);
+  ew_session_add_session_callbacks (soupserver, server);
+  ew_server_add_admin_callbacks (server, soupserver);
 
   soup_server_add_handler (soupserver, "/", main_page_callback, server, NULL);
   soup_server_add_handler (soupserver, "/list", list_callback, server, NULL);

@@ -137,3 +137,8 @@ timeout (gpointer data)
   return TRUE;
 }
 
+void
+ew_server_add_admin_callbacks (EwServer *server, SoupServer *soupserver)
+{
+}
+

@@ -3,33 +3,10 @@
 
 #include "ew-server.h"
 #include "ew-config.h"
-#include "ew-html.h"
 
 #include <glib/gstdio.h>
-#include <glib-object.h>
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <string.h>
-#include <glib/gstdio.h>
 
 
-enum {
-  PROP_PORT = 1
-};
-
-
-char * get_time_string (void);
-
-
-/* EwConfig stuff */
 
 static EwConfigField *
 ew_config_get_field (EwConfig *config, const char *key)
@@ -107,7 +84,7 @@ compare (gconstpointer a, gconstpointer b)
   return strcmp ((const char *)a,(const char *)b);
 }
 
-static void
+void
 ew_config_hash_to_string (GString *s, GHashTable *hash)
 {
   GList *list;
@@ -281,3 +258,150 @@ void ew_config_set_notify (EwConfig *config, const char *key,
 }
 
 
+void
+ew_config_handle_post (EwConfig *config, SoupMessage *msg)
+{
+  GHashTable *hash;
+  char *filename, *media_type;
+  SoupBuffer *buffer;
+  const char *content_type;
+
+  content_type = soup_message_headers_get_one (msg->request_headers,
+      "Content-Type");
+
+  hash = NULL;
+  if (g_str_equal (content_type, "application/x-www-form-urlencoded")) {
+    //g_print ("urlencoded: %s\n", msg->request_body->data);
+    hash = soup_form_decode (msg->request_body->data);
+  } else if (g_str_has_prefix (content_type, "multipart/form-data")) {
+    //g_print("multipart/form-data\n");
+    hash = soup_form_decode_multipart (msg, "logo_file", &filename,
+        &media_type, &buffer);
+
+    if (buffer && buffer->length > 0) {
+      GError *error = NULL;
+      gboolean ret;
+
+      ret = g_file_set_contents ("logo.png", buffer->data, buffer->length,
+          &error);
+      if (!ret) {
+        /* FIXME */
+        //ew_server_log (server, "failed to write logo.png file");
+      }
+      soup_buffer_free (buffer);
+    }
+    if (g_hash_table_lookup (hash, "firmware_file")) {
+      g_hash_table_unref (hash);
+      g_free (filename);
+      g_free (media_type);
+      hash = soup_form_decode_multipart (msg, "firmware_file", &filename,
+          &media_type, &buffer);
+
+      if (buffer && buffer->length > 0) {
+        g_file_set_contents ("/opt/entropywave/ew-oberon/new-firmware",
+            buffer->data, buffer->length, NULL);
+        g_file_set_contents ("/tmp/reboot", "", 0, NULL);
+        soup_buffer_free (buffer);
+      }
+    }
+    if (g_hash_table_lookup (hash, "cert_file")) {
+      g_hash_table_unref (hash);
+      g_free (filename);
+      g_free (media_type);
+      hash = soup_form_decode_multipart (msg, "cert_file", &filename,
+          &media_type, &buffer);
+
+      if (buffer && buffer->length > 0) {
+        g_file_set_contents ("server.crt", buffer->data, buffer->length, NULL);
+        soup_buffer_free (buffer);
+      }
+    }
+    if (g_hash_table_lookup (hash, "key_file")) {
+      g_hash_table_unref (hash);
+      g_free (filename);
+      g_free (media_type);
+      hash = soup_form_decode_multipart (msg, "key_file", &filename,
+          &media_type, &buffer);
+
+      if (buffer && buffer->length > 0) {
+        g_file_set_contents ("server.key", buffer->data, buffer->length, NULL);
+        soup_buffer_free (buffer);
+      }
+    }
+    g_free (filename);
+    g_free (media_type);
+  }
+
+#if 0
+  if (hash) {
+    GHashTableIter iter;
+    char *key, *value;
+    g_hash_table_iter_init (&iter, hash);
+    while (g_hash_table_iter_next (&iter, (gpointer)&key, (gpointer)&value)) {
+      g_print("%s=%s\n", key, value);
+    }
+  }
+#endif
+
+  if (hash) {
+    const char *s, *t;
+    char *key, *value;
+    GHashTableIter iter;
+
+    g_hash_table_remove (hash, "session_id");
+    g_hash_table_remove (hash, "firmware_file");
+    g_hash_table_remove (hash, "key_file");
+    g_hash_table_remove (hash, "cert_file");
+
+    s = g_hash_table_lookup (hash, "poweroff");
+    if (s) {
+      g_file_set_contents ("/tmp/shutdown", "", 0, NULL);
+    }
+
+    s = g_hash_table_lookup (hash, "reboot");
+    if (s) {
+      g_file_set_contents ("/tmp/reboot", "", 0, NULL);
+    }
+
+    s = g_hash_table_lookup (hash, "admin_token0");
+    t = g_hash_table_lookup (hash, "admin_token1");
+    if (s || t) {
+      const char *t = g_hash_table_lookup (hash, "admin_token1");
+
+      if (s && t && strcmp (s, t) == 0) {
+#define REALM "Entropy Wave E1000"
+        ew_config_set (config, "admin_token",
+            soup_auth_domain_digest_encode_password("admin", REALM, s));
+#if 0
+        ew_config_set (config, "admin_hash",
+            password_hash ("admin", s));
+#endif
+      }
+      g_hash_table_remove (hash, "admin_token0");
+      g_hash_table_remove (hash, "admin_token1");
+    }
+
+    s = g_hash_table_lookup (hash, "editor_token0");
+    t = g_hash_table_lookup (hash, "editor_token1");
+    if (s || t) {
+      const char *t = g_hash_table_lookup (hash, "editor_token1");
+
+      if (s && t && strcmp (s, t) == 0) {
+        ew_config_set (config, "editor_token",
+            soup_auth_domain_digest_encode_password("editor", REALM, s));
+#if 0
+        ew_config_set (config, "editor_hash",
+            password_hash ("admin", s));
+#endif
+      }
+      g_hash_table_remove (hash, "editor_token0");
+      g_hash_table_remove (hash, "editor_token1");
+    }
+
+    g_hash_table_iter_init (&iter, hash);
+    while (g_hash_table_iter_next (&iter, (gpointer)&key, (gpointer)&value)) {
+      ew_config_set (config, key, value);
+    }
+    ew_config_write_config_to_file (config);
+  }
+}

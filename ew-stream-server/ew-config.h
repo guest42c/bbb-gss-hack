@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+
 G_BEGIN_DECLS
 
 enum {
@@ -25,13 +27,6 @@ struct _EwConfig {
   GHashTable *hash;
   char *config_filename;
   int config_timestamp;
-};
-
-typedef struct _EwSession EwSession;
-struct _EwSession {
-  char *session_id;
-  char *username;
-  time_t last_time;
 };
 
 
@@ -66,6 +61,8 @@ void ew_config_set_notify (EwConfig *config, const char *key,
 gboolean ew_config_value_is_equal (EwConfig *config, const char *key,
     const char *value);
 gboolean ew_config_value_is_on (EwConfig *config, const char *key);
+void ew_config_hash_to_string (GString *s, GHashTable *hash);
+void ew_config_handle_post (EwConfig *config, SoupMessage *msg);
 
 
 G_END_DECLS

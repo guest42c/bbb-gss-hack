@@ -10,7 +10,11 @@ ew_stream_server_SOURCES = \
 	ew-stream-server.c \
 	ew-server.c \
 	ew-server.h \
+	ew-session.c \
+	ew-session.h \
 	ew-config.c \
+	ew-config.h \
+	ew-config-form.c \
 	ew-html.c \
 	ew-html.h
 
