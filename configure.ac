@@ -28,7 +28,7 @@ LT_PATH_NM
 dnl allow for different autotools
 AS_AUTOTOOLS_ALTERNATE
 
-AC_CONFIG_SRCDIR([ew-stream-server/ew-stream-server.c])
+AC_CONFIG_SRCDIR([ew-stream-server/ew-server.c])
 
 AC_CONFIG_MACRO_DIR([m4])
 ACLOCAL_AMFLAGS="-I m4 $ACLOCAL_AMFLAGS"
