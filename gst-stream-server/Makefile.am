@@ -1,9 +1,9 @@
 
-lib_LTLIBRARIES = libgss.la
+lib_LTLIBRARIES = libgss-@GST_MAJORMINOR@.la
 
-libgss_la_CFLAGS = $(EWAPPS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) -Wall -Werror
-libgss_la_LIBS = $(GST_LIBS) $(SOUP_LIBS)
-libgss_la_SOURCES = \
+libgss_@GST_MAJORMINOR@_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS)
+libgss_@GST_MAJORMINOR@_la_LIBS = $(GST_LIBS) $(SOUP_LIBS)
+libgss_@GST_MAJORMINOR@_la_SOURCES = \
 	gss-hls-server.c \
 	gss-hls-server.h \
 	gss-server.c \

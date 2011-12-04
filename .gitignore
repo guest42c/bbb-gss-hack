@@ -30,8 +30,8 @@ m4/ltoptions.m4
 m4/ltsugar.m4
 m4/ltversion.m4
 m4/lt~obsolete.m4
-pkgconfig/gst-stream-server-@GST_MAJORMINOR@-uninstalled.pc
-pkgconfig/gst-stream-server-@GST_MAJORMINOR@.pc
+pkgconfig/gst-stream-server-0.10-uninstalled.pc
+pkgconfig/gst-stream-server-0.10.pc
 pkgconfig/gst-stream-server-uninstalled.pc
 pkgconfig/gst-stream-server.pc
 
