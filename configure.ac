@@ -106,6 +106,7 @@ AS_HOST_DEFINES()
 AC_CONFIG_FILES([
 Makefile 
 ew-stream-server/Makefile
+tools/Makefile
 ])
 AC_OUTPUT
 

@@ -2,7 +2,6 @@
 #include "config.h"
 
 #include "ew-server.h"
-#include "ew-event.h"
 #include "ew-config.h"
 #include "ew-config-form.h"
 #include "ew-html.h"
