@@ -29,7 +29,13 @@ extern EwConfigDefault config_defaults[];
 gboolean verbose;
 gboolean cl_verbose;
 
+void ew_stream_server_notify_url (const char *s, void *priv);
+
 static void signal_interrupt (int signum);
+
+#define N_PROGRAMS 10
+
+EwProgram *programs[N_PROGRAMS];
 
 static GOptionEntry entries[] = {
   {"verbose", 'v', 0, G_OPTION_ARG_NONE, &cl_verbose, "Be verbose", NULL},
@@ -47,6 +53,7 @@ main (int argc, char *argv[])
 {
   GError *error = NULL;
   GOptionContext *context;
+  int i;
 
   if (!g_thread_supported ())
     g_thread_init (NULL);
@@ -72,6 +79,19 @@ main (int argc, char *argv[])
   ew_config_load_from_file_locked (server->config, CONFIG_FILENAME ".perm");
   ew_config_load_from_file_locked (server->config, CONFIG_FILENAME ".package");
 
+  for(i=0;i<N_PROGRAMS;i++){
+    char *key;
+
+    key = g_strdup_printf("stream%d_url", i);
+
+    ew_config_set_notify (server->config, key,
+        ew_stream_server_notify_url, GINT_TO_POINTER (i));
+
+    ew_stream_server_notify_url (key, GINT_TO_POINTER (i));
+
+    g_free (key);
+  }
+
   //g_timeout_add (1000, periodic_timer, NULL);
 
   main_loop = g_main_loop_new (NULL, TRUE);
@@ -93,5 +113,35 @@ signal_interrupt (int signum)
   }
 }
 
+
+void
+ew_stream_server_notify_url (const char *s, void *priv)
+{
+  int i = GPOINTER_TO_INT (priv);
+  const char *url;
+
+  url = ew_config_get (server->config, s);
+
+  if (url[0] == 0 && programs[i] == NULL) return;
+  if (programs[i] && strcmp(url, programs[i]->follow_host) == 0) return;
+
+  if (programs[i]) {
+    ew_server_remove_program (server, programs[i]);
+    programs[i] = NULL;
+  }
+
+  if (url[0]) {
+    char *stream_name;
+    if (i == 0) {
+      stream_name = g_strdup ("stream");
+    } else {
+      stream_name = g_strdup_printf ("stream%d", i);
+    }
+    programs[i] = ew_server_add_program (server, stream_name);
+    ew_program_follow (programs[i], url, "stream");
+    g_free (stream_name);
+  }
+
+}
 
 
