@@ -23,7 +23,6 @@ libtool
 ltmain.sh
 autom4te.cache
 tools/ew-stream-server
-tools/ew-stream-server2
 install-sh
 m4/libtool.m4
 m4/ltoptions.m4

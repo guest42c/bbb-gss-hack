@@ -1,18 +1,13 @@
 
 bin_PROGRAMS = \
-	ew-stream-server \
-	ew-stream-server2
+	ew-stream-server
 
 
 ew_stream_server_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS)
 ew_stream_server_LDADD = $(GSS_LIBS) $(GST_LIBS) $(SOUP_LIBS)
-ew_stream_server_SOURCES = ew-stream-server.c
-
-ew_stream_server2_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS)
-ew_stream_server2_LDADD = $(GSS_LIBS) $(GST_LIBS) $(SOUP_LIBS)
-ew_stream_server2_SOURCES = \
-	ew-stream-server2.c \
-	ew-stream-server2.h \
+ew_stream_server_SOURCES = \
+	ew-stream-server.c \
+	ew-stream-server.h \
 	ew-config-stream-server.c
 
 
