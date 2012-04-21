@@ -19,7 +19,6 @@ struct _EwProgram {
 
 struct _EwStream {
   EwProgram *program;
-  //EwHLSBundle *bundle;
   GstElement *sink;
   int program_id;
   int bandwidth;

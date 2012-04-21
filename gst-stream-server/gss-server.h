@@ -93,7 +93,6 @@ struct _EwServerStream {
   char *follow_url;
   int push_fd;
 
-  //EwHLSBundle *bundle;
   GstElement *pipeline;
   GstElement *sink;
   int level;
