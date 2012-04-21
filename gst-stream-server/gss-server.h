@@ -7,7 +7,7 @@
 #include <libsoup/soup.h>
 #include "gss-config.h"
 
-#define DEFAULT_PORT 80
+
 
 typedef struct _EwProgram EwProgram;
 typedef struct _EwServerStream EwServerStream;
@@ -145,6 +145,7 @@ struct _EwServer
   //char * config_filename;
   char * server_name;
   int port;
+  int https_port;
 
   int n_programs;
   EwProgram **programs;

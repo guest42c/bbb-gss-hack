@@ -97,9 +97,12 @@ void ew_stream_create_push_pipeline (EwServerStream *stream);
 static SoupSession *session;
 
 #define MAX_FDS 65536
-void *fd_table[MAX_FDS];
+static void *fd_table[MAX_FDS];
 
 G_DEFINE_TYPE (EwServer, ew_server, G_TYPE_OBJECT);
+
+#define DEFAULT_HTTP_PORT 80
+#define DEFAULT_HTTPS_PORT 443
 
 static void
 ew_server_init (EwServer *server)
@@ -109,9 +112,11 @@ ew_server_init (EwServer *server)
   }
 
   if (getuid() == 0) {
-    server->port = DEFAULT_PORT;
+    server->port = DEFAULT_HTTP_PORT;
+    server->https_port = DEFAULT_HTTPS_PORT;
   } else {
-    server->port = 8080;
+    server->port = 8000+DEFAULT_HTTP_PORT;
+    server->https_port = 8000+DEFAULT_HTTPS_PORT;
   }
 
   server->n_programs = 0;
@@ -148,7 +153,7 @@ ew_server_class_init (EwServerClass *server_class)
 
   g_object_class_install_property (G_OBJECT_CLASS(server_class), PROP_PORT,
       g_param_spec_int ("port", "Port",
-        "Port", 0, 65535, DEFAULT_PORT,
+        "Port", 0, 65535, DEFAULT_HTTP_PORT,
         (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
 }
@@ -438,6 +443,7 @@ ew_server_free (EwServer *server)
   g_free (server->base_url);
   g_free (server->server_name);
   g_free (server->programs);
+  /* FIXME why? */
   //g_free (server);
 }
 
@@ -446,11 +452,6 @@ ew_server_notify (const char *key, void *priv)
 {
   EwServer *server = (EwServer *)priv;
   const char *s;
-
-#if 0
-  s = ew_config_get (server->config, "server_port");
-  server->port = strtol (s, NULL, 10);
-#endif
 
   s = ew_config_get (server->config, "server_name");
   ew_server_set_hostname (server, s);
@@ -602,13 +603,18 @@ get_time_string (void)
 
   datetime = g_date_time_new_now_local ();
 
+#if 0
   /* RFC 822 */
-  //strftime(thetime, 79, "%a, %d %b %y %T %z", tmp); // RFC-822
+  strftime(thetime, 79, "%a, %d %b %y %T %z", tmp); // RFC-822
+#endif
   /* RFC 2822 */
   s = g_date_time_format (datetime, "%a, %d %b %Y %H:%M:%S %z"); // RFC-2822
+  /* Workaround for a glib bug that was fixed some time ago */
   if (s[27] == '-') s[27] = '0';
+#if 0
   /* RFC 3339, almost */
-  //strftime(thetime, 79, "%Y-%m-%d %H:%M:%S%z", tmp);
+  strftime(thetime, 79, "%Y-%m-%d %H:%M:%S%z", tmp);
+#endif
 
   g_date_time_unref (datetime);
 
@@ -677,6 +683,7 @@ ew_server_get_multifdsink_string (void)
     "sync=false "
     "time-min=200000000 "
     "recover-policy=keyframe "
+    //"recover-policy=latest "
     "unit-type=2 "
     "units-max=20000000000 "
     "units-soft-max=11000000000 "
