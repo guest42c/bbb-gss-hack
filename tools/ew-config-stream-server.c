@@ -21,17 +21,62 @@ Field control_fields[] = {
   { FIELD_SECTION, NULL, "Control" },
   { FIELD_CHECKBOX, "enable_streaming", "Enable Public Streaming", "on", 1 },
   { FIELD_SECTION, NULL, "Stream #0" },
+  { FIELD_TEXT_INPUT, "stream0_name", "Stream Name", "stream0", 0 },
+  { FIELD_SELECT, "stream0_type", "Connection type", "ew-follow", 0,
+    {
+      { "ew-follow", "E1000/S1000 follower" },
+      { "http-follow", "HTTP stream follower" },
+      { "ew-contrib", "Entropy Wave contributor" },
+      { "icecast", "Icecast contributor" }
+    }
+  },
   { FIELD_TEXT_INPUT, "stream0_url", "Stream URL or E1000 IP address", "10.0.2.40", 0 },
   //{ FIELD_TEXT_INPUT, "stream0_width", "Width", "640", 0 },
   //{ FIELD_TEXT_INPUT, "stream0_height", "Height", "360", 0 },
   //{ FIELD_TEXT_INPUT, "stream0_bitrate", "Bitrate", "700000", 0 },
   { FIELD_SECTION, NULL, "Stream #1" },
+  { FIELD_TEXT_INPUT, "stream1_name", "Stream Name", "stream1", 0 },
+  { FIELD_SELECT, "stream1_type", "Connection type", "ew-follow", 0,
+    {
+      { "ew-follow", "E1000/S1000 follower" },
+      { "http-follow", "HTTP stream follower" },
+      { "ew-contrib", "Entropy Wave contributor" },
+      { "icecast", "Icecast contributor" }
+    }
+  },
   { FIELD_TEXT_INPUT, "stream1_url", "Stream URL or E1000 IP address", "", 0 },
   { FIELD_SECTION, NULL, "Stream #2" },
+  { FIELD_TEXT_INPUT, "stream2_name", "Stream Name", "stream2", 0 },
+  { FIELD_SELECT, "stream2_type", "Connection type", "ew-follow", 0,
+    {
+      { "ew-follow", "E1000/S1000 follower" },
+      { "http-follow", "HTTP stream follower" },
+      { "ew-contrib", "Entropy Wave contributor" },
+      { "icecast", "Icecast contributor" }
+    }
+  },
   { FIELD_TEXT_INPUT, "stream2_url", "Stream URL or E1000 IP address", "", 0 },
   { FIELD_SECTION, NULL, "Stream #3" },
+  { FIELD_TEXT_INPUT, "stream3_name", "Stream Name", "stream3", 0 },
+  { FIELD_SELECT, "stream3_type", "Connection type", "ew-follow", 0,
+    {
+      { "ew-follow", "E1000/S1000 follower" },
+      { "http-follow", "HTTP stream follower" },
+      { "ew-contrib", "Entropy Wave contributor" },
+      { "icecast", "Icecast contributor" }
+    }
+  },
   { FIELD_TEXT_INPUT, "stream3_url", "Stream URL or E1000 IP address", "", 0 },
   { FIELD_SECTION, NULL, "Stream #4" },
+  { FIELD_TEXT_INPUT, "stream4_name", "Stream Name", "stream4", 0 },
+  { FIELD_SELECT, "stream4_type", "Connection type", "ew-follow", 0,
+    {
+      { "ew-follow", "E1000/S1000 follower" },
+      { "http-follow", "HTTP stream follower" },
+      { "ew-contrib", "Entropy Wave contributor" },
+      { "icecast", "Icecast contributor" }
+    }
+  },
   { FIELD_TEXT_INPUT, "stream4_url", "Stream URL or E1000 IP address", "", 0 },
   { FIELD_SUBMIT, "submit", "Update Configuration", NULL, 0 },
   { FIELD_NONE }

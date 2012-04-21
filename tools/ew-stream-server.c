@@ -26,7 +26,7 @@
 
 extern EwConfigDefault config_defaults[];
 
-gboolean verbose;
+gboolean verbose = TRUE;
 gboolean cl_verbose;
 
 void ew_stream_server_notify_url (const char *s, void *priv);
@@ -132,13 +132,37 @@ ew_stream_server_notify_url (const char *s, void *priv)
 
   if (url[0]) {
     char *stream_name;
-    if (i == 0) {
-      stream_name = g_strdup ("stream");
-    } else {
-      stream_name = g_strdup_printf ("stream%d", i);
+    const char *stream_type;
+    char *key;
+    
+    key = g_strdup_printf ("stream%d_type", i);
+    stream_type = ew_config_get (server->config, key);
+    g_free (key);
+
+    key = g_strdup_printf ("stream%d_name", i);
+    stream_name = g_strdup (ew_config_get (server->config, key));
+    g_free (key);
+    if (strcmp (stream_name, "") == 0) {
+      g_free (stream_name);
+      if (i == 0) {
+        stream_name = g_strdup ("stream");
+      } else {
+        stream_name = g_strdup_printf ("stream%d", i);
+      }
     }
+
     programs[i] = ew_server_add_program (server, stream_name);
-    ew_program_follow (programs[i], url, "stream");
+    if (strcmp (stream_type, "http-follow") == 0) {
+      ew_program_http_follow (programs[i], url);
+    } else if (strcmp (stream_type, "ew-contrib") == 0) {
+      ew_program_ew_contrib (programs[i]);
+    } else if (strcmp (stream_type, "http-put") == 0) {
+      ew_program_http_put (programs[i], "stream");
+    } else {
+      /* ew-follow */
+      ew_program_follow (programs[i], url, "stream");
+    }
+
     g_free (stream_name);
   }
 
