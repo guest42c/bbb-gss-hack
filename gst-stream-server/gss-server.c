@@ -32,6 +32,10 @@ static void list_callback (SoupServer *server, SoupMessage *msg,
 static void log_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
+static void push_callback (SoupServer *server, SoupMessage *msg,
+    const char *path, GHashTable *query, SoupClientContext *client,
+    gpointer user_data);
+static void push_wrote_headers (SoupMessage *msg, void *user_data);
 static void file_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
@@ -88,6 +92,7 @@ void ew_program_stop (EwProgram *program);
 void ew_program_start (EwProgram *program);
 void ew_stream_set_sink (EwServerStream *stream, GstElement *sink);
 void ew_stream_create_follow_pipeline (EwServerStream *stream);
+void ew_stream_create_push_pipeline (EwServerStream *stream);
 
 static SoupSession *session;
 
@@ -300,6 +305,7 @@ setup_paths (EwServer *server, SoupServer *soupserver)
   soup_server_add_handler (soupserver, "/", main_page_callback, server, NULL);
   soup_server_add_handler (soupserver, "/list", list_callback, server, NULL);
   soup_server_add_handler (soupserver, "/log", log_callback, server, NULL);
+  soup_server_add_handler (soupserver, "/push", push_callback, server, NULL);
 
   if (enable_cortado) {
     soup_server_add_handler (soupserver, "/cortado.jar", file_callback,
@@ -1053,6 +1059,90 @@ log_callback (SoupServer *server, SoupMessage *msg,
 }
 
 static void
+dump_header (const char *name, const char *value, gpointer user_data)
+{
+  g_print("%s: %s\n", name, value);
+}
+
+
+static void
+push_callback (SoupServer *server, SoupMessage *msg,
+    const char *path, GHashTable *query, SoupClientContext *client,
+    gpointer user_data)
+{
+  EwProgram *program;
+  //const char *mime_type = "text/plain";
+  EwServer *ewserver = (EwServer *)user_data;
+  const char *content_type;
+
+  if (msg->method != SOUP_METHOD_PUT && strcmp(msg->method, "SOURCE") != 0) {
+    soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
+    return;
+  }
+
+  g_print("push %s\n", msg->method);
+  soup_message_headers_foreach (msg->request_headers, dump_header, user_data);
+
+  if (!g_str_equal (path, "/push")) {
+    ew_html_error_404 (msg);
+    return;
+  }
+
+  program = ew_server_add_program (ewserver, "push_stream");
+  program->program_type = EW_PROGRAM_MANUAL;
+
+  content_type = soup_message_headers_get_one (msg->request_headers,
+      "Content-Type");
+  if (content_type) {
+    if (strcmp (content_type, "application/ogg") == 0) {
+      program->push_media_type = EW_SERVER_STREAM_OGG;
+    } else if (strcmp (content_type, "video/webm") == 0) {
+      program->push_media_type = EW_SERVER_STREAM_WEBM;
+    } else if (strcmp (content_type, "video/mpeg-ts") == 0) {
+      program->push_media_type = EW_SERVER_STREAM_TS;
+    } else if (strcmp (content_type, "video/x-flv") == 0) {
+      program->push_media_type = EW_SERVER_STREAM_FLV;
+    } else {
+      program->push_media_type = EW_SERVER_STREAM_OGG;
+    }
+  } else {
+    program->push_media_type = EW_SERVER_STREAM_OGG;
+  }
+
+  ew_program_start (program);
+
+  program->push_client = client;
+
+  soup_message_set_status (msg, SOUP_STATUS_OK);
+
+  soup_message_headers_set_encoding (msg->response_headers,
+      SOUP_ENCODING_EOF);
+
+  g_signal_connect (msg, "wrote-headers", G_CALLBACK(push_wrote_headers),
+      program);
+ 
+}
+
+static void
+push_wrote_headers (SoupMessage *msg, void *user_data)
+{
+  EwProgram *program = (EwProgram *)user_data;
+  SoupSocket *socket;
+  EwServerStream *stream;
+  int fd;
+
+  socket = soup_client_context_get_socket (program->push_client);
+  fd = soup_socket_get_fd (socket);
+
+  stream = ew_program_add_stream_full (program, EW_SERVER_STREAM_OGG,
+      640, 360, 600000, NULL);
+  stream->push_fd = fd;
+  ew_stream_create_push_pipeline (stream);
+
+  gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
+}
+
+static void
 file_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
@@ -1539,6 +1629,9 @@ ew_stream_create_follow_pipeline (EwServerStream *stream)
   g_string_append_printf (pipe_desc, "%s name=sink ",
       ew_server_get_multifdsink_string ());
 
+  if (verbose) {
+    g_print ("pipeline: %s\n", pipe_desc->str);
+  }
   error = NULL;
   pipe = gst_parse_launch (pipe_desc->str, &error);
   if (error != NULL) {
@@ -1549,6 +1642,82 @@ ew_stream_create_follow_pipeline (EwServerStream *stream)
   e = gst_bin_get_by_name (GST_BIN(pipe), "src");
   g_assert(e != NULL);
   g_object_set (e, "location", stream->follow_url, NULL);
+  g_object_unref (e);
+
+  e = gst_bin_get_by_name (GST_BIN(pipe), "sink");
+  g_assert(e != NULL);
+  ew_stream_set_sink (stream, e);
+  g_object_unref (e);
+  stream->pipeline = pipe;
+
+  bus = gst_pipeline_get_bus (GST_PIPELINE(pipe));
+  gst_bus_add_signal_watch (bus);
+  g_signal_connect (bus, "message", G_CALLBACK(handle_pipeline_message),
+      stream);
+  g_object_unref (bus);
+
+}
+
+static gboolean
+push_data_probe_callback (GstPad *pad, GstMiniObject *mo, gpointer user_data)
+{
+#if 0
+  //EwServerStream *stream = (EwServerStream *) user_data;
+
+  if (GST_IS_BUFFER (mo)) {
+    GstBuffer *buffer = GST_BUFFER (mo);
+
+    g_print("push got %d bytes\n", GST_BUFFER_SIZE (buffer));
+    //gst_util_dump_mem (GST_BUFFER_DATA(buffer), 16);
+  }
+#endif
+
+  return TRUE;
+}
+
+void
+ew_stream_create_push_pipeline (EwServerStream *stream)
+{
+  GstElement *pipe;
+  GstElement *e;
+  GString *pipe_desc;
+  GError *error = NULL;
+  GstBus *bus;
+
+  pipe_desc = g_string_new ("");
+
+  g_string_append_printf (pipe_desc, "fdsrc name=src do-timestamp=true ! ");
+  switch (stream->type) {
+    case EW_SERVER_STREAM_OGG:
+      g_string_append (pipe_desc, "oggparse name=parse ! ");
+      break;
+    case EW_SERVER_STREAM_TS:
+    case EW_SERVER_STREAM_TS_MAIN:
+      g_string_append (pipe_desc, "mpegtsparse name=parse ! ");
+      break;
+    case EW_SERVER_STREAM_WEBM:
+      g_string_append (pipe_desc, "matroskaparse name=parse ! ");
+      break;
+  }
+  g_string_append (pipe_desc, "queue ! ");
+  g_string_append_printf (pipe_desc, "%s name=sink ",
+      ew_server_get_multifdsink_string ());
+
+  if (verbose) {
+    g_print ("pipeline: %s\n", pipe_desc->str);
+  }
+  error = NULL;
+  pipe = gst_parse_launch (pipe_desc->str, &error);
+  if (error != NULL) {
+    if (verbose) g_print("pipeline parse error: %s\n", error->message);
+  }
+  g_string_free (pipe_desc, TRUE);
+
+  e = gst_bin_get_by_name (GST_BIN(pipe), "src");
+  g_assert(e != NULL);
+  g_object_set (e, "fd", stream->push_fd, NULL);
+  gst_pad_add_data_probe (gst_element_get_pad (e, "src"),
+      G_CALLBACK (push_data_probe_callback), stream);
   g_object_unref (e);
 
   e = gst_bin_get_by_name (GST_BIN(pipe), "sink");
@@ -1669,20 +1838,22 @@ ew_program_stop (EwProgram *program)
 void
 ew_program_start (EwProgram *program)
 {
-  int i;
-  EwServerStream *stream;
 
   ew_program_log (program, "start");
-  if (program->follow_uri) {
-    ew_program_follow_get_list (program);
-  } else {
-    for (i=0;i<program->n_streams;i++){
-      stream = program->streams[i];
-      if (stream->follow_url) {
-        ew_stream_create_follow_pipeline (stream);
-      }
-      gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
-    }
+
+  switch (program->program_type) {
+    case EW_PROGRAM_EW_FOLLOW:
+      ew_program_follow_get_list (program);
+      break;
+    case EW_PROGRAM_HTTP_FOLLOW:
+      ew_program_add_stream_follow (program, EW_SERVER_STREAM_OGG, 640, 360,
+          700000, program->follow_uri);
+      break;
+    case EW_PROGRAM_MANUAL:
+      break;
+    default:
+      g_warning ("not implemented");
+      break;
   }
 }
 
@@ -1753,6 +1924,7 @@ follow_callback (SoupSession *session, SoupMessage *message, gpointer ptr)
 void
 ew_program_follow (EwProgram *program, const char *host, const char *stream)
 {
+  program->program_type = EW_PROGRAM_EW_FOLLOW;
   program->follow_uri = g_strdup_printf("http://%s/%s.list", host, stream);
   program->follow_host = g_strdup (host);
   program->restart_delay = 1;
@@ -1788,5 +1960,27 @@ periodic_timer (gpointer data)
   }
 
   return TRUE;
+}
+
+void
+ew_program_http_follow (EwProgram *program, const char *uri)
+{
+  program->program_type = EW_PROGRAM_HTTP_FOLLOW;
+  program->follow_uri = g_strdup (uri);
+  program->follow_host = g_strdup (uri);
+  
+  program->restart_delay = 1;
+}
+
+void
+ew_program_ew_contrib (EwProgram *program)
+{
+
+}
+
+void
+ew_program_http_put (EwProgram *program, const char *location)
+{
+  
 }
 

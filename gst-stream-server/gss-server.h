@@ -25,12 +25,23 @@ enum {
   EW_SERVER_STREAM_FLV
 };
 
+typedef enum {
+  EW_PROGRAM_EW_FOLLOW,
+  EW_PROGRAM_HTTP_FOLLOW,
+  EW_PROGRAM_MANUAL
+} EwProgramType;
+
 struct _EwProgram {
   EwServer *server;
+
+  EwProgramType program_type;
 
   char *location;
   char *follow_uri;
   char *follow_host;
+
+  SoupClientContext *push_client;
+  int push_media_type;
 
   gboolean enable_streaming;
 
@@ -80,6 +91,7 @@ struct _EwServerStream {
   const char *mod; /* stream modifier ('-main') */
   int type;
   char *follow_url;
+  int push_fd;
 
   //EwHLSBundle *bundle;
   GstElement *pipeline;
@@ -174,6 +186,9 @@ void ew_server_follow_all (EwProgram *program, const char *host);
 
 void ew_program_follow (EwProgram *program, const char *host,
     const char *stream);
+void ew_program_http_follow (EwProgram *progra, const char *uri);
+void ew_program_ew_contrib (EwProgram *program);
+void ew_program_http_put (EwProgram *program, const char *location);
 void ew_program_follow_get_list (EwProgram *program);
 EwServerStream * ew_program_add_ogv_stream (EwProgram *program);
 EwServerStream * ew_program_add_webm_stream (EwProgram *program);
