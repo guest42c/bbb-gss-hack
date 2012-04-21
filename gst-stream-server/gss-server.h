@@ -9,32 +9,32 @@
 
 
 
-typedef struct _EwProgram EwProgram;
-typedef struct _EwServerStream EwServerStream;
-typedef struct _EwServer EwServer;
-typedef struct _EwServerClass EwServerClass;
-typedef struct _EwConnection EwConnection;
-typedef struct _EwHLSSegment EwHLSSegment;
+typedef struct _GssProgram GssProgram;
+typedef struct _GssServerStream GssServerStream;
+typedef struct _GssServer GssServer;
+typedef struct _GssServerClass GssServerClass;
+typedef struct _GssConnection GssConnection;
+typedef struct _GssHLSSegment GssHLSSegment;
 
 enum {
-  EW_SERVER_STREAM_UNKNOWN,
-  EW_SERVER_STREAM_OGG,
-  EW_SERVER_STREAM_WEBM,
-  EW_SERVER_STREAM_TS,
-  EW_SERVER_STREAM_TS_MAIN,
-  EW_SERVER_STREAM_FLV
+  GSS_SERVER_STREAM_UNKNOWN,
+  GSS_SERVER_STREAM_OGG,
+  GSS_SERVER_STREAM_WEBM,
+  GSS_SERVER_STREAM_TS,
+  GSS_SERVER_STREAM_TS_MAIN,
+  GSS_SERVER_STREAM_FLV
 };
 
 typedef enum {
-  EW_PROGRAM_EW_FOLLOW,
-  EW_PROGRAM_HTTP_FOLLOW,
-  EW_PROGRAM_MANUAL
-} EwProgramType;
+  GSS_PROGRAM_EW_FOLLOW,
+  GSS_PROGRAM_HTTP_FOLLOW,
+  GSS_PROGRAM_MANUAL
+} GssProgramType;
 
-struct _EwProgram {
-  EwServer *server;
+struct _GssProgram {
+  GssServer *server;
 
-  EwProgramType program_type;
+  GssProgramType program_type;
 
   char *location;
   char *follow_uri;
@@ -46,7 +46,7 @@ struct _EwProgram {
   gboolean enable_streaming;
 
   int n_streams;
-  EwServerStream **streams;
+  GssServerStream **streams;
 
   gboolean enable_ogv;
   gboolean enable_webm;
@@ -68,20 +68,20 @@ struct _EwProgram {
     guint32 init_vector[4];
   } hls;
 
-  void (*special_client_fd_removed) (EwServerStream *stream, int fd,
+  void (*special_client_fd_removed) (GssServerStream *stream, int fd,
       gpointer user_data);
   gpointer special_user_data;
 };
 
-struct _EwHLSSegment {
+struct _GssHLSSegment {
   int index;
   SoupBuffer *buffer;
   char *location;
   int duration;
 };
 
-struct _EwServerStream {
-  EwProgram *program;
+struct _GssServerStream {
+  GssProgram *program;
   int index;
   char *name;
   char *codecs;
@@ -109,7 +109,7 @@ struct _EwServerStream {
 
   int n_chunks;
 #define N_CHUNKS 20
-  EwHLSSegment chunks[N_CHUNKS];
+  GssHLSSegment chunks[N_CHUNKS];
   struct {
     gboolean need_index_update;
     SoupBuffer *index_buffer; /* contents of current index file */
@@ -118,37 +118,37 @@ struct _EwServerStream {
   } hls;
 };
 
-struct _EwConnection {
+struct _GssConnection {
   SoupMessage *msg;
   SoupClientContext *client;
-  EwServerStream *stream;
-  EwProgram *program;
+  GssServerStream *stream;
+  GssProgram *program;
 };
 
 
-#define EW_TYPE_SERVER \
-  (ew_server_get_type())
-#define EW_SERVER(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),EW_TYPE_SERVER,EwServer))
-#define EW_SERVER_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),EW_TYPE_SERVER,EwServerClass))
-#define GST_IS_EW_SERVER(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),EW_TYPE_SERVER))
-#define GST_IS_EW_SERVER_CLASS(obj) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),EW_TYPE_SERVER))
+#define GSS_TYPE_SERVER \
+  (gss_server_get_type())
+#define GSS_SERVER(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GSS_TYPE_SERVER,GssServer))
+#define GSS_SERVER_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),GSS_TYPE_SERVER,GssServerClass))
+#define GSS_IS_SERVER(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GSS_TYPE_SERVER))
+#define GSS_IS_SERVER_CLASS(obj) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass),GSS_TYPE_SERVER))
 
-struct _EwServer
+struct _GssServer
 {
   GObject object;
 
-  EwConfig *config;
+  GssConfig *config;
   //char * config_filename;
   char * server_name;
   int port;
   int https_port;
 
   int n_programs;
-  EwProgram **programs;
+  GssProgram **programs;
 
   SoupServer *server;
   SoupServer *ssl_server;
@@ -165,7 +165,7 @@ struct _EwServer
   int n_messages;
 };
 
-struct _EwServerClass
+struct _GssServerClass
 {
   GObjectClass object_class;
 
@@ -173,51 +173,51 @@ struct _EwServerClass
 
 extern int verbose;
 
-GType ew_server_get_type (void);
+GType gss_server_get_type (void);
 
-EwServer * ew_server_new (void);
-void ew_server_free (EwServer *server);
-void ew_server_set_hostname (EwServer *server, const char *hostname);
-void ew_server_read_config (EwServer *server, const char *config_filename);
+GssServer * gss_server_new (void);
+void gss_server_free (GssServer *server);
+void gss_server_set_hostname (GssServer *server, const char *hostname);
+void gss_server_read_config (GssServer *server, const char *config_filename);
 
-EwProgram * ew_server_add_program (EwServer *server, const char *program_name);
-void ew_server_remove_program (EwServer *server, EwProgram *program);
-void ew_server_follow_all (EwProgram *program, const char *host);
+GssProgram * gss_server_add_program (GssServer *server, const char *program_name);
+void gss_server_remove_program (GssServer *server, GssProgram *program);
+void gss_server_follow_all (GssProgram *program, const char *host);
 
-void ew_program_follow (EwProgram *program, const char *host,
+void gss_program_follow (GssProgram *program, const char *host,
     const char *stream);
-void ew_program_http_follow (EwProgram *progra, const char *uri);
-void ew_program_ew_contrib (EwProgram *program);
-void ew_program_http_put (EwProgram *program, const char *location);
-void ew_program_follow_get_list (EwProgram *program);
-EwServerStream * ew_program_add_ogv_stream (EwProgram *program);
-EwServerStream * ew_program_add_webm_stream (EwProgram *program);
-EwServerStream * ew_program_add_hls_stream (EwProgram *program);
-void ew_program_add_stream (EwProgram *program, EwServerStream *stream);
-EwServerStream * ew_program_add_stream_full (EwProgram *program,
+void gss_program_http_follow (GssProgram *progra, const char *uri);
+void gss_program_ew_contrib (GssProgram *program);
+void gss_program_http_put (GssProgram *program, const char *location);
+void gss_program_follow_get_list (GssProgram *program);
+GssServerStream * gss_program_add_ogv_stream (GssProgram *program);
+GssServerStream * gss_program_add_webm_stream (GssProgram *program);
+GssServerStream * gss_program_add_hls_stream (GssProgram *program);
+void gss_program_add_stream (GssProgram *program, GssServerStream *stream);
+GssServerStream * gss_program_add_stream_full (GssProgram *program,
     int type, int width, int height, int bitrate, GstElement *sink);
-void ew_program_log (EwProgram *program, const char *message, ...);
-void ew_program_enable_streaming (EwProgram *program);
-void ew_program_disable_streaming (EwProgram *program);
+void gss_program_log (GssProgram *program, const char *message, ...);
+void gss_program_enable_streaming (GssProgram *program);
+void gss_program_disable_streaming (GssProgram *program);
 
-void ew_server_stream_add_hls (EwServerStream *stream);
+void gss_server_stream_add_hls (GssServerStream *stream);
 
-const char * ew_server_get_multifdsink_string (void);
+const char * gss_server_get_multifdsink_string (void);
 
-void ew_server_deinit (void);
-void ew_program_free (EwProgram *program);
-void ew_stream_free (EwServerStream *stream);
-void ew_program_set_jpegsink (EwProgram *program, GstElement *jpegsink);
+void gss_server_deinit (void);
+void gss_program_free (GssProgram *program);
+void gss_stream_free (GssServerStream *stream);
+void gss_program_set_jpegsink (GssProgram *program, GstElement *jpegsink);
 
-void ew_server_add_admin_callbacks (EwServer *server, SoupServer *soupserver);
+void gss_server_add_admin_callbacks (GssServer *server, SoupServer *soupserver);
 
-void add_video_block (EwProgram *program, GString *s, int max_width,
+void add_video_block (GssProgram *program, GString *s, int max_width,
     const char *base_url);
 
-void ew_server_log (EwServer *server, char *message);
+void gss_server_log (GssServer *server, char *message);
 
 void
-ew_server_add_static_file (SoupServer *soupserver, const char *filename,
+gss_server_add_static_file (SoupServer *soupserver, const char *filename,
     const char *mime_type);
 
 #endif

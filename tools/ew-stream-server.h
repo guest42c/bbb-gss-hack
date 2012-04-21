@@ -12,10 +12,10 @@
 #define MAX_STREAMS 50
 #define LATENCY ((int)(10*GST_MSECOND))
 
-typedef struct _EwEncoder EwEncoder;
-typedef struct _EwStream EwStream;
+typedef struct _GssEncoder GssEncoder;
+typedef struct _GssStream GssStream;
 
-struct _EwStream {
+struct _GssStream {
   int index;
   gboolean enabled;
   char *desc;
@@ -44,7 +44,7 @@ struct _EwStream {
   char *shoutcast_password;
   char *shoutcast_stream;
 
-  EwServerStream *server_stream;
+  GssServerStream *server_stream;
 
   GstElement *venc;
   GstElement *vscale;

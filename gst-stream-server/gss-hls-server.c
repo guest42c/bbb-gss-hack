@@ -18,27 +18,27 @@ enum {
 };
 
 
-static void ew_hls_handle_m3u8 (SoupServer *server, SoupMessage *msg,
+static void gss_hls_handle_m3u8 (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
-static void ew_hls_handle_stream_m3u8 (SoupServer *server, SoupMessage *msg,
+static void gss_hls_handle_stream_m3u8 (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
 
-static void ew_hls_handle_ts_chunk (SoupServer *server, SoupMessage *msg,
+static void gss_hls_handle_ts_chunk (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
-void ew_program_add_hls_chunk (EwServerStream *stream, SoupBuffer *buf);
+void gss_program_add_hls_chunk (GssServerStream *stream, SoupBuffer *buf);
 
 static gboolean
 sink_data_probe_callback (GstPad *pad, GstMiniObject *mo, gpointer user_data);
 
-static void ew_hls_update_variant (EwProgram *program);
+static void gss_hls_update_variant (GssProgram *program);
 
 void
-ew_server_stream_add_hls (EwServerStream *stream)
+gss_server_stream_add_hls (GssServerStream *stream)
 {
-  EwProgram *program = stream->program;
+  GssProgram *program = stream->program;
   char *s;
   int mbs_per_sec;
   int level;
@@ -51,7 +51,7 @@ ew_server_stream_add_hls (EwServerStream *stream)
     program->enable_hls = TRUE;
 
     s = g_strdup_printf ("/%s.m3u8", program->location);
-    soup_server_add_handler (program->server->server, s, ew_hls_handle_m3u8,
+    soup_server_add_handler (program->server->server, s, gss_hls_handle_m3u8,
         program, NULL);
     g_free (s);
   }
@@ -60,9 +60,9 @@ ew_server_stream_add_hls (EwServerStream *stream)
       G_CALLBACK(sink_data_probe_callback), stream);
 
   profile = 0;
-  if (stream->type == EW_SERVER_STREAM_TS) {
+  if (stream->type == GSS_SERVER_STREAM_TS) {
     profile = 0x42e0; /* baseline */
-  } else if (stream->type == EW_SERVER_STREAM_TS_MAIN) {
+  } else if (stream->type == GSS_SERVER_STREAM_TS_MAIN) {
     profile = 0x4d40; /* main */
   }
   //profile = 0x6400; // high
@@ -103,29 +103,29 @@ ew_server_stream_add_hls (EwServerStream *stream)
 
   s = g_strdup_printf ("/%s-%dx%d-%dkbps%s.m3u8", program->location,
         stream->width, stream->height, stream->bitrate/1000, stream->mod);
-  soup_server_add_handler (program->server->server, s, ew_hls_handle_stream_m3u8,
+  soup_server_add_handler (program->server->server, s, gss_hls_handle_stream_m3u8,
       stream, NULL);
   g_free (s);
 
-  ew_hls_update_variant (program);
+  gss_hls_update_variant (program);
 }
 
 
 typedef struct _ChunkCallback ChunkCallback;
 struct _ChunkCallback {
-  EwServerStream *stream;
+  GssServerStream *stream;
   guint8 *data;
   int n;
 };
 
 gboolean
-ew_program_add_hls_chunk_callback (gpointer data)
+gss_program_add_hls_chunk_callback (gpointer data)
 {
   ChunkCallback *chunk_callback = (ChunkCallback *)data;
   SoupBuffer *buffer;
 
   buffer = soup_buffer_new (SOUP_MEMORY_TAKE, chunk_callback->data, chunk_callback->n);
-  ew_program_add_hls_chunk (chunk_callback->stream, buffer);
+  gss_program_add_hls_chunk (chunk_callback->stream, buffer);
 
   g_free (chunk_callback);
 
@@ -135,7 +135,7 @@ ew_program_add_hls_chunk_callback (gpointer data)
 static gboolean
 sink_data_probe_callback (GstPad *pad, GstMiniObject *mo, gpointer user_data)
 {
-  EwServerStream *stream = (EwServerStream *) user_data;
+  GssServerStream *stream = (GssServerStream *) user_data;
 
   if (GST_IS_BUFFER (mo)) {
     GstBuffer *buffer = GST_BUFFER(mo);
@@ -157,7 +157,7 @@ sink_data_probe_callback (GstPad *pad, GstMiniObject *mo, gpointer user_data)
         chunk_callback->n = n;
         chunk_callback->stream = stream;
 
-        g_idle_add (ew_program_add_hls_chunk_callback, chunk_callback);
+        g_idle_add (gss_program_add_hls_chunk_callback, chunk_callback);
       }
     }
 
@@ -170,9 +170,9 @@ sink_data_probe_callback (GstPad *pad, GstMiniObject *mo, gpointer user_data)
 }
 
 void
-ew_program_add_hls_chunk (EwServerStream *stream, SoupBuffer *buf)
+gss_program_add_hls_chunk (GssServerStream *stream, SoupBuffer *buf)
 {
-  EwHLSSegment *segment;
+  GssHLSSegment *segment;
 
   segment = &stream->chunks[stream->n_chunks%N_CHUNKS];
 
@@ -193,22 +193,22 @@ ew_program_add_hls_chunk (EwServerStream *stream, SoupBuffer *buf)
 
   soup_server_add_handler (stream->program->server->server,
       segment->location,
-      ew_hls_handle_ts_chunk, segment, NULL);
+      gss_hls_handle_ts_chunk, segment, NULL);
 
   stream->n_chunks++;
   stream->program->n_hls_chunks = stream->n_chunks;
 
   if (stream->n_chunks == 1) {
-    ew_hls_update_variant (stream->program);
+    gss_hls_update_variant (stream->program);
   }
 
 }
 
 
 static void
-ew_hls_update_index (EwServerStream *stream)
+gss_hls_update_index (GssServerStream *stream)
 {
-  EwProgram *program = stream->program;
+  GssProgram *program = stream->program;
   GString *s;
   int i;
   int seq_num = MAX(0,program->n_hls_chunks - 5);
@@ -241,7 +241,7 @@ ew_hls_update_index (EwServerStream *stream)
   g_string_append (s, "#EXT-X-VERSION:1\n");
 
   for(i=seq_num; i<stream->n_chunks; i++){
-    EwHLSSegment *segment = &stream->chunks[i%N_CHUNKS];
+    GssHLSSegment *segment = &stream->chunks[i%N_CHUNKS];
 
     g_string_append_printf (s,
         "#EXTINF:%d,\n"
@@ -265,7 +265,7 @@ ew_hls_update_index (EwServerStream *stream)
 }
 
 static void
-ew_hls_update_variant (EwProgram *program)
+gss_hls_update_variant (GssProgram *program)
 {
   GString *s;
   int j;
@@ -308,11 +308,11 @@ soup_message_get_uri_path (SoupMessage *msg)
 }
 
 static void
-ew_hls_handle_m3u8 (SoupServer *server, SoupMessage *msg,
+gss_hls_handle_m3u8 (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
-  EwProgram *program = (EwProgram *)user_data;
+  GssProgram *program = (GssProgram *)user_data;
 
   g_assert (program->hls.variant_buffer != NULL);
 
@@ -326,14 +326,14 @@ ew_hls_handle_m3u8 (SoupServer *server, SoupMessage *msg,
 }
 
 static void
-ew_hls_handle_stream_m3u8 (SoupServer *server, SoupMessage *msg,
+gss_hls_handle_stream_m3u8 (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
-  EwServerStream *stream = (EwServerStream *)user_data;
+  GssServerStream *stream = (GssServerStream *)user_data;
 
   if (stream->hls.index_buffer == NULL || stream->hls.need_index_update) {
-    ew_hls_update_index (stream);
+    gss_hls_update_index (stream);
   }
 
 
@@ -347,11 +347,11 @@ ew_hls_handle_stream_m3u8 (SoupServer *server, SoupMessage *msg,
 }
 
 static void
-ew_hls_handle_ts_chunk (SoupServer *server, SoupMessage *msg,
+gss_hls_handle_ts_chunk (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
-  EwHLSSegment *segment = (EwHLSSegment *)user_data;
+  GssHLSSegment *segment = (GssHLSSegment *)user_data;
 
   soup_message_set_status (msg, SOUP_STATUS_OK);
 

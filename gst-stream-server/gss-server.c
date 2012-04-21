@@ -39,33 +39,33 @@ static void push_wrote_headers (SoupMessage *msg, void *user_data);
 static void file_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
-static void ew_server_handle_program (SoupServer *server, SoupMessage *msg,
+static void gss_server_handle_program (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
-static void ew_server_handle_program_frag (SoupServer *server, SoupMessage *msg,
+static void gss_server_handle_program_frag (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
-static void ew_server_handle_program_list (SoupServer *server, SoupMessage *msg,
+static void gss_server_handle_program_list (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
-static void ew_server_handle_program_image (SoupServer *server, SoupMessage *msg,
+static void gss_server_handle_program_image (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
-static void ew_server_handle_program_jpeg (SoupServer *server, SoupMessage *msg,
+static void gss_server_handle_program_jpeg (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
 static void static_content_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
 
-static void ew_server_set_property (GObject * object, guint prop_id,
+static void gss_server_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
-static void ew_server_get_property (GObject * object, guint prop_id,
+static void gss_server_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 static void
-setup_paths (EwServer *server, SoupServer *soupserver);
+setup_paths (GssServer *server, SoupServer *soupserver);
 
-static void ew_server_notify (const char *key, void *priv);
+static void gss_server_notify (const char *key, void *priv);
 
 static void
 client_removed (GstElement *e, int arg0, int arg1,
@@ -74,11 +74,11 @@ static void client_fd_removed (GstElement *e, int fd, gpointer user_data);
 static void
 msg_wrote_headers (SoupMessage *msg, void *user_data);
 static void
-ew_stream_handle (SoupServer *server, SoupMessage *msg,
+gss_stream_handle (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
 static void
-ew_stream_handle_m3u8 (SoupServer *server, SoupMessage *msg,
+gss_stream_handle_m3u8 (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
 static gboolean periodic_timer (gpointer data);
@@ -88,24 +88,24 @@ static void
 handle_pipeline_message (GstBus *bus, GstMessage *message,
     gpointer user_data);
 
-void ew_program_stop (EwProgram *program);
-void ew_program_start (EwProgram *program);
-void ew_stream_set_sink (EwServerStream *stream, GstElement *sink);
-void ew_stream_create_follow_pipeline (EwServerStream *stream);
-void ew_stream_create_push_pipeline (EwServerStream *stream);
+void gss_program_stop (GssProgram *program);
+void gss_program_start (GssProgram *program);
+void gss_stream_set_sink (GssServerStream *stream, GstElement *sink);
+void gss_stream_create_follow_pipeline (GssServerStream *stream);
+void gss_stream_create_push_pipeline (GssServerStream *stream);
 
 static SoupSession *session;
 
 #define MAX_FDS 65536
 static void *fd_table[MAX_FDS];
 
-G_DEFINE_TYPE (EwServer, ew_server, G_TYPE_OBJECT);
+G_DEFINE_TYPE (GssServer, gss_server, G_TYPE_OBJECT);
 
 #define DEFAULT_HTTP_PORT 80
 #define DEFAULT_HTTPS_PORT 443
 
 static void
-ew_server_init (EwServer *server)
+gss_server_init (GssServer *server)
 {
   if (session == NULL) {
     session = soup_session_async_new ();
@@ -125,14 +125,14 @@ ew_server_init (EwServer *server)
 }
 
 void
-ew_server_deinit (void)
+gss_server_deinit (void)
 {
   if (session) g_object_unref (session);
   session = NULL;
 }
 
 void
-ew_server_log (EwServer *server, char *message)
+gss_server_log (GssServer *server, char *message)
 {
   if (verbose) g_print ("%s\n", message);
   server->messages = g_list_append (server->messages, message);
@@ -146,10 +146,10 @@ ew_server_log (EwServer *server, char *message)
 }
 
 static void
-ew_server_class_init (EwServerClass *server_class)
+gss_server_class_init (GssServerClass *server_class)
 {
-  G_OBJECT_CLASS(server_class)->set_property = ew_server_set_property;
-  G_OBJECT_CLASS(server_class)->get_property = ew_server_get_property;
+  G_OBJECT_CLASS(server_class)->set_property = gss_server_set_property;
+  G_OBJECT_CLASS(server_class)->get_property = gss_server_get_property;
 
   g_object_class_install_property (G_OBJECT_CLASS(server_class), PROP_PORT,
       g_param_spec_int ("port", "Port",
@@ -160,12 +160,12 @@ ew_server_class_init (EwServerClass *server_class)
 
 
 static void
-ew_server_set_property (GObject * object, guint prop_id,
+gss_server_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
-  EwServer *server;
+  GssServer *server;
 
-  server = EW_SERVER (object);
+  server = GSS_SERVER (object);
 
   switch (prop_id) {
     case PROP_PORT:
@@ -175,12 +175,12 @@ ew_server_set_property (GObject * object, guint prop_id,
 }
 
 static void
-ew_server_get_property (GObject * object, guint prop_id,
+gss_server_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
-  EwServer *server;
+  GssServer *server;
 
-  server = EW_SERVER (object);
+  server = GSS_SERVER (object);
 
   switch (prop_id) {
     case PROP_PORT:
@@ -231,23 +231,23 @@ gethostname_alloc (void)
   return t;
 }
 
-EwServer *
-ew_server_new (void)
+GssServer *
+gss_server_new (void)
 {
-  EwServer *server;
+  GssServer *server;
   SoupAddress *if6;
 
-  server = g_object_new (EW_TYPE_SERVER, NULL);
+  server = g_object_new (GSS_TYPE_SERVER, NULL);
 
-  server->config = ew_config_new ();
+  server->config = gss_config_new ();
 
-  ew_config_set_notify (server->config, "max_connections", ew_server_notify,
+  gss_config_set_notify (server->config, "max_connections", gss_server_notify,
       server);
-  ew_config_set_notify (server->config, "max_bandwidth", ew_server_notify,
+  gss_config_set_notify (server->config, "max_bandwidth", gss_server_notify,
       server);
-  ew_config_set_notify (server->config, "server_name", ew_server_notify,
+  gss_config_set_notify (server->config, "server_name", gss_server_notify,
       server);
-  ew_config_set_notify (server->config, "server_port", ew_server_notify,
+  gss_config_set_notify (server->config, "server_port", gss_server_notify,
       server);
 
   //server->config_filename = "/opt/entropywave/ew-oberon/config";
@@ -302,10 +302,10 @@ ew_server_new (void)
 
 
 static void
-setup_paths (EwServer *server, SoupServer *soupserver)
+setup_paths (GssServer *server, SoupServer *soupserver)
 {
-  ew_session_add_session_callbacks (soupserver, server);
-  ew_server_add_admin_callbacks (server, soupserver);
+  gss_session_add_session_callbacks (soupserver, server);
+  gss_server_add_admin_callbacks (server, soupserver);
 
   soup_server_add_handler (soupserver, "/", main_page_callback, server, NULL);
   soup_server_add_handler (soupserver, "/list", list_callback, server, NULL);
@@ -327,7 +327,7 @@ setup_paths (EwServer *server, SoupServer *soupserver)
   }
 
 #define IMAGE(image) \
-  ew_server_add_static_file (soupserver, "/images/" image , "image/png")
+  gss_server_add_static_file (soupserver, "/images/" image , "image/png")
 
   IMAGE("button_access.png");
   IMAGE("button_admin.png");
@@ -382,7 +382,7 @@ static_content_callback (SoupServer *server, SoupMessage *msg,
         &error);
     if (!ret) {
       g_error_free (error);
-      ew_html_error_404 (msg);
+      gss_html_error_404 (msg);
       if (verbose) g_print("missing file %s\n", path);
       return;
     }
@@ -408,7 +408,7 @@ static_content_callback (SoupServer *server, SoupMessage *msg,
 
 
 void
-ew_server_add_static_file (SoupServer *soupserver, const char *filename,
+gss_server_add_static_file (SoupServer *soupserver, const char *filename,
     const char *mime_type)
 {
   StaticContent *content;
@@ -425,14 +425,14 @@ ew_server_add_static_file (SoupServer *soupserver, const char *filename,
 }
 
 void
-ew_server_free (EwServer *server)
+gss_server_free (GssServer *server)
 {
   int i;
 
   for(i=0;i<server->n_programs;i++){
-    EwProgram *program = server->programs[i];
+    GssProgram *program = server->programs[i];
 
-    ew_program_free (program);
+    gss_program_free (program);
   }
 
   if (server->server) g_object_unref (server->server);
@@ -448,21 +448,21 @@ ew_server_free (EwServer *server)
 }
 
 static void
-ew_server_notify (const char *key, void *priv)
+gss_server_notify (const char *key, void *priv)
 {
-  EwServer *server = (EwServer *)priv;
+  GssServer *server = (GssServer *)priv;
   const char *s;
 
-  s = ew_config_get (server->config, "server_name");
-  ew_server_set_hostname (server, s);
+  s = gss_config_get (server->config, "server_name");
+  gss_server_set_hostname (server, s);
 
-  s = ew_config_get (server->config, "max_connections");
+  s = gss_config_get (server->config, "max_connections");
   server->max_connections = strtol (s, NULL, 10);
   if (server->max_connections == 0) {
     server->max_connections = INT_MAX;
   }
 
-  s = ew_config_get (server->config, "max_bandwidth");
+  s = gss_config_get (server->config, "max_bandwidth");
   server->max_bitrate = (gint64)strtol (s, NULL, 10) * 8000;
   if (server->max_bitrate == 0) {
     server->max_bitrate = G_MAXINT64;
@@ -471,7 +471,7 @@ ew_server_notify (const char *key, void *priv)
 }
 
 void
-ew_server_set_hostname (EwServer *server, const char *hostname)
+gss_server_set_hostname (GssServer *server, const char *hostname)
 {
   g_free (server->server_name);
   server->server_name = g_strdup (hostname);
@@ -490,21 +490,21 @@ ew_server_set_hostname (EwServer *server, const char *hostname)
 }
 
 void
-ew_server_follow_all (EwProgram *program, const char *host)
+gss_server_follow_all (GssProgram *program, const char *host)
 {
 
 }
 
-EwProgram *
-ew_server_add_program (EwServer *server, const char *program_name)
+GssProgram *
+gss_server_add_program (GssServer *server, const char *program_name)
 {
-  EwProgram *program;
+  GssProgram *program;
   char *s;
 
-  program = g_malloc0(sizeof(EwProgram));
+  program = g_malloc0(sizeof(GssProgram));
 
   server->programs = g_realloc (server->programs,
-      sizeof(EwProgram *) * (server->n_programs + 1));
+      sizeof(GssProgram *) * (server->n_programs + 1));
   server->programs[server->n_programs] = program;
   server->n_programs++;
 
@@ -514,27 +514,27 @@ ew_server_add_program (EwServer *server, const char *program_name)
 
   s = g_strdup_printf ("/%s", program_name);
   soup_server_add_handler (server->server, s,
-      ew_server_handle_program, program, NULL);
+      gss_server_handle_program, program, NULL);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", program_name);
   soup_server_add_handler (server->server, s,
-      ew_server_handle_program_frag, program, NULL);
+      gss_server_handle_program_frag, program, NULL);
   g_free (s);
 
   s = g_strdup_printf ("/%s.list", program_name);
   soup_server_add_handler (server->server, s,
-      ew_server_handle_program_list, program, NULL);
+      gss_server_handle_program_list, program, NULL);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.png", program_name);
   soup_server_add_handler (server->server, s,
-      ew_server_handle_program_image, program, NULL);
+      gss_server_handle_program_image, program, NULL);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.jpeg", program_name);
   soup_server_add_handler (server->server, s,
-      ew_server_handle_program_jpeg, program, NULL);
+      gss_server_handle_program_jpeg, program, NULL);
   g_free (s);
 
 
@@ -542,7 +542,7 @@ ew_server_add_program (EwServer *server, const char *program_name)
 }
 
 void
-ew_program_set_jpegsink (EwProgram *program, GstElement *jpegsink)
+gss_program_set_jpegsink (GssProgram *program, GstElement *jpegsink)
 {
   program->jpegsink = g_object_ref (jpegsink);
 
@@ -553,7 +553,7 @@ ew_program_set_jpegsink (EwProgram *program, GstElement *jpegsink)
 }
 
 void
-ew_server_remove_program (EwServer *server, EwProgram *program)
+gss_server_remove_program (GssServer *server, GssProgram *program)
 {
 
   int i;
@@ -568,18 +568,18 @@ ew_server_remove_program (EwServer *server, EwProgram *program)
     }
   }
 
-  ew_program_free (program);
+  gss_program_free (program);
 }
 
 void
-ew_program_free (EwProgram *program)
+gss_program_free (GssProgram *program)
 {
   int i;
 
   for(i=0;i<program->n_streams;i++){
-    EwServerStream *stream = program->streams[i];
+    GssServerStream *stream = program->streams[i];
 
-    ew_stream_free (stream);
+    gss_stream_free (stream);
   }
 
   if (program->hls.variant_buffer) {
@@ -622,7 +622,7 @@ get_time_string (void)
 }
 
 void
-ew_program_log (EwProgram *program, const char *message, ...)
+gss_program_log (GssProgram *program, const char *message, ...)
 {
   char *thetime = get_time_string ();
   char *s;
@@ -635,14 +635,14 @@ ew_program_log (EwProgram *program, const char *message, ...)
   s = g_strdup_vprintf (message, varargs);
   va_end (varargs);
 
-  ew_server_log (program->server, g_strdup_printf("%s: %s: %s",
+  gss_server_log (program->server, g_strdup_printf("%s: %s: %s",
         thetime, program->location, s));
   g_free (s);
   g_free (thetime);
 }
 
 void
-ew_stream_free (EwServerStream *stream)
+gss_stream_free (GssServerStream *stream)
 {
   int i;
 
@@ -653,7 +653,7 @@ ew_stream_free (EwServerStream *stream)
   g_free (stream->follow_url);
 
   for(i=0;i<N_CHUNKS;i++){
-    EwHLSSegment *segment = &stream->chunks[i];
+    GssHLSSegment *segment = &stream->chunks[i];
 
     if (segment->buffer) {
       soup_buffer_free (segment->buffer);
@@ -665,7 +665,7 @@ ew_stream_free (EwServerStream *stream)
     soup_buffer_free (stream->hls.index_buffer);
   }
 
-  ew_stream_set_sink (stream, NULL);
+  gss_stream_set_sink (stream, NULL);
   if (stream->pipeline) {
     gst_element_set_state (GST_ELEMENT(stream->pipeline), GST_STATE_NULL);
     g_object_unref (stream->pipeline);
@@ -677,7 +677,7 @@ ew_stream_free (EwServerStream *stream)
 
 
 const char *
-ew_server_get_multifdsink_string (void)
+gss_server_get_multifdsink_string (void)
 {
   return "multifdsink "
     "sync=false "
@@ -693,10 +693,10 @@ ew_server_get_multifdsink_string (void)
 }
 
 void
-ew_program_add_stream (EwProgram *program, EwServerStream *stream)
+gss_program_add_stream (GssProgram *program, GssServerStream *stream)
 {
   program->streams = g_realloc (program->streams,
-      sizeof(EwProgram *) * (program->n_streams + 1));
+      sizeof(GssProgram *) * (program->n_streams + 1));
   program->streams[program->n_streams] = stream;
   stream->index = program->n_streams;
   program->n_streams++;
@@ -708,7 +708,7 @@ static void
 client_removed (GstElement *e, int fd, int status,
     gpointer user_data)
 {
-  EwServerStream *stream = user_data;
+  GssServerStream *stream = user_data;
 
   if (fd_table[fd]) {
     if (stream) {
@@ -721,7 +721,7 @@ client_removed (GstElement *e, int fd, int status,
 static void
 client_fd_removed (GstElement *e, int fd, gpointer user_data)
 {
-  EwServerStream *stream = user_data;
+  GssServerStream *stream = user_data;
   SoupSocket *socket = fd_table[fd];
 
   if (socket) {
@@ -735,13 +735,13 @@ client_fd_removed (GstElement *e, int fd, gpointer user_data)
 
 
 static void
-ew_stream_handle (SoupServer *server, SoupMessage *msg,
+gss_stream_handle (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
-  EwServerStream *stream = (EwServerStream *)user_data;
-  EwServer *ewserver = stream->program->server;
-  EwConnection *connection;
+  GssServerStream *stream = (GssServerStream *)user_data;
+  GssServer *ewserver = stream->program->server;
+  GssConnection *connection;
 
   if (msg->method != SOUP_METHOD_GET) {
     soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
@@ -762,7 +762,7 @@ ew_stream_handle (SoupServer *server, SoupMessage *msg,
     return;
   }
 
-  connection = g_malloc0 (sizeof(EwConnection));
+  connection = g_malloc0 (sizeof(GssConnection));
   connection->msg = msg;
   connection->client = client;
   connection->stream = stream;
@@ -781,7 +781,7 @@ ew_stream_handle (SoupServer *server, SoupMessage *msg,
 static void
 msg_wrote_headers (SoupMessage *msg, void *user_data)
 {
-  EwConnection *connection = user_data;
+  GssConnection *connection = user_data;
   SoupSocket *socket;
   int fd;
 
@@ -804,12 +804,12 @@ msg_wrote_headers (SoupMessage *msg, void *user_data)
 }
 
 static void
-ew_stream_handle_m3u8 (SoupServer *server, SoupMessage *msg,
+gss_stream_handle_m3u8 (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
   char *content;
-  EwServerStream *stream = (EwServerStream *)user_data;
+  GssServerStream *stream = (GssServerStream *)user_data;
 
   content = g_strdup_printf(
       "#EXTM3U\n"
@@ -823,12 +823,12 @@ ew_stream_handle_m3u8 (SoupServer *server, SoupMessage *msg,
       content, strlen(content));
 }
 
-EwServerStream *
-ew_stream_new (int type, int width, int height, int bitrate)
+GssServerStream *
+gss_stream_new (int type, int width, int height, int bitrate)
 {
-  EwServerStream *stream;
+  GssServerStream *stream;
 
-  stream = g_malloc0 (sizeof(EwServerStream));
+  stream = g_malloc0 (sizeof(GssServerStream));
 
   stream->type = type;
   stream->width = width;
@@ -836,27 +836,27 @@ ew_stream_new (int type, int width, int height, int bitrate)
   stream->bitrate = bitrate;
 
   switch (type) {
-    case EW_SERVER_STREAM_OGG:
+    case GSS_SERVER_STREAM_OGG:
       stream->mime_type = g_strdup ("video/ogg");
       stream->mod = "";
       stream->ext = "ogv";
       break;
-    case EW_SERVER_STREAM_WEBM:
+    case GSS_SERVER_STREAM_WEBM:
       stream->mime_type = g_strdup ("video/webm");
       stream->mod = "";
       stream->ext = "webm";
       break;
-    case EW_SERVER_STREAM_TS:
+    case GSS_SERVER_STREAM_TS:
       stream->mime_type = g_strdup ("video/mp2t");
       stream->mod = "";
       stream->ext = "ts";
       break;
-    case EW_SERVER_STREAM_TS_MAIN:
+    case GSS_SERVER_STREAM_TS_MAIN:
       stream->mime_type = g_strdup ("video/mp2t");
       stream->mod = "-main";
       stream->ext = "ts";
       break;
-    case EW_SERVER_STREAM_FLV:
+    case GSS_SERVER_STREAM_FLV:
       stream->mime_type = g_strdup ("video/x-flv");
       stream->mod = "";
       stream->ext = "flv";
@@ -867,39 +867,39 @@ ew_stream_new (int type, int width, int height, int bitrate)
 }
 
 void
-ew_program_enable_streaming (EwProgram *program)
+gss_program_enable_streaming (GssProgram *program)
 {
   program->enable_streaming = TRUE;
 }
 
 void
-ew_program_disable_streaming (EwProgram *program)
+gss_program_disable_streaming (GssProgram *program)
 {
   int i;
 
   program->enable_streaming = FALSE;
   for(i=0;i<program->n_streams;i++){
-    EwServerStream *stream = program->streams[i];
+    GssServerStream *stream = program->streams[i];
     g_signal_emit_by_name (stream->sink, "clear");
   }
 }
 
-EwServerStream *
-ew_program_add_stream_full (EwProgram *program,
+GssServerStream *
+gss_program_add_stream_full (GssProgram *program,
     int type, int width, int height, int bitrate, GstElement *sink)
 {
   SoupServer *soupserver = program->server->server;
-  EwServerStream *stream;
+  GssServerStream *stream;
   char *s;
 
-  stream = ew_stream_new (type, width, height, bitrate);
-  ew_program_add_stream (program, stream);
+  stream = gss_stream_new (type, width, height, bitrate);
+  gss_program_add_stream (program, stream);
 
   stream->name = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s", program->location,
       stream->width, stream->height, stream->bitrate/1000,stream->mod,
       stream->ext);
   s = g_strdup_printf("/%s", stream->name);
-  soup_server_add_handler (soupserver, s, ew_stream_handle,
+  soup_server_add_handler (soupserver, s, gss_stream_handle,
       stream, NULL);
   g_free (s);
 
@@ -908,17 +908,17 @@ ew_program_add_stream_full (EwProgram *program,
       stream->width, stream->height, stream->bitrate/1000, stream->mod,
       stream->ext);
   s = g_strdup_printf("/%s", stream->playlist_name);
-  soup_server_add_handler (soupserver, s, ew_stream_handle_m3u8,
+  soup_server_add_handler (soupserver, s, gss_stream_handle_m3u8,
       stream, NULL);
   g_free (s);
 
-  ew_stream_set_sink (stream, sink);
+  gss_stream_set_sink (stream, sink);
 
   return stream;
 }
 
 void
-ew_stream_set_sink (EwServerStream *stream, GstElement *sink)
+gss_stream_set_sink (GssServerStream *stream, GstElement *sink)
 {
   if (stream->sink) {
     g_object_unref (stream->sink);
@@ -931,9 +931,9 @@ ew_stream_set_sink (EwServerStream *stream, GstElement *sink)
         G_CALLBACK (client_removed), stream);
     g_signal_connect (stream->sink, "client-fd-removed",
         G_CALLBACK (client_fd_removed), stream);
-    if (stream->type == EW_SERVER_STREAM_TS ||
-        stream->type == EW_SERVER_STREAM_TS_MAIN) {
-      ew_server_stream_add_hls (stream);
+    if (stream->type == GSS_SERVER_STREAM_TS ||
+        stream->type == GSS_SERVER_STREAM_TS_MAIN) {
+      gss_server_stream_add_hls (stream);
     }
   }
 }
@@ -946,7 +946,7 @@ main_page_callback (SoupServer *server, SoupMessage *msg,
 {
   const char *mime_type = "text/html";
   char *content;
-  EwServer *ewserver = (EwServer *)user_data;
+  GssServer *ewserver = (GssServer *)user_data;
   GString *s;
   int i;
 
@@ -956,13 +956,13 @@ main_page_callback (SoupServer *server, SoupMessage *msg,
   }
 
   if (!g_str_equal (path, "/")) {
-    ew_html_error_404 (msg);
+    gss_html_error_404 (msg);
     return;
   }
 
   s = g_string_new ("");
 
-  ew_html_header (s, "Entropy Wave Live Streaming");
+  gss_html_header (s, "Entropy Wave Live Streaming");
 
   g_string_append_printf(s,
       "<div id=\"header\">\n"
@@ -972,7 +972,7 @@ main_page_callback (SoupServer *server, SoupMessage *msg,
       "<h1>Available Streams</h1>\n");
 
   for(i=0;i<ewserver->n_programs;i++){
-    EwProgram *program = ewserver->programs[i];
+    GssProgram *program = ewserver->programs[i];
     g_string_append_printf(s,"<br/>"
         "<img src=\"/%s-snapshot.jpeg\">"
         "<a href=\"/%s\">%s</a>\n",
@@ -982,7 +982,7 @@ main_page_callback (SoupServer *server, SoupMessage *msg,
 
   g_string_append (s, "</div><!-- end content div -->\n");
 
-  ew_html_footer (s, NULL);
+  gss_html_footer (s, NULL);
 
   content = g_string_free (s, FALSE);
 
@@ -999,7 +999,7 @@ list_callback (SoupServer *server, SoupMessage *msg,
 {
   const char *mime_type = "text/plain";
   char *content;
-  EwServer *ewserver = (EwServer *)user_data;
+  GssServer *ewserver = (GssServer *)user_data;
   GString *s = g_string_new ("");
   int i;
 
@@ -1009,12 +1009,12 @@ list_callback (SoupServer *server, SoupMessage *msg,
   }
 
   if (!g_str_equal (path, "/list")) {
-    ew_html_error_404 (msg);
+    gss_html_error_404 (msg);
     return;
   }
 
   for(i=0;i<ewserver->n_programs;i++){
-    EwProgram *program = ewserver->programs[i];
+    GssProgram *program = ewserver->programs[i];
     g_string_append_printf(s, "%s\n", program->location);
   }
 
@@ -1033,7 +1033,7 @@ log_callback (SoupServer *server, SoupMessage *msg,
 {
   const char *mime_type = "text/plain";
   char *content;
-  EwServer *ewserver = (EwServer *)user_data;
+  GssServer *ewserver = (GssServer *)user_data;
   GString *s = g_string_new ("");
   GList *g;
   char *t;
@@ -1044,7 +1044,7 @@ log_callback (SoupServer *server, SoupMessage *msg,
   }
 
   if (!g_str_equal (path, "/log")) {
-    ew_html_error_404 (msg);
+    gss_html_error_404 (msg);
     return;
   }
 
@@ -1077,9 +1077,9 @@ push_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
-  EwProgram *program;
+  GssProgram *program;
   //const char *mime_type = "text/plain";
-  EwServer *ewserver = (EwServer *)user_data;
+  GssServer *ewserver = (GssServer *)user_data;
   const char *content_type;
 
   if (msg->method != SOUP_METHOD_PUT && strcmp(msg->method, "SOURCE") != 0) {
@@ -1091,32 +1091,32 @@ push_callback (SoupServer *server, SoupMessage *msg,
   soup_message_headers_foreach (msg->request_headers, dump_header, user_data);
 
   if (!g_str_equal (path, "/push")) {
-    ew_html_error_404 (msg);
+    gss_html_error_404 (msg);
     return;
   }
 
-  program = ew_server_add_program (ewserver, "push_stream");
-  program->program_type = EW_PROGRAM_MANUAL;
+  program = gss_server_add_program (ewserver, "push_stream");
+  program->program_type = GSS_PROGRAM_MANUAL;
 
   content_type = soup_message_headers_get_one (msg->request_headers,
       "Content-Type");
   if (content_type) {
     if (strcmp (content_type, "application/ogg") == 0) {
-      program->push_media_type = EW_SERVER_STREAM_OGG;
+      program->push_media_type = GSS_SERVER_STREAM_OGG;
     } else if (strcmp (content_type, "video/webm") == 0) {
-      program->push_media_type = EW_SERVER_STREAM_WEBM;
+      program->push_media_type = GSS_SERVER_STREAM_WEBM;
     } else if (strcmp (content_type, "video/mpeg-ts") == 0) {
-      program->push_media_type = EW_SERVER_STREAM_TS;
+      program->push_media_type = GSS_SERVER_STREAM_TS;
     } else if (strcmp (content_type, "video/x-flv") == 0) {
-      program->push_media_type = EW_SERVER_STREAM_FLV;
+      program->push_media_type = GSS_SERVER_STREAM_FLV;
     } else {
-      program->push_media_type = EW_SERVER_STREAM_OGG;
+      program->push_media_type = GSS_SERVER_STREAM_OGG;
     }
   } else {
-    program->push_media_type = EW_SERVER_STREAM_OGG;
+    program->push_media_type = GSS_SERVER_STREAM_OGG;
   }
 
-  ew_program_start (program);
+  gss_program_start (program);
 
   program->push_client = client;
 
@@ -1133,18 +1133,18 @@ push_callback (SoupServer *server, SoupMessage *msg,
 static void
 push_wrote_headers (SoupMessage *msg, void *user_data)
 {
-  EwProgram *program = (EwProgram *)user_data;
+  GssProgram *program = (GssProgram *)user_data;
   SoupSocket *socket;
-  EwServerStream *stream;
+  GssServerStream *stream;
   int fd;
 
   socket = soup_client_context_get_socket (program->push_client);
   fd = soup_socket_get_fd (socket);
 
-  stream = ew_program_add_stream_full (program, EW_SERVER_STREAM_OGG,
+  stream = gss_program_add_stream_full (program, GSS_SERVER_STREAM_OGG,
       640, 360, 600000, NULL);
   stream->push_fd = fd;
-  ew_stream_create_push_pipeline (stream);
+  gss_stream_create_push_pipeline (stream);
 
   gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
 }
@@ -1162,7 +1162,7 @@ file_callback (SoupServer *server, SoupMessage *msg,
 
   ret = g_file_get_contents (path + 1, &contents, &size, &error);
   if (!ret) {
-    ew_html_error_404 (msg);
+    gss_html_error_404 (msg);
     if (verbose) g_print("missing file %s\n", path);
     return;
   }
@@ -1176,7 +1176,7 @@ file_callback (SoupServer *server, SoupMessage *msg,
 
 
 void
-add_video_block (EwProgram *program, GString *s, int max_width,
+add_video_block (GssProgram *program, GString *s, int max_width,
     const char *base_url)
 {
   int i;
@@ -1184,7 +1184,7 @@ add_video_block (EwProgram *program, GString *s, int max_width,
   int height = 0;
 
   for(i=0;i<program->n_streams;i++){
-    EwServerStream *stream = program->streams[i];
+    GssServerStream *stream = program->streams[i];
     if (stream->width > width) width = stream->width;
     if (stream->height > height) height = stream->height;
   }
@@ -1200,8 +1200,8 @@ add_video_block (EwProgram *program, GString *s, int max_width,
       width, height);
 
   for(i=program->n_streams-1;i>=0;i--){
-    EwServerStream *stream = program->streams[i];
-    if (stream->type == EW_SERVER_STREAM_WEBM) {
+    GssServerStream *stream = program->streams[i];
+    if (stream->type == GSS_SERVER_STREAM_WEBM) {
       g_string_append_printf (s,
           "<source src=\"%s/%s\" type='video/webm; codecs=\"vp8, vorbis\"'>\n",
           base_url, stream->name);
@@ -1209,8 +1209,8 @@ add_video_block (EwProgram *program, GString *s, int max_width,
   }
 
   for(i=program->n_streams-1;i>=0;i--){
-    EwServerStream *stream = program->streams[i];
-    if (stream->type == EW_SERVER_STREAM_OGG) {
+    GssServerStream *stream = program->streams[i];
+    if (stream->type == GSS_SERVER_STREAM_OGG) {
       g_string_append_printf (s,
           "<source src=\"%s/%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
           base_url, stream->name);
@@ -1218,9 +1218,9 @@ add_video_block (EwProgram *program, GString *s, int max_width,
   }
 
   for(i=program->n_streams-1;i>=0;i--){
-    EwServerStream *stream = program->streams[i];
-    if (stream->type == EW_SERVER_STREAM_TS ||
-        stream->type == EW_SERVER_STREAM_TS_MAIN) {
+    GssServerStream *stream = program->streams[i];
+    if (stream->type == GSS_SERVER_STREAM_TS ||
+        stream->type == GSS_SERVER_STREAM_TS_MAIN) {
 #if 0
       g_string_append_printf (s,
           "<source src=\"%s/%s\" type='video/x-mpegURL; codecs=\"avc1.42E01E, mp4a.40.2\"' >\n",
@@ -1237,8 +1237,8 @@ add_video_block (EwProgram *program, GString *s, int max_width,
 
   if (enable_cortado) {
     for(i=0;i<program->n_streams;i++){
-      EwServerStream *stream = program->streams[i];
-      if (stream->type == EW_SERVER_STREAM_OGG) {
+      GssServerStream *stream = program->streams[i];
+      if (stream->type == GSS_SERVER_STREAM_OGG) {
         g_string_append_printf (s,
             "<applet code=\"com.fluendo.player.Cortado.class\"\n"
             "  archive=\"%s/cortado.jar\" width=\"%d\" height=\"%d\">\n"
@@ -1252,8 +1252,8 @@ add_video_block (EwProgram *program, GString *s, int max_width,
 
   if (enable_flash) {
     for(i=0;i<program->n_streams;i++){
-      EwServerStream *stream = program->streams[i];
-      if (stream->type == EW_SERVER_STREAM_FLV) {
+      GssServerStream *stream = program->streams[i];
+      if (stream->type == GSS_SERVER_STREAM_FLV) {
         g_string_append_printf (s,
             " <object width='%d' height='%d' id='flvPlayer' "
               "type=\"application/x-shockwave-flash\" "
@@ -1315,13 +1315,13 @@ add_video_block (EwProgram *program, GString *s, int max_width,
 }
 
 static void
-ew_server_handle_program_frag (SoupServer *server, SoupMessage *msg,
+gss_server_handle_program_frag (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
   const char *mime_type = "text/html";
   char *content;
-  EwProgram *program = (EwProgram *)user_data;
+  GssProgram *program = (GssProgram *)user_data;
   GString *s = g_string_new ("");
 
   if (!program->enable_streaming) {
@@ -1340,18 +1340,18 @@ ew_server_handle_program_frag (SoupServer *server, SoupMessage *msg,
 }
 
 static void
-ew_server_handle_program (SoupServer *server, SoupMessage *msg,
+gss_server_handle_program (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
   const char *mime_type = "text/html";
   char *content;
-  EwProgram *program = (EwProgram *)user_data;
+  GssProgram *program = (GssProgram *)user_data;
   GString *s = g_string_new ("");
   const char *base_url = "";
   int i;
 
-  ew_html_header (s, program->location);
+  gss_html_header (s, program->location);
   g_string_append_printf(s,
       "<div id=\"header\">\n"
       "<img src=\"" BASE "images/template_header_nologo.png\" width=\"812\" height=\"36\" border=\"0\" alt=\"\" />\n"
@@ -1366,22 +1366,22 @@ ew_server_handle_program (SoupServer *server, SoupMessage *msg,
   g_string_append (s, "<br/>\n");
   for(i=0;i<program->n_streams;i++){
     const char *typename = "Unknown";
-    EwServerStream *stream = program->streams[i];
+    GssServerStream *stream = program->streams[i];
 
     switch (stream->type) {
-      case EW_SERVER_STREAM_OGG:
+      case GSS_SERVER_STREAM_OGG:
         typename = "Ogg/Theora";
         break;
-      case EW_SERVER_STREAM_WEBM:
+      case GSS_SERVER_STREAM_WEBM:
         typename = "WebM";
         break;
-      case EW_SERVER_STREAM_TS:
+      case GSS_SERVER_STREAM_TS:
         typename = "MPEG-TS";
         break;
-      case EW_SERVER_STREAM_TS_MAIN:
+      case GSS_SERVER_STREAM_TS_MAIN:
         typename = "MPEG-TS main";
         break;
-      case EW_SERVER_STREAM_FLV:
+      case GSS_SERVER_STREAM_FLV:
         typename = "FLV";
         break;
     }
@@ -1400,7 +1400,7 @@ ew_server_handle_program (SoupServer *server, SoupMessage *msg,
 
   g_string_append (s, "</div><!-- end content div -->\n");
   
-  ew_html_footer (s, NULL);
+  gss_html_footer (s, NULL);
 
   content = g_string_free (s, FALSE);
 
@@ -1411,34 +1411,34 @@ ew_server_handle_program (SoupServer *server, SoupMessage *msg,
 }
 
 static void
-ew_server_handle_program_list (SoupServer *server, SoupMessage *msg,
+gss_server_handle_program_list (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
   const char *mime_type = "text/plain";
   char *content;
-  EwProgram *program = (EwProgram *)user_data;
+  GssProgram *program = (GssProgram *)user_data;
   GString *s = g_string_new ("");
   int i;
   const char *base_url = "";
 
   for(i=0;i<program->n_streams;i++){
-    EwServerStream *stream = program->streams[i];
+    GssServerStream *stream = program->streams[i];
     const char *typename = "unknown";
     switch (stream->type) {
-      case EW_SERVER_STREAM_OGG:
+      case GSS_SERVER_STREAM_OGG:
         typename = "ogg";
         break;
-      case EW_SERVER_STREAM_WEBM:
+      case GSS_SERVER_STREAM_WEBM:
         typename = "webm";
         break;
-      case EW_SERVER_STREAM_TS:
+      case GSS_SERVER_STREAM_TS:
         typename = "mpeg-ts";
         break;
-      case EW_SERVER_STREAM_TS_MAIN:
+      case GSS_SERVER_STREAM_TS_MAIN:
         typename = "mpeg-ts-main";
         break;
-      case EW_SERVER_STREAM_FLV:
+      case GSS_SERVER_STREAM_FLV:
         typename = "flv";
         break;
     }
@@ -1457,12 +1457,12 @@ ew_server_handle_program_list (SoupServer *server, SoupMessage *msg,
 }
 
 static void
-ew_server_handle_program_image (SoupServer *server, SoupMessage *msg,
+gss_server_handle_program_image (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
   const char *mime_type = "image/png";
-  EwProgram *program = (EwProgram *)user_data;
+  GssProgram *program = (GssProgram *)user_data;
   GstBuffer *buffer = NULL;
 
   if (!program->enable_streaming) {
@@ -1483,25 +1483,25 @@ ew_server_handle_program_image (SoupServer *server, SoupMessage *msg,
 
     gst_buffer_unref (buffer);
   } else {
-    ew_html_error_404 (msg);
+    gss_html_error_404 (msg);
   }
 
 }
 
 static void
-ew_server_handle_program_jpeg (SoupServer *server, SoupMessage *msg,
+gss_server_handle_program_jpeg (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
-  EwProgram *program = (EwProgram *)user_data;
-  EwConnection *connection;
+  GssProgram *program = (GssProgram *)user_data;
+  GssConnection *connection;
 
   if (!program->enable_streaming || program->jpegsink == NULL) {
     soup_message_set_status (msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
 
-  connection = g_malloc0 (sizeof(EwConnection));
+  connection = g_malloc0 (sizeof(GssConnection));
   connection->msg = msg;
   connection->client = client;
   connection->program = program;
@@ -1520,7 +1520,7 @@ ew_server_handle_program_jpeg (SoupServer *server, SoupMessage *msg,
 static void
 jpeg_wrote_headers (SoupMessage *msg, void *user_data)
 {
-  EwConnection *connection = user_data;
+  GssConnection *connection = user_data;
   SoupSocket *socket;
   int fd;
 
@@ -1556,7 +1556,7 @@ get_timestamp (const char *filename)
 
 
 void
-ew_server_read_config (EwServer *server, const char *config_filename)
+gss_server_read_config (GssServer *server, const char *config_filename)
 {
   GKeyFile *kf;
   char *s;
@@ -1594,22 +1594,22 @@ ew_server_read_config (EwServer *server, const char *config_filename)
 /* set up a stream follower */
 
 void
-ew_program_add_stream_follow (EwProgram *program, int type, int width,
+gss_program_add_stream_follow (GssProgram *program, int type, int width,
     int height, int bitrate, const char *url)
 {
-  EwServerStream *stream;
+  GssServerStream *stream;
 
-  stream = ew_program_add_stream_full (program, type, width, height,
+  stream = gss_program_add_stream_full (program, type, width, height,
       bitrate, NULL);
   stream->follow_url = g_strdup (url);
 
-  ew_stream_create_follow_pipeline (stream);
+  gss_stream_create_follow_pipeline (stream);
  
   gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
 }
 
 void
-ew_stream_create_follow_pipeline (EwServerStream *stream)
+gss_stream_create_follow_pipeline (GssServerStream *stream)
 {
   GstElement *pipe;
   GstElement *e;
@@ -1621,20 +1621,20 @@ ew_stream_create_follow_pipeline (EwServerStream *stream)
 
   g_string_append_printf (pipe_desc, "souphttpsrc name=src do-timestamp=true ! ");
   switch (stream->type) {
-    case EW_SERVER_STREAM_OGG:
+    case GSS_SERVER_STREAM_OGG:
       g_string_append (pipe_desc, "oggparse name=parse ! ");
       break;
-    case EW_SERVER_STREAM_TS:
-    case EW_SERVER_STREAM_TS_MAIN:
+    case GSS_SERVER_STREAM_TS:
+    case GSS_SERVER_STREAM_TS_MAIN:
       g_string_append (pipe_desc, "mpegtsparse name=parse ! ");
       break;
-    case EW_SERVER_STREAM_WEBM:
+    case GSS_SERVER_STREAM_WEBM:
       g_string_append (pipe_desc, "matroskaparse name=parse ! ");
       break;
   }
   g_string_append (pipe_desc, "queue ! ");
   g_string_append_printf (pipe_desc, "%s name=sink ",
-      ew_server_get_multifdsink_string ());
+      gss_server_get_multifdsink_string ());
 
   if (verbose) {
     g_print ("pipeline: %s\n", pipe_desc->str);
@@ -1653,7 +1653,7 @@ ew_stream_create_follow_pipeline (EwServerStream *stream)
 
   e = gst_bin_get_by_name (GST_BIN(pipe), "sink");
   g_assert(e != NULL);
-  ew_stream_set_sink (stream, e);
+  gss_stream_set_sink (stream, e);
   g_object_unref (e);
   stream->pipeline = pipe;
 
@@ -1669,7 +1669,7 @@ static gboolean
 push_data_probe_callback (GstPad *pad, GstMiniObject *mo, gpointer user_data)
 {
 #if 0
-  //EwServerStream *stream = (EwServerStream *) user_data;
+  //GssServerStream *stream = (GssServerStream *) user_data;
 
   if (GST_IS_BUFFER (mo)) {
     GstBuffer *buffer = GST_BUFFER (mo);
@@ -1683,7 +1683,7 @@ push_data_probe_callback (GstPad *pad, GstMiniObject *mo, gpointer user_data)
 }
 
 void
-ew_stream_create_push_pipeline (EwServerStream *stream)
+gss_stream_create_push_pipeline (GssServerStream *stream)
 {
   GstElement *pipe;
   GstElement *e;
@@ -1695,20 +1695,20 @@ ew_stream_create_push_pipeline (EwServerStream *stream)
 
   g_string_append_printf (pipe_desc, "fdsrc name=src do-timestamp=true ! ");
   switch (stream->type) {
-    case EW_SERVER_STREAM_OGG:
+    case GSS_SERVER_STREAM_OGG:
       g_string_append (pipe_desc, "oggparse name=parse ! ");
       break;
-    case EW_SERVER_STREAM_TS:
-    case EW_SERVER_STREAM_TS_MAIN:
+    case GSS_SERVER_STREAM_TS:
+    case GSS_SERVER_STREAM_TS_MAIN:
       g_string_append (pipe_desc, "mpegtsparse name=parse ! ");
       break;
-    case EW_SERVER_STREAM_WEBM:
+    case GSS_SERVER_STREAM_WEBM:
       g_string_append (pipe_desc, "matroskaparse name=parse ! ");
       break;
   }
   g_string_append (pipe_desc, "queue ! ");
   g_string_append_printf (pipe_desc, "%s name=sink ",
-      ew_server_get_multifdsink_string ());
+      gss_server_get_multifdsink_string ());
 
   if (verbose) {
     g_print ("pipeline: %s\n", pipe_desc->str);
@@ -1729,7 +1729,7 @@ ew_stream_create_push_pipeline (EwServerStream *stream)
 
   e = gst_bin_get_by_name (GST_BIN(pipe), "sink");
   g_assert(e != NULL);
-  ew_stream_set_sink (stream, e);
+  gss_stream_set_sink (stream, e);
   g_object_unref (e);
   stream->pipeline = pipe;
 
@@ -1745,8 +1745,8 @@ static void
 handle_pipeline_message (GstBus *bus, GstMessage *message,
     gpointer user_data)
 {
-  EwServerStream *stream = user_data;
-  EwProgram *program = stream->program;
+  GssServerStream *stream = user_data;
+  GssProgram *program = stream->program;
 
   switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_STATE_CHANGED:
@@ -1768,7 +1768,7 @@ handle_pipeline_message (GstBus *bus, GstMessage *message,
         if (newstate == GST_STATE_PLAYING && message->src == GST_OBJECT(stream->pipeline)) {
           char *s;
           s = g_strdup_printf ("stream %s started", stream->name);
-          ew_program_log (program, s);
+          gss_program_log (program, s);
           g_free (s);
         }
         //gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
@@ -1796,17 +1796,17 @@ handle_pipeline_message (GstBus *bus, GstMessage *message,
         
         s = g_strdup_printf("Internal Error: %s (%s) from %s\n",
             error->message, debug, GST_MESSAGE_SRC_NAME(message));
-        ew_program_log (program, s);
+        gss_program_log (program, s);
         g_free (s);
 
         program->restart_delay = 5;
-        ew_program_stop (program);
+        gss_program_stop (program);
       }
       break;
     case GST_MESSAGE_EOS:
-      ew_program_log (program, "end of stream");
+      gss_program_log (program, "end of stream");
       stream->program->restart_delay = 5;
-      ew_program_stop (program);
+      gss_program_stop (program);
       break;
     case GST_MESSAGE_ELEMENT:
       break;
@@ -1816,18 +1816,18 @@ handle_pipeline_message (GstBus *bus, GstMessage *message,
 }
 
 void
-ew_program_stop (EwProgram *program)
+gss_program_stop (GssProgram *program)
 {
   int i;
-  EwServerStream *stream;
+  GssServerStream *stream;
 
-  ew_program_log (program, "stop");
+  gss_program_log (program, "stop");
 
   for (i=0;i<program->n_streams;i++){
     stream = program->streams[i];
     gst_element_set_state (stream->pipeline, GST_STATE_NULL);
     if (stream->follow_url) {
-      ew_stream_set_sink (stream, NULL);
+      gss_stream_set_sink (stream, NULL);
       g_object_unref (stream->pipeline);
       stream->pipeline = NULL;
     }
@@ -1836,27 +1836,27 @@ ew_program_stop (EwProgram *program)
   if (program->follow_uri) {
     for (i=0;i<program->n_streams;i++){
       stream = program->streams[i];
-      ew_stream_free (stream);
+      gss_stream_free (stream);
     }
     program->n_streams = 0;
   }
 }
 
 void
-ew_program_start (EwProgram *program)
+gss_program_start (GssProgram *program)
 {
 
-  ew_program_log (program, "start");
+  gss_program_log (program, "start");
 
   switch (program->program_type) {
-    case EW_PROGRAM_EW_FOLLOW:
-      ew_program_follow_get_list (program);
+    case GSS_PROGRAM_EW_FOLLOW:
+      gss_program_follow_get_list (program);
       break;
-    case EW_PROGRAM_HTTP_FOLLOW:
-      ew_program_add_stream_follow (program, EW_SERVER_STREAM_OGG, 640, 360,
+    case GSS_PROGRAM_HTTP_FOLLOW:
+      gss_program_add_stream_follow (program, GSS_SERVER_STREAM_OGG, 640, 360,
           700000, program->follow_uri);
       break;
-    case EW_PROGRAM_MANUAL:
+    case GSS_PROGRAM_MANUAL:
       break;
     default:
       g_warning ("not implemented");
@@ -1867,14 +1867,14 @@ ew_program_start (EwProgram *program)
 static void
 follow_callback (SoupSession *session, SoupMessage *message, gpointer ptr)
 {
-  EwProgram *program = ptr;
+  GssProgram *program = ptr;
 
   if (message->status_code == SOUP_STATUS_OK) {
     SoupBuffer *buffer;
     char **lines;
     int i;
 
-    ew_program_log (program, "got list of streams");
+    gss_program_log (program, "got list of streams");
 
     buffer = soup_message_body_flatten (message->response_body);
 
@@ -1896,21 +1896,21 @@ follow_callback (SoupSession *session, SoupMessage *message, gpointer ptr)
       if (n == 6) {
         char *full_url;
 
-        type = EW_SERVER_STREAM_UNKNOWN;
+        type = GSS_SERVER_STREAM_UNKNOWN;
         if (strcmp (type_str, "ogg") == 0) {
-          type = EW_SERVER_STREAM_OGG;
+          type = GSS_SERVER_STREAM_OGG;
         } else if (strcmp (type_str, "webm") == 0) {
-          type = EW_SERVER_STREAM_WEBM;
+          type = GSS_SERVER_STREAM_WEBM;
         } else if (strcmp (type_str, "mpeg-ts") == 0) {
-          type = EW_SERVER_STREAM_TS;
+          type = GSS_SERVER_STREAM_TS;
         } else if (strcmp (type_str, "mpeg-ts-main") == 0) {
-          type = EW_SERVER_STREAM_TS_MAIN;
+          type = GSS_SERVER_STREAM_TS_MAIN;
         } else if (strcmp (type_str, "flv") == 0) {
-          type = EW_SERVER_STREAM_FLV;
+          type = GSS_SERVER_STREAM_FLV;
         }
 
         full_url = g_strdup_printf("http://%s%s", program->follow_host, url);
-        ew_program_add_stream_follow (program, type, width, height, bitrate,
+        gss_program_add_stream_follow (program, type, width, height, bitrate,
             full_url);
         g_free (full_url);
       }
@@ -1921,24 +1921,24 @@ follow_callback (SoupSession *session, SoupMessage *message, gpointer ptr)
 
     soup_buffer_free (buffer);
   } else {
-    ew_program_log (program, "failed to get list of streams");
+    gss_program_log (program, "failed to get list of streams");
     program->restart_delay = 10;
-    ew_program_stop (program);
+    gss_program_stop (program);
   }
 
 }
 
 void
-ew_program_follow (EwProgram *program, const char *host, const char *stream)
+gss_program_follow (GssProgram *program, const char *host, const char *stream)
 {
-  program->program_type = EW_PROGRAM_EW_FOLLOW;
+  program->program_type = GSS_PROGRAM_EW_FOLLOW;
   program->follow_uri = g_strdup_printf("http://%s/%s.list", host, stream);
   program->follow_host = g_strdup (host);
   program->restart_delay = 1;
 }
 
 void
-ew_program_follow_get_list (EwProgram *program)
+gss_program_follow_get_list (GssProgram *program)
 {
   SoupMessage *message;
 
@@ -1951,16 +1951,16 @@ ew_program_follow_get_list (EwProgram *program)
 static gboolean
 periodic_timer (gpointer data)
 {
-  EwServer *server = (EwServer *) data;
+  GssServer *server = (GssServer *) data;
   int i;
 
   for (i = 0; i< server->n_programs; i++) {
-    EwProgram *program = server->programs[i];
+    GssProgram *program = server->programs[i];
 
     if (program->restart_delay) {
       program->restart_delay--;
       if (program->restart_delay == 0) {
-        ew_program_start (program);
+        gss_program_start (program);
       }
     }
 
@@ -1970,9 +1970,9 @@ periodic_timer (gpointer data)
 }
 
 void
-ew_program_http_follow (EwProgram *program, const char *uri)
+gss_program_http_follow (GssProgram *program, const char *uri)
 {
-  program->program_type = EW_PROGRAM_HTTP_FOLLOW;
+  program->program_type = GSS_PROGRAM_HTTP_FOLLOW;
   program->follow_uri = g_strdup (uri);
   program->follow_host = g_strdup (uri);
   
@@ -1980,13 +1980,13 @@ ew_program_http_follow (EwProgram *program, const char *uri)
 }
 
 void
-ew_program_ew_contrib (EwProgram *program)
+gss_program_ew_contrib (GssProgram *program)
 {
 
 }
 
 void
-ew_program_http_put (EwProgram *program, const char *location)
+gss_program_http_put (GssProgram *program, const char *location)
 {
   
 }

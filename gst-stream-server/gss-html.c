@@ -9,7 +9,7 @@
 #define BASE "/"
 
 void
-ew_html_header (GString *s, const char *title)
+gss_html_header (GString *s, const char *title)
 {
   g_string_append_printf(s,
       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
@@ -41,7 +41,7 @@ ew_html_header (GString *s, const char *title)
 }
 
 void
-ew_html_footer (GString *s, const char *session_id)
+gss_html_footer (GString *s, const char *session_id)
 {
   g_string_append (s,
       "<br />\n"
@@ -68,7 +68,7 @@ ew_html_footer (GString *s, const char *session_id)
 }
 
 void
-ew_html_error_404 (SoupMessage *msg)
+gss_html_error_404 (SoupMessage *msg)
 {
   char *content;
   GString *s;

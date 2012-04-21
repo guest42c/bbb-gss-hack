@@ -7,8 +7,8 @@
 
 #define N_CHUNKS 10
 
-typedef struct _EwHLSStream EwHLSStream;
-typedef struct _EwHLSChunk EwHLSChunk;
+typedef struct _GssHLSStream GssHLSStream;
+typedef struct _GssHLSChunk GssHLSChunk;
 
 
 

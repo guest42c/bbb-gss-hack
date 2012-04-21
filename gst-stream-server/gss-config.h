@@ -11,19 +11,19 @@
 G_BEGIN_DECLS
 
 enum {
-  EW_CONFIG_FLAG_NOSAVE = 1
+  GSS_CONFIG_FLAG_NOSAVE = 1
 
 };
 
-typedef struct _EwConfigDefault EwConfigDefault;
-struct _EwConfigDefault {
+typedef struct _GssConfigDefault GssConfigDefault;
+struct _GssConfigDefault {
   const char *name;
   const char *default_value;
   unsigned int flags;
 };
 
-typedef struct _EwConfig EwConfig;
-struct _EwConfig {
+typedef struct _GssConfig GssConfig;
+struct _GssConfig {
   GHashTable *hash;
   char *config_filename;
   int config_timestamp;
@@ -31,10 +31,10 @@ struct _EwConfig {
 
 
 
-typedef void (*EwConfigNotifyFunc) (const char *config_name, void *priv);
+typedef void (*GssConfigNotifyFunc) (const char *config_name, void *priv);
 
-typedef struct _EwConfigField EwConfigField;
-struct _EwConfigField {
+typedef struct _GssConfigField GssConfigField;
+struct _GssConfigField {
   char *value;
   void (*notify) (const char *config_name, void *priv);
   void *notify_priv;
@@ -42,27 +42,27 @@ struct _EwConfigField {
   unsigned int flags;
 };
 
-EwConfig * ew_config_new (void);
-void ew_config_set_config_filename (EwConfig *config, const char *filename);
-void ew_config_write_config_to_file (EwConfig *config);
-void ew_config_free (EwConfig *config);
-void ew_config_check_config_file (EwConfig *config);
-void ew_config_set (EwConfig *config, const char *key, const char *value);
-const char * ew_config_get (EwConfig *config, const char *key);
-gboolean ew_config_get_boolean (EwConfig *config, const char *key);
-int ew_config_get_int (EwConfig *config, const char *key);
-void ew_config_load_defaults (EwConfig *config, EwConfigDefault *list);
-void ew_config_load_from_file (EwConfig *config);
-void ew_config_load_from_file_locked (EwConfig *config, const char *filename);
-void ew_config_lock (EwConfig *config, const char *key);
-void ew_config_set_flags (EwConfig *config, const char *key, unsigned int flags);
-void ew_config_set_notify (EwConfig *config, const char *key,
-    EwConfigNotifyFunc notify, void *priv);
-gboolean ew_config_value_is_equal (EwConfig *config, const char *key,
+GssConfig * gss_config_new (void);
+void gss_config_set_config_filename (GssConfig *config, const char *filename);
+void gss_config_write_config_to_file (GssConfig *config);
+void gss_config_free (GssConfig *config);
+void gss_config_check_config_file (GssConfig *config);
+void gss_config_set (GssConfig *config, const char *key, const char *value);
+const char * gss_config_get (GssConfig *config, const char *key);
+gboolean gss_config_get_boolean (GssConfig *config, const char *key);
+int gss_config_get_int (GssConfig *config, const char *key);
+void gss_config_load_defaults (GssConfig *config, GssConfigDefault *list);
+void gss_config_load_from_file (GssConfig *config);
+void gss_config_load_from_file_locked (GssConfig *config, const char *filename);
+void gss_config_lock (GssConfig *config, const char *key);
+void gss_config_set_flags (GssConfig *config, const char *key, unsigned int flags);
+void gss_config_set_notify (GssConfig *config, const char *key,
+    GssConfigNotifyFunc notify, void *priv);
+gboolean gss_config_value_is_equal (GssConfig *config, const char *key,
     const char *value);
-gboolean ew_config_value_is_on (EwConfig *config, const char *key);
-void ew_config_hash_to_string (GString *s, GHashTable *hash);
-void ew_config_handle_post (EwConfig *config, SoupMessage *msg);
+gboolean gss_config_value_is_on (GssConfig *config, const char *key);
+void gss_config_hash_to_string (GString *s, GHashTable *hash);
+void gss_config_handle_post (GssConfig *config, SoupMessage *msg);
 
 
 G_END_DECLS

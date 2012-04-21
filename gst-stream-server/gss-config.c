@@ -10,13 +10,13 @@
 
 
 
-static EwConfigField *
-ew_config_get_field (EwConfig *config, const char *key)
+static GssConfigField *
+gss_config_get_field (GssConfig *config, const char *key)
 {
-  EwConfigField *field;
+  GssConfigField *field;
   field = g_hash_table_lookup (config->hash, key);
   if (field == NULL) {
-    field = g_malloc0 (sizeof (EwConfigField));
+    field = g_malloc0 (sizeof (GssConfigField));
     field->value = g_strdup ("");
     g_hash_table_insert (config->hash, g_strdup(key), field);
   }
@@ -24,33 +24,33 @@ ew_config_get_field (EwConfig *config, const char *key)
 }
 
 static void
-ew_config_field_free (gpointer data)
+gss_config_field_free (gpointer data)
 {
-  EwConfigField *field = (EwConfigField *)data;
+  GssConfigField *field = (GssConfigField *)data;
   g_free (field->value);
 }
 
-EwConfig *
-ew_config_new (void)
+GssConfig *
+gss_config_new (void)
 {
-  EwConfig *config;
+  GssConfig *config;
 
-  config = g_malloc0 (sizeof(EwConfig));
+  config = g_malloc0 (sizeof(GssConfig));
 
   config->hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
-      ew_config_field_free);
+      gss_config_field_free);
 
   return config;
 }
 
 void
-ew_config_free (EwConfig *config)
+gss_config_free (GssConfig *config)
 {
   g_hash_table_unref (config->hash);
   g_free (config);
 }
 
-void ew_config_set_config_filename (EwConfig *config, const char *filename)
+void gss_config_set_config_filename (GssConfig *config, const char *filename)
 {
   g_free (config->config_filename);
   config->config_filename = g_strdup (filename);
@@ -70,13 +70,13 @@ get_timestamp (const char *filename)
   return 0;
 }
 
-void ew_config_check_config_file (EwConfig *config)
+void gss_config_check_config_file (GssConfig *config)
 {
   int timestamp;
 
   timestamp = get_timestamp (config->config_filename);
   if (timestamp > config->config_timestamp) {
-    ew_config_load_from_file (config);
+    gss_config_load_from_file (config);
   }
 }
 
@@ -87,7 +87,7 @@ compare (gconstpointer a, gconstpointer b)
 }
 
 void
-ew_config_hash_to_string (GString *s, GHashTable *hash)
+gss_config_hash_to_string (GString *s, GHashTable *hash)
 {
   GList *list;
   GList *g;
@@ -97,10 +97,10 @@ ew_config_hash_to_string (GString *s, GHashTable *hash)
 
   for(g=list;g;g=g_list_next(g)){
     const char *key = g->data;
-    EwConfigField *field;
+    GssConfigField *field;
 
     field = g_hash_table_lookup (hash, key);
-    if (!(field->flags & EW_CONFIG_FLAG_NOSAVE)) {
+    if (!(field->flags & GSS_CONFIG_FLAG_NOSAVE)) {
       char *esc = g_strescape (field->value, NULL);
       g_string_append_printf (s, "%s=%s\n", key, esc);
       g_free (esc);
@@ -111,12 +111,12 @@ ew_config_hash_to_string (GString *s, GHashTable *hash)
 }
 
 void
-ew_config_write_config_to_file (EwConfig *config)
+gss_config_write_config_to_file (GssConfig *config)
 {
   GString *s;
 
   s = g_string_new ("");
-  ew_config_hash_to_string (s, config->hash);
+  gss_config_hash_to_string (s, config->hash);
 
   g_file_set_contents (config->config_filename, s->str, s->len, NULL);
   g_string_free (s, TRUE);
@@ -125,10 +125,10 @@ ew_config_write_config_to_file (EwConfig *config)
 }
 
 void
-ew_config_set (EwConfig *config, const char *key, const char *value)
+gss_config_set (GssConfig *config, const char *key, const char *value)
 {
-  EwConfigField *field;
-  field = ew_config_get_field (config, key);
+  GssConfigField *field;
+  field = gss_config_get_field (config, key);
   
   if (field->locked) return;
 
@@ -141,43 +141,43 @@ ew_config_set (EwConfig *config, const char *key, const char *value)
 }
 
 void
-ew_config_lock (EwConfig *config, const char *key)
+gss_config_lock (GssConfig *config, const char *key)
 {
-  EwConfigField *field;
-  field = ew_config_get_field (config, key);
+  GssConfigField *field;
+  field = gss_config_get_field (config, key);
   
   field->locked = TRUE;
 }
 
 const char *
-ew_config_get (EwConfig *config, const char *key)
+gss_config_get (GssConfig *config, const char *key)
 {
-  EwConfigField *field;
-  field = ew_config_get_field (config, key);
+  GssConfigField *field;
+  field = gss_config_get_field (config, key);
   return field->value;
 }
 
 gboolean
-ew_config_value_is_equal (EwConfig *config, const char *key, const char *value)
+gss_config_value_is_equal (GssConfig *config, const char *key, const char *value)
 {
-  EwConfigField *field;
-  field = ew_config_get_field (config, key);
+  GssConfigField *field;
+  field = gss_config_get_field (config, key);
   return (strcmp (field->value, value) == 0);
 }
 
 gboolean
-ew_config_value_is_on (EwConfig *config, const char *key)
+gss_config_value_is_on (GssConfig *config, const char *key)
 {
-  EwConfigField *field;
-  field = ew_config_get_field (config, key);
+  GssConfigField *field;
+  field = gss_config_get_field (config, key);
   return (strcmp (field->value, "on") == 0);
 }
 
 gboolean
-ew_config_get_boolean (EwConfig *config, const char *key)
+gss_config_get_boolean (GssConfig *config, const char *key)
 {
-  EwConfigField *field;
-  field = ew_config_get_field (config, key);
+  GssConfigField *field;
+  field = gss_config_get_field (config, key);
   if (strcmp (field->value, "on") == 0) return TRUE;
   if (strcmp (field->value, "true") == 0) return TRUE;
   if (strcmp (field->value, "yes") == 0) return TRUE;
@@ -186,24 +186,24 @@ ew_config_get_boolean (EwConfig *config, const char *key)
 }
 
 int
-ew_config_get_int (EwConfig *config, const char *key)
+gss_config_get_int (GssConfig *config, const char *key)
 {
-  EwConfigField *field;
-  field = ew_config_get_field (config, key);
+  GssConfigField *field;
+  field = gss_config_get_field (config, key);
   return strtol (field->value, NULL, 0);
 }
 
 void
-ew_config_load_defaults (EwConfig *config, EwConfigDefault *list)
+gss_config_load_defaults (GssConfig *config, GssConfigDefault *list)
 {
   int i;
   for(i=0;list[i].name;i++){
-    ew_config_set (config, list[i].name, list[i].default_value);
+    gss_config_set (config, list[i].name, list[i].default_value);
   }
 }
 
 void
-_ew_config_load_from_file (EwConfig *config, gboolean lock)
+_gss_config_load_from_file (GssConfig *config, gboolean lock)
 {
   gboolean ret;
   gchar *contents;
@@ -221,9 +221,9 @@ _ew_config_load_from_file (EwConfig *config, gboolean lock)
     kv = g_strsplit (lines[i], "=", 2);
     if (kv[0] && kv[1]) {
       char *unesc = g_strcompress (kv[1]);
-      ew_config_set (config, kv[0], unesc);
+      gss_config_set (config, kv[0], unesc);
       g_free (unesc);
-      if (lock) ew_config_lock (config, kv[0]);
+      if (lock) gss_config_lock (config, kv[0]);
     }
     g_strfreev (kv);
   }
@@ -235,33 +235,33 @@ _ew_config_load_from_file (EwConfig *config, gboolean lock)
 }
 
 void
-ew_config_load_from_file (EwConfig *config)
+gss_config_load_from_file (GssConfig *config)
 {
-  _ew_config_load_from_file (config, FALSE);
+  _gss_config_load_from_file (config, FALSE);
 }
 
 void
-ew_config_load_from_file_locked (EwConfig *config, const char *filename)
+gss_config_load_from_file_locked (GssConfig *config, const char *filename)
 {
   char *tmp = config->config_filename;
   config->config_filename = (char *)filename;
-  _ew_config_load_from_file (config, TRUE);
+  _gss_config_load_from_file (config, TRUE);
   config->config_filename = tmp;
 }
 
-void ew_config_set_notify (EwConfig *config, const char *key,
-    EwConfigNotifyFunc notify, void *notify_priv)
+void gss_config_set_notify (GssConfig *config, const char *key,
+    GssConfigNotifyFunc notify, void *notify_priv)
 {
-  EwConfigField *field;
+  GssConfigField *field;
 
-  field = ew_config_get_field (config, key);
+  field = gss_config_get_field (config, key);
   field->notify = notify;
   field->notify_priv = notify_priv;
 }
 
 
 void
-ew_config_handle_post (EwConfig *config, SoupMessage *msg)
+gss_config_handle_post (GssConfig *config, SoupMessage *msg)
 {
   GHashTable *hash;
   char *filename, *media_type;
@@ -288,7 +288,7 @@ ew_config_handle_post (EwConfig *config, SoupMessage *msg)
           &error);
       if (!ret) {
         /* FIXME */
-        //ew_server_log (server, "failed to write logo.png file");
+        //gss_server_log (server, "failed to write logo.png file");
       }
       soup_buffer_free (buffer);
     }
@@ -372,10 +372,10 @@ ew_config_handle_post (EwConfig *config, SoupMessage *msg)
 
       if (s && t && strcmp (s, t) == 0) {
 #define REALM "Entropy Wave E1000"
-        ew_config_set (config, "admin_token",
+        gss_config_set (config, "admin_token",
             soup_auth_domain_digest_encode_password("admin", REALM, s));
 #if 0
-        ew_config_set (config, "admin_hash",
+        gss_config_set (config, "admin_hash",
             password_hash ("admin", s));
 #endif
       }
@@ -389,10 +389,10 @@ ew_config_handle_post (EwConfig *config, SoupMessage *msg)
       const char *t = g_hash_table_lookup (hash, "editor_token1");
 
       if (s && t && strcmp (s, t) == 0) {
-        ew_config_set (config, "editor_token",
+        gss_config_set (config, "editor_token",
             soup_auth_domain_digest_encode_password("editor", REALM, s));
 #if 0
-        ew_config_set (config, "editor_hash",
+        gss_config_set (config, "editor_hash",
             password_hash ("admin", s));
 #endif
       }
@@ -402,8 +402,8 @@ ew_config_handle_post (EwConfig *config, SoupMessage *msg)
 
     g_hash_table_iter_init (&iter, hash);
     while (g_hash_table_iter_next (&iter, (gpointer)&key, (gpointer)&value)) {
-      ew_config_set (config, key, value);
+      gss_config_set (config, key, value);
     }
-    ew_config_write_config_to_file (config);
+    gss_config_write_config_to_file (config);
   }
 }

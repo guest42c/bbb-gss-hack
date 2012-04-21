@@ -23,7 +23,7 @@
 
 
 void
-ew_config_form_add_select (GString *s, Field *item, const char *value)
+gss_config_form_add_select (GString *s, Field *item, const char *value)
 {
   int i;
 
@@ -50,7 +50,7 @@ ew_config_form_add_select (GString *s, Field *item, const char *value)
 }
 
 void
-ew_config_form_add_text_input (GString *s, Field *item, const char *value)
+gss_config_form_add_text_input (GString *s, Field *item, const char *value)
 {
   if (item->indent) g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
   g_string_append_printf(s, "%s: <input id=\"%s\" type=\"text\" name=\"%s\" size=30 value=\"%s\">\n",
@@ -61,7 +61,7 @@ ew_config_form_add_text_input (GString *s, Field *item, const char *value)
 }
 
 void
-ew_config_form_add_password (GString *s, Field *item, const char *value)
+gss_config_form_add_password (GString *s, Field *item, const char *value)
 {
   if (item->indent) g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
   g_string_append_printf(s, "%s: <input id=\"%s\" type=\"password\" name=\"%s\" size=20>\n",
@@ -72,7 +72,7 @@ ew_config_form_add_password (GString *s, Field *item, const char *value)
 }
 
 void
-ew_config_form_add_checkbox (GString *s, Field *item, const char *value)
+gss_config_form_add_checkbox (GString *s, Field *item, const char *value)
 {
   gboolean selected;
 
@@ -101,7 +101,7 @@ ew_config_form_add_checkbox (GString *s, Field *item, const char *value)
 }
 
 void
-ew_config_form_add_file (GString *s, Field *item, const char *value)
+gss_config_form_add_file (GString *s, Field *item, const char *value)
 {
   if (item->indent) g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
   g_string_append_printf(s, "%s: <input id=\"%s\" type=\"file\" name=\"%s\" value=\"%s\">\n",
@@ -112,7 +112,7 @@ ew_config_form_add_file (GString *s, Field *item, const char *value)
 }
 
 void
-ew_config_form_add_radio (GString *s, Field *item, const char *value)
+gss_config_form_add_radio (GString *s, Field *item, const char *value)
 {
   int i;
 
@@ -135,7 +135,7 @@ ew_config_form_add_radio (GString *s, Field *item, const char *value)
 }
 
 void
-ew_config_form_add_submit (GString *s, Field *item, const char *value)
+gss_config_form_add_submit (GString *s, Field *item, const char *value)
 {
   g_string_append (s, "<br />\n");
   g_string_append_printf (s,
@@ -146,7 +146,7 @@ ew_config_form_add_submit (GString *s, Field *item, const char *value)
 }
 
 void
-ew_config_form_add_hidden (GString *s, Field *item, const char *value)
+gss_config_form_add_hidden (GString *s, Field *item, const char *value)
 {
   g_string_append_printf (s,
       "<input name=\"%s\" type=\"hidden\" value=\"%s\"/>\n",
@@ -155,8 +155,8 @@ ew_config_form_add_hidden (GString *s, Field *item, const char *value)
 }
 
 void
-ew_config_form_add_form (EwServer *server, GString * s, const char *action,
-    const char *name, Field *fields, EwSession *session)
+gss_config_form_add_form (GssServer *server, GString * s, const char *action,
+    const char *name, Field *fields, GssSession *session)
 {
   int i;
   const char *enctype;
@@ -190,35 +190,35 @@ ew_config_form_add_form (EwServer *server, GString * s, const char *action,
     const char *default_value = NULL;
     
     if (fields[i].config_name) {
-      default_value = ew_config_get (server->config, fields[i].config_name);
+      default_value = gss_config_get (server->config, fields[i].config_name);
     }
     if (default_value == NULL) default_value = "";
     switch (fields[i].type) {
       case FIELD_SELECT:
-        ew_config_form_add_select (s, fields + i, default_value);
+        gss_config_form_add_select (s, fields + i, default_value);
         break;
       case FIELD_TEXT_INPUT:
-        ew_config_form_add_text_input (s, fields + i, default_value);
+        gss_config_form_add_text_input (s, fields + i, default_value);
         break;
       case FIELD_PASSWORD:
-        ew_config_form_add_password (s, fields + i, default_value);
+        gss_config_form_add_password (s, fields + i, default_value);
         break;
       case FIELD_CHECKBOX:
-        ew_config_form_add_checkbox (s, fields + i, default_value);
+        gss_config_form_add_checkbox (s, fields + i, default_value);
         break;
       case FIELD_FILE:
-        ew_config_form_add_file (s, fields + i, default_value);
+        gss_config_form_add_file (s, fields + i, default_value);
         break;
       case FIELD_RADIO:
-        ew_config_form_add_radio (s, fields + i, default_value);
+        gss_config_form_add_radio (s, fields + i, default_value);
         break;
       case FIELD_SUBMIT:
         if (fields[i].indent) {
-          ew_config_form_add_submit (s, fields + i, default_value);
+          gss_config_form_add_submit (s, fields + i, default_value);
           if (in_fieldset) g_string_append (s, "</fieldset>\n");
         } else {
           if (in_fieldset) g_string_append (s, "</fieldset>\n");
-          ew_config_form_add_submit (s, fields + i, default_value);
+          gss_config_form_add_submit (s, fields + i, default_value);
         }
         in_fieldset = FALSE;
         break;
@@ -232,7 +232,7 @@ ew_config_form_add_form (EwServer *server, GString * s, const char *action,
         in_fieldset = TRUE;
         break;
       case FIELD_HIDDEN:
-        ew_config_form_add_hidden (s, fields + i, default_value);
+        gss_config_form_add_hidden (s, fields + i, default_value);
         break;
       default:
         break;

@@ -40,16 +40,16 @@ struct _Field {
   Option options[10];
 };
 
-void ew_config_form_add_select (GString *s, Field *item, const char *value);
-void ew_config_form_add_text_input (GString *s, Field *item, const char *value);
-void ew_config_form_add_password (GString *s, Field *item, const char *value);
-void ew_config_form_add_checkbox (GString *s, Field *item, const char *value);
-void ew_config_form_add_file (GString *s, Field *item, const char *value);
-void ew_config_form_add_radio (GString *s, Field *item, const char *value);
-void ew_config_form_add_submit (GString *s, Field *item, const char *value);
-void ew_config_form_add_hidden (GString *s, Field *item, const char *value);
-void ew_config_form_add_form (EwServer *server, GString * s, const char *action,
-    const char *name, Field *fields, EwSession *session);
+void gss_config_form_add_select (GString *s, Field *item, const char *value);
+void gss_config_form_add_text_input (GString *s, Field *item, const char *value);
+void gss_config_form_add_password (GString *s, Field *item, const char *value);
+void gss_config_form_add_checkbox (GString *s, Field *item, const char *value);
+void gss_config_form_add_file (GString *s, Field *item, const char *value);
+void gss_config_form_add_radio (GString *s, Field *item, const char *value);
+void gss_config_form_add_submit (GString *s, Field *item, const char *value);
+void gss_config_form_add_hidden (GString *s, Field *item, const char *value);
+void gss_config_form_add_form (GssServer *server, GString * s, const char *action,
+    const char *name, Field *fields, GssSession *session);
 
 
 

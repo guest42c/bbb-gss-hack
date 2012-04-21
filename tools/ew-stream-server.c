@@ -1,4 +1,4 @@
-/* EwEncoder
+/* GssEncoder
  * Copyright (C) 2011 David Schleef <ds@schleef.org>
  * Copyright (C) 2010 Entropy Wave Inc
  *
@@ -24,18 +24,18 @@
 //#define CONFIG_FILENAME "/opt/entropywave/ew-oberon/config"
 #define CONFIG_FILENAME "config"
 
-extern EwConfigDefault config_defaults[];
+extern GssConfigDefault config_defaults[];
 
 gboolean verbose = TRUE;
 gboolean cl_verbose;
 
-void ew_stream_server_notify_url (const char *s, void *priv);
+void gss_stream_server_notify_url (const char *s, void *priv);
 
 static void signal_interrupt (int signum);
 
 #define N_PROGRAMS 10
 
-EwProgram *programs[N_PROGRAMS];
+GssProgram *programs[N_PROGRAMS];
 
 static GOptionEntry entries[] = {
   {"verbose", 'v', 0, G_OPTION_ARG_NONE, &cl_verbose, "Be verbose", NULL},
@@ -45,7 +45,7 @@ static GOptionEntry entries[] = {
 };
 
 #define N_ENCODERS 1
-EwServer *server;
+GssServer *server;
 GMainLoop *main_loop;
 
 int
@@ -70,24 +70,24 @@ main (int argc, char *argv[])
   }
   g_option_context_free (context);
 
-  server = ew_server_new ();
-  ew_server_read_config (server, CONFIG_FILENAME);
+  server = gss_server_new ();
+  gss_server_read_config (server, CONFIG_FILENAME);
 
-  ew_config_set_config_filename (server->config, CONFIG_FILENAME);
-  ew_config_load_defaults (server->config, config_defaults);
-  ew_config_load_from_file (server->config);
-  ew_config_load_from_file_locked (server->config, CONFIG_FILENAME ".perm");
-  ew_config_load_from_file_locked (server->config, CONFIG_FILENAME ".package");
+  gss_config_set_config_filename (server->config, CONFIG_FILENAME);
+  gss_config_load_defaults (server->config, config_defaults);
+  gss_config_load_from_file (server->config);
+  gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".perm");
+  gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".package");
 
   for(i=0;i<N_PROGRAMS;i++){
     char *key;
 
     key = g_strdup_printf("stream%d_url", i);
 
-    ew_config_set_notify (server->config, key,
-        ew_stream_server_notify_url, GINT_TO_POINTER (i));
+    gss_config_set_notify (server->config, key,
+        gss_stream_server_notify_url, GINT_TO_POINTER (i));
 
-    ew_stream_server_notify_url (key, GINT_TO_POINTER (i));
+    gss_stream_server_notify_url (key, GINT_TO_POINTER (i));
 
     g_free (key);
   }
@@ -98,8 +98,8 @@ main (int argc, char *argv[])
 
   g_main_loop_run (main_loop);
 
-  ew_server_free (server);
-  ew_server_deinit();
+  gss_server_free (server);
+  gss_server_deinit();
   gst_deinit();
 
   exit (0);
@@ -115,18 +115,18 @@ signal_interrupt (int signum)
 
 
 void
-ew_stream_server_notify_url (const char *s, void *priv)
+gss_stream_server_notify_url (const char *s, void *priv)
 {
   int i = GPOINTER_TO_INT (priv);
   const char *url;
 
-  url = ew_config_get (server->config, s);
+  url = gss_config_get (server->config, s);
 
   if (url[0] == 0 && programs[i] == NULL) return;
   if (programs[i] && strcmp(url, programs[i]->follow_host) == 0) return;
 
   if (programs[i]) {
-    ew_server_remove_program (server, programs[i]);
+    gss_server_remove_program (server, programs[i]);
     programs[i] = NULL;
   }
 
@@ -136,11 +136,11 @@ ew_stream_server_notify_url (const char *s, void *priv)
     char *key;
     
     key = g_strdup_printf ("stream%d_type", i);
-    stream_type = ew_config_get (server->config, key);
+    stream_type = gss_config_get (server->config, key);
     g_free (key);
 
     key = g_strdup_printf ("stream%d_name", i);
-    stream_name = g_strdup (ew_config_get (server->config, key));
+    stream_name = g_strdup (gss_config_get (server->config, key));
     g_free (key);
     if (strcmp (stream_name, "") == 0) {
       g_free (stream_name);
@@ -151,16 +151,16 @@ ew_stream_server_notify_url (const char *s, void *priv)
       }
     }
 
-    programs[i] = ew_server_add_program (server, stream_name);
+    programs[i] = gss_server_add_program (server, stream_name);
     if (strcmp (stream_type, "http-follow") == 0) {
-      ew_program_http_follow (programs[i], url);
+      gss_program_http_follow (programs[i], url);
     } else if (strcmp (stream_type, "ew-contrib") == 0) {
-      ew_program_ew_contrib (programs[i]);
+      gss_program_ew_contrib (programs[i]);
     } else if (strcmp (stream_type, "http-put") == 0) {
-      ew_program_http_put (programs[i], "stream");
+      gss_program_http_put (programs[i], "stream");
     } else {
       /* ew-follow */
-      ew_program_follow (programs[i], url, "stream");
+      gss_program_follow (programs[i], url, "stream");
     }
 
     g_free (stream_name);

@@ -47,24 +47,24 @@ int n_hosts_allow;
 
 
 void
-ew_session_add_session_callbacks (SoupServer *soupserver, gpointer priv)
+gss_session_add_session_callbacks (SoupServer *soupserver, gpointer priv)
 {
-  EwServer *ewserver = (EwServer *)priv;
+  GssServer *ewserver = (GssServer *)priv;
 
-  soup_server_add_handler (soupserver, "/login", ew_session_login_callback,
+  soup_server_add_handler (soupserver, "/login", gss_session_login_callback,
       ewserver, NULL);
-  soup_server_add_handler (soupserver, "/logout", ew_session_logout_callback,
+  soup_server_add_handler (soupserver, "/logout", gss_session_logout_callback,
       ewserver, NULL);
 
-  ew_config_set_notify (ewserver->config, "hosts_allow",
-      ew_session_notify_hosts_allow, ewserver);
-  ew_session_notify_hosts_allow ("hosts_allow", ewserver);
+  gss_config_set_notify (ewserver->config, "hosts_allow",
+      gss_session_notify_hosts_allow, ewserver);
+  gss_session_notify_hosts_allow ("hosts_allow", ewserver);
 }
 
 void
-ew_session_notify_hosts_allow (const char *key, void *priv)
+gss_session_notify_hosts_allow (const char *key, void *priv)
 {
-  EwServer *ewserver = (EwServer *)priv;
+  GssServer *ewserver = (GssServer *)priv;
   char **chunks;
   char *end;
   const char *s;
@@ -74,7 +74,7 @@ ew_session_notify_hosts_allow (const char *key, void *priv)
   g_free (hosts_allow);
   n_hosts_allow = 0;
 
-  s = ew_config_get (ewserver->config, "hosts_allow");
+  s = gss_config_get (ewserver->config, "hosts_allow");
   chunks = g_strsplit (s, " ", 0);
   n = g_strv_length (chunks);
 
@@ -218,7 +218,7 @@ host_validate (const struct in6_addr *in6a)
 }
 
 gboolean
-ew_addr_address_check (SoupClientContext *context)
+gss_addr_address_check (SoupClientContext *context)
 {
   SoupAddress *addr;
   struct sockaddr *sa;
@@ -254,7 +254,7 @@ ew_addr_address_check (SoupClientContext *context)
 }
 
 gboolean
-ew_addr_is_localhost (SoupClientContext *context)
+gss_addr_is_localhost (SoupClientContext *context)
 {
   SoupAddress *addr;
   struct sockaddr *sa;
@@ -305,7 +305,7 @@ password_hash (const char *username, const char *password)
 #endif
 
 char *
-ew_session_create_id (void)
+gss_session_create_id (void)
 {
   int fd;
   uint32_t entropy[2];
@@ -324,14 +324,14 @@ ew_session_create_id (void)
 
 #define SESSION_TIMEOUT 3600
 
-EwSession *
-ew_session_lookup (const char *session_id)
+GssSession *
+gss_session_lookup (const char *session_id)
 {
   GList *g;
   time_t now = time(NULL);
 
   for(g=sessions;g;g=g_list_next(g)) {
-    EwSession *session = g->data;
+    GssSession *session = g->data;
     if (strcmp (session->session_id, session_id) == 0) {
       if (session->last_time + SESSION_TIMEOUT < now) {
         continue;
@@ -343,13 +343,13 @@ ew_session_lookup (const char *session_id)
 }
 
 void
-ew_session_touch (EwSession *session)
+gss_session_touch (GssSession *session)
 {
   session->last_time = time(NULL);
 }
 
-EwSession *
-ew_session_message_get_session (SoupMessage *msg, GHashTable *query)
+GssSession *
+gss_session_message_get_session (SoupMessage *msg, GHashTable *query)
 {
   if (msg->method == SOUP_METHOD_GET || msg->method == SOUP_METHOD_POST) {
     char *id;
@@ -359,20 +359,20 @@ ew_session_message_get_session (SoupMessage *msg, GHashTable *query)
     id = g_hash_table_lookup (query, "session_id");
     if (id == NULL) return NULL;
 
-    return ew_session_lookup (id);
+    return gss_session_lookup (id);
   }
 
   return NULL;
 }
 
-EwSession *
-ew_session_new (const char *username)
+GssSession *
+gss_session_new (const char *username)
 {
-  EwSession *session;
+  GssSession *session;
 
-  session = g_malloc0 (sizeof(EwSession));
+  session = g_malloc0 (sizeof(GssSession));
   session->username = g_strdup (username);
-  session->session_id = ew_session_create_id();
+  session->session_id = gss_session_create_id();
   session->last_time = time(NULL);
 
   sessions = g_list_prepend (sessions, session);
@@ -381,11 +381,11 @@ ew_session_new (const char *username)
 }
 
 void
-ew_session_login_callback (SoupServer *server, SoupMessage *msg,
+gss_session_login_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
-  EwServer *ewserver = (EwServer *)user_data;
+  GssServer *ewserver = (GssServer *)user_data;
   const char *content = "login\n";
   GString *s;
   char *redirect_url;
@@ -437,13 +437,13 @@ ew_session_login_callback (SoupServer *server, SoupMessage *msg,
 #if 0
       hash = password_hash (username, password);
       valid = (strcmp(username, "admin") == 0) &&
-        ew_config_value_is_equal (ewserver->config, "admin_hash", hash);
+        gss_config_value_is_equal (ewserver->config, "admin_hash", hash);
       g_free (hash);
 #endif
       hash = soup_auth_domain_digest_encode_password(username, REALM,
           password);
       valid = (strcmp(username, "admin") == 0) &&
-        ew_config_value_is_equal (ewserver->config, "admin_token", hash);
+        gss_config_value_is_equal (ewserver->config, "admin_token", hash);
       g_free (hash);
     }
 
@@ -452,10 +452,10 @@ ew_session_login_callback (SoupServer *server, SoupMessage *msg,
     }
 
     if (valid) {
-      EwSession *session;
+      GssSession *session;
       char *location;
 
-      session = ew_session_new (username);
+      session = gss_session_new (username);
 
       redirect_url = "/admin";
       if (query) {
@@ -474,7 +474,7 @@ ew_session_login_callback (SoupServer *server, SoupMessage *msg,
     }
 
 #if 0
-    ew_html_error_404 (msg);
+    gss_html_error_404 (msg);
 
     return;
 #endif
@@ -482,7 +482,7 @@ ew_session_login_callback (SoupServer *server, SoupMessage *msg,
 
   s = g_string_new ("");
 
-  ew_html_header (s, "Login");
+  gss_html_header (s, "Login");
 
   g_string_append_printf(s,
       "<div id=\"header\"><img src=\"" BASE "images/template_header_nologo.png\" width=\"812\" height=\"36\" border=\"0\" alt=\"\" />\n");
@@ -504,11 +504,11 @@ ew_session_login_callback (SoupServer *server, SoupMessage *msg,
     location = g_strdup ("/login");
   }
 
-  ew_config_form_add_form (ewserver, s, location, "Login", login_fields, NULL);
+  gss_config_form_add_form (ewserver, s, location, "Login", login_fields, NULL);
   g_free (location);
 
   g_string_append (s, "</div><!-- end content div -->\n");
-  ew_html_footer (s, NULL);
+  gss_html_footer (s, NULL);
 
   content = g_string_free (s, FALSE);
   soup_message_set_status (msg, SOUP_STATUS_OK);
@@ -517,14 +517,14 @@ ew_session_login_callback (SoupServer *server, SoupMessage *msg,
 } 
 
 void
-ew_session_logout_callback (SoupServer *server, SoupMessage *msg,
+gss_session_logout_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data)
 {
-  //EwServer *ewserver = (EwServer *)user_data;
-  EwSession *session;
+  //GssServer *ewserver = (GssServer *)user_data;
+  GssSession *session;
 
-  session = ew_session_message_get_session (msg, query);
+  session = gss_session_message_get_session (msg, query);
 
   if (session == NULL) {
     soup_message_headers_append (msg->response_headers,

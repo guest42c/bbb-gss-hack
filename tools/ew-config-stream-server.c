@@ -5,6 +5,7 @@
 #include <gst-stream-server/gss-config.h>
 #include <gst-stream-server/gss-form.h>
 #include <gst-stream-server/gss-html.h>
+#include <gst-stream-server/gss-soup.h>
 
 #include <glib/gstdio.h>
 #include <glib-object.h>
@@ -190,10 +191,10 @@ Field poweroff_fields[] = {
 
 
 static void
-admin_header (EwServer *server, GString *s, const char *session_id)
+admin_header (GssServer *server, GString *s, const char *session_id)
 {
 
-  ew_html_header (s, "S1000 Configuration");
+  gss_html_header (s, "S1000 Configuration");
 
   g_string_append_printf(s,
       "<div id=\"header\"><img src=\"" BASE "images/template_header_nologo.png\" width=\"812\" height=\"36\" border=\"0\" alt=\"\" />\n");
@@ -263,10 +264,10 @@ admin_callback (SoupServer *server, SoupMessage *msg,
   const char *mime_type = "text/html";
   char *content;
   GString *s;
-  EwServer *ewserver = (EwServer *)user_data;
+  GssServer *ewserver = (GssServer *)user_data;
   int type;
   int i;
-  EwSession *session;
+  GssSession *session;
 
 #if 0
   if (msg->method == SOUP_METHOD_GET) {
@@ -287,19 +288,19 @@ admin_callback (SoupServer *server, SoupMessage *msg,
   }
 #endif
 
-  if (!ew_addr_address_check (client)) {
-    ew_html_error_404 (msg);
+  if (!gss_addr_address_check (client)) {
+    gss_html_error_404 (msg);
     return;
   }
 
   if (server == ewserver->server) {
-    if (ew_addr_is_localhost (client)) {
-      session = ew_session_message_get_session (msg, query);
+    if (gss_addr_is_localhost (client)) {
+      session = gss_session_message_get_session (msg, query);
       if (session == NULL) {
-        EwSession *session;
+        GssSession *session;
         char *location;
 
-        session = ew_session_new ("admin");
+        session = gss_session_new ("admin");
 
         location = g_strdup_printf("/admin?session_id=%s", session->session_id);
 
@@ -316,7 +317,7 @@ admin_callback (SoupServer *server, SoupMessage *msg,
       session = NULL;
     }
   } else {
-    session = ew_session_message_get_session (msg, query);
+    session = gss_session_message_get_session (msg, query);
   }
 
   if (session == NULL) {
@@ -326,12 +327,8 @@ admin_callback (SoupServer *server, SoupMessage *msg,
     s = g_uri_escape_string (path, NULL, FALSE);
     if (server == ewserver->server) {
       char *host;
-      char *colon;
-      
-      host = strdup (soup_message_headers_get (msg->request_headers, "Host"));
-      colon = strchr (host, ':');
-      if (colon) colon[0] = 0;
 
+      host = gss_soup_get_request_host (msg);
       location = g_strdup_printf("https://%s:%d/login?redirect_url=%s",
           host, soup_server_get_port(ewserver->ssl_server), s);
 
@@ -358,7 +355,7 @@ admin_callback (SoupServer *server, SoupMessage *msg,
     }
   }
   if (type == ADMIN_NONE) {
-    ew_html_error_404 (msg);
+    gss_html_error_404 (msg);
     return;
   }
 
@@ -367,11 +364,11 @@ admin_callback (SoupServer *server, SoupMessage *msg,
     return;
   }
 
-  ew_session_touch (session);
+  gss_session_touch (session);
 
   if (msg->method == SOUP_METHOD_POST) {
     //g_print("POST to %s\n", path);
-    ew_config_handle_post (ewserver->config, msg);
+    gss_config_handle_post (ewserver->config, msg);
   }
 
   s = g_string_new ("");
@@ -381,7 +378,7 @@ admin_callback (SoupServer *server, SoupMessage *msg,
     g_string_append (s, "OK\n");
   } else if (type == ADMIN_CONFIG) {
     mime_type = "text/plain";
-    ew_config_hash_to_string (s, ewserver->config->hash);
+    gss_config_hash_to_string (s, ewserver->config->hash);
   } else {
     admin_header (ewserver, s, session->session_id);
 
@@ -391,13 +388,13 @@ admin_callback (SoupServer *server, SoupMessage *msg,
 
     switch (type) {
       case ADMIN_CONTROL:
-        ew_config_form_add_form (ewserver, s, "/admin", "Control", control_fields, session);
+        gss_config_form_add_form (ewserver, s, "/admin", "Control", control_fields, session);
         break;
       case ADMIN_NETWORK:
-        ew_config_form_add_form (ewserver, s, "/admin/network", "Network Configuration", network_fields, session);
+        gss_config_form_add_form (ewserver, s, "/admin/network", "Network Configuration", network_fields, session);
         break;
       case ADMIN_SERVER:
-        ew_config_form_add_form (ewserver, s, "/admin/server", "HTTP Server Configuration", server_fields, session);
+        gss_config_form_add_form (ewserver, s, "/admin/server", "HTTP Server Configuration", server_fields, session);
         break;
       case ADMIN_LOG:
         {
@@ -411,24 +408,24 @@ admin_callback (SoupServer *server, SoupMessage *msg,
         break;
       case ADMIN_ADMIN:
         g_string_append_printf (s, "Firmware Version: %s<br />\n",
-            ew_config_get (ewserver->config, "version"));
+            gss_config_get (ewserver->config, "version"));
         g_string_append_printf (s, "Configuration File: <a href=\"/admin/config?session_id=%s\">LINK</a><br />\n",
             session->session_id);
-        ew_config_form_add_form (ewserver, s, "/admin/admin_password", "Admin Password",
+        gss_config_form_add_form (ewserver, s, "/admin/admin_password", "Admin Password",
             admin_password_fields, session);
-        ew_config_form_add_form (ewserver, s, "/admin/editor_password", "Editor Password",
+        gss_config_form_add_form (ewserver, s, "/admin/editor_password", "Editor Password",
             editor_password_fields, session);
-        ew_config_form_add_form (ewserver, s, "/admin/upload_config", "Configuration File",
+        gss_config_form_add_form (ewserver, s, "/admin/upload_config", "Configuration File",
             configuration_file_fields, session);
-        ew_config_form_add_form (ewserver, s, "/admin/status", "Firmware Update",
+        gss_config_form_add_form (ewserver, s, "/admin/status", "Firmware Update",
             firmware_file_fields, session);
-        ew_config_form_add_form (ewserver, s, "/admin/status", "Upload Certificate",
+        gss_config_form_add_form (ewserver, s, "/admin/status", "Upload Certificate",
             certificate_file_fields, session);
-        ew_config_form_add_form (ewserver, s, "/admin/reboot", "Reboot", reboot_fields, session);
-        ew_config_form_add_form (ewserver, s, "/admin/poweroff", "Power Off", poweroff_fields, session);
+        gss_config_form_add_form (ewserver, s, "/admin/reboot", "Reboot", reboot_fields, session);
+        gss_config_form_add_form (ewserver, s, "/admin/poweroff", "Power Off", poweroff_fields, session);
         break;
       case ADMIN_ACCESS:
-        ew_config_form_add_form (ewserver, s, "/admin/access", "Access Restrictions",
+        gss_config_form_add_form (ewserver, s, "/admin/access", "Access Restrictions",
             access_fields, session);
         break;
       default:
@@ -436,7 +433,7 @@ admin_callback (SoupServer *server, SoupMessage *msg,
     }
 
     g_string_append (s, "</div><!-- end content div -->\n");
-    ew_html_footer (s, session->session_id);
+    gss_html_footer (s, session->session_id);
   }
 
   content = g_string_free (s, FALSE);
@@ -462,14 +459,14 @@ admin_callback (SoupServer *server, SoupMessage *msg,
 
 
 void
-ew_server_add_admin_callbacks (EwServer *server, SoupServer *soupserver)
+gss_server_add_admin_callbacks (GssServer *server, SoupServer *soupserver)
 {
   soup_server_add_handler (soupserver, "/admin", admin_callback,
       server, NULL);
 }
 
 
-EwConfigDefault config_defaults[] = {
+GssConfigDefault config_defaults[] = {
   { "mode", "streamer" },
 
   /* master enable */
