@@ -1,4 +1,4 @@
-/* GssEncoder
+/* ew-stream-server
  * Copyright (C) 2011 David Schleef <ds@schleef.org>
  * Copyright (C) 2010 Entropy Wave Inc
  *
@@ -29,7 +29,7 @@ extern GssConfigDefault config_defaults[];
 gboolean verbose = TRUE;
 gboolean cl_verbose;
 
-void gss_stream_server_notify_url (const char *s, void *priv);
+void ew_stream_server_notify_url (const char *s, void *priv);
 
 static void signal_interrupt (int signum);
 
@@ -71,6 +71,12 @@ main (int argc, char *argv[])
   g_option_context_free (context);
 
   server = gss_server_new ();
+
+  ew_stream_server_add_admin_callbacks (server, server->server);
+  if (server->ssl_server) {
+    ew_stream_server_add_admin_callbacks (server, server->ssl_server);
+  }
+
   gss_server_read_config (server, CONFIG_FILENAME);
 
   gss_config_set_config_filename (server->config, CONFIG_FILENAME);
@@ -85,9 +91,9 @@ main (int argc, char *argv[])
     key = g_strdup_printf("stream%d_url", i);
 
     gss_config_set_notify (server->config, key,
-        gss_stream_server_notify_url, GINT_TO_POINTER (i));
+        ew_stream_server_notify_url, GINT_TO_POINTER (i));
 
-    gss_stream_server_notify_url (key, GINT_TO_POINTER (i));
+    ew_stream_server_notify_url (key, GINT_TO_POINTER (i));
 
     g_free (key);
   }
@@ -115,7 +121,7 @@ signal_interrupt (int signum)
 
 
 void
-gss_stream_server_notify_url (const char *s, void *priv)
+ew_stream_server_notify_url (const char *s, void *priv)
 {
   int i = GPOINTER_TO_INT (priv);
   const char *url;

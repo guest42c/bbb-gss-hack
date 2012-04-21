@@ -459,7 +459,7 @@ admin_callback (SoupServer *server, SoupMessage *msg,
 
 
 void
-gss_server_add_admin_callbacks (GssServer *server, SoupServer *soupserver)
+ew_stream_server_add_admin_callbacks (GssServer *server, SoupServer *soupserver)
 {
   soup_server_add_handler (soupserver, "/admin", admin_callback,
       server, NULL);

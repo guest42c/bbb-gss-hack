@@ -277,12 +277,14 @@ gss_server_new (void)
 
   setup_paths (server, server->server);
 
-  server->ssl_server = soup_server_new (SOUP_SERVER_PORT, 443,
+  server->ssl_server = soup_server_new (SOUP_SERVER_PORT,
+      DEFAULT_HTTPS_PORT,
       "ssl-cert-file", "server.crt",
       "ssl-key-file", "server.key",
       NULL);
   if (!server->ssl_server) {
-    server->ssl_server = soup_server_new (SOUP_SERVER_PORT, 8443,
+    server->ssl_server = soup_server_new (SOUP_SERVER_PORT,
+        8000 + DEFAULT_HTTPS_PORT,
         "ssl-cert-file", "server.crt",
         "ssl-key-file", "server.key",
         NULL);
@@ -305,7 +307,6 @@ static void
 setup_paths (GssServer *server, SoupServer *soupserver)
 {
   gss_session_add_session_callbacks (soupserver, server);
-  gss_server_add_admin_callbacks (server, soupserver);
 
   soup_server_add_handler (soupserver, "/", main_page_callback, server, NULL);
   soup_server_add_handler (soupserver, "/list", list_callback, server, NULL);
