@@ -26,6 +26,8 @@
 #include "gss-server.h"
 #include <libsoup/soup.h>
 
+G_BEGIN_DECLS
+
 //#define USE_XHTML
 #define USE_HTML5
 
@@ -37,6 +39,8 @@ void gss_html_append_image (GString *s, const char *url, int width, int height,
     const char *alt_text);
 void gss_html_append_image_printf (GString *s, const char *url,
     int width, int height, const char *alt_text, ...);
+
+G_END_DECLS
 
 #endif
 

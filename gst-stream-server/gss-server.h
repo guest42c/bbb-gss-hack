@@ -28,6 +28,7 @@
 #include <libsoup/soup.h>
 #include "gss-config.h"
 
+G_BEGIN_DECLS
 
 
 typedef struct _GssProgram GssProgram;
@@ -250,6 +251,8 @@ void gss_server_log (GssServer *server, char *message);
 void
 gss_server_add_static_file (SoupServer *soupserver, const char *filename,
     const char *mime_type);
+
+G_END_DECLS
 
 #endif
 

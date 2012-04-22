@@ -25,8 +25,12 @@
 #include <glib.h>
 #include <libsoup/soup.h>
 
+G_BEGIN_DECLS
+
 char *gss_soup_get_request_host (SoupMessage *message);
 char * gss_soup_get_base_url_http (GssServer *server, SoupMessage *msg);
+
+G_END_DECLS
 
 #endif
 

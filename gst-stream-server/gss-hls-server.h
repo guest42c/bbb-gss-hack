@@ -25,12 +25,15 @@
 #include <gst/gst.h>
 #include <libsoup/soup.h>
 
+G_BEGIN_DECLS
+
 #define N_CHUNKS 10
 
 typedef struct _GssHLSStream GssHLSStream;
 typedef struct _GssHLSChunk GssHLSChunk;
 
 
+G_END_DECLS
 
 #endif
 

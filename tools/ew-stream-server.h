@@ -18,11 +18,12 @@
  * Boston, MA 02110-1301, USA.
  */
 
-
 #ifndef _EW_STREAM_SERVER_H_
 #define _EW_STREAM_SERVER_H_
 
 #include <gst-stream-server/gss-server.h>
+
+G_BEGIN_DECLS
 
 #define MAX_RATIO 0.9
 #define MAX_STREAMS 50
@@ -31,6 +32,8 @@
 
 void ew_stream_server_add_admin_callbacks (GssServer *server,
     SoupServer *soupserver);
+
+G_END_DECLS
 
 #endif
 
