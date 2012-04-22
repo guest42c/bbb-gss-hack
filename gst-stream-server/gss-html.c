@@ -2,65 +2,66 @@
 #include "config.h"
 
 #include "gss-html.h"
+#include "gss-server.h"
 
 #include <string.h>
 
 
-#define BASE "/"
-
 void
-gss_html_header (GString *s, const char *title)
+gss_html_header (GssServer *server, GString *s, const char *title)
 {
   g_string_append_printf(s,
+#ifdef USE_XHTML
       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
       "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
+#else
+#ifdef USE_HTML5
+      "<!DOCTYPE html>\n"
+#else
+      "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n"
+#endif
       "<html>\n"
+#endif
       "<head>\n"
+#ifdef USE_XHTML
       "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n"
-      "<title>%s</title>\n"
-      "<style>\n"
-      "body {background-color: #998276; font-family: Verdana, Geneva, sans-serif;}\n"
-      "div#container {width: 812px; background-image: url(" BASE "images/template_bodybg.png); background-repeat: repeat-y;}\n"
-      "div#nav {text-align: center; margin: 0 auto;}\n"
-      "div#nav div {display: inline; margin: 0 -1px;}\n"
-      "div#nav img {padding: 0; margin: 0;}\n"
-      "div#content {margin: 0 30px;}\n"
-      "form {font-size: 10pt;}\n"
-      "fieldset {margin: 10px 0;}\n"
-      "legend {color: #282a8c; font-weight: bold;}\n"
-      "input, textarea {background: -webkit-gradient(linear, left top, left bottom, from(#edeaea), to(#fff)); background: -moz-linear-gradient(top, #edeaea, #fff);}\n"
-      "table.subtab {margin-left: 15px;}\n"
-      ".indent {margin-left: 15px;}\n"
-      "</style>\n"
-      "<!--[if IE 7]>\n"
-      "<link rel=\"stylesheet\" href=\"ie7.css\" type=\"text/css\" />\n"
-      "<![endif]-->\n"
-      "</head>\n"
-      "<body>\n"
-      "<div id=\"container\">\n", title);
-}
+#else
+      "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
+#endif
+      "<title>%s</title>\n", title);
 
-void
-gss_html_footer (GString *s, const char *session_id)
-{
-  g_string_append (s,
-      "<br />\n"
-      "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/stream\">Live Stream</a><br />\n"
-      "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/\">Available Streams</a><br />\n");
-  if (session_id) {
-    g_string_append_printf (s,
-        "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/admin/admin?session_id=%s\">Admin Interface</a><br />\n",
-        session_id);
-    g_string_append_printf (s,
-        "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/logout?session_id=%s\">Log Out</a><br />\n",
-        session_id);
+  if (server->append_style_html) {
+    server->append_style_html (server, s, server->append_style_html_priv);
   }
 
   g_string_append (s,
-      "<div id=\"footer\">\n"
-      "<a href=\"http://entropywave.com/\">\n"
-      "<img src=\"" BASE "images/template_footer.png\" width=\"812\" height=\"97\" border=\"0\" alt=\"\" /></div><!-- end footer div -->\n"
-      "</a>\n"
+      "</head>\n"
+      "<body>\n"
+      "<div id=\"container\">\n");
+}
+
+void
+gss_html_footer (GssServer *server, GString *s, const char *session_id)
+{
+  gss_html_append_break (s);
+  g_string_append (s,
+      "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/\">Available Streams</a>\n");
+  if (session_id) {
+    g_string_append_printf (s,
+        "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/admin/admin?session_id=%s\">Admin Interface</a>\n",
+        session_id);
+    g_string_append_printf (s,
+        "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/logout?session_id=%s\">Log Out</a>\n",
+        session_id);
+  }
+  gss_html_append_break (s);
+
+  g_string_append (s, "<div id=\"footer\">\n");
+  g_string_append (s, "<a href=\"http://entropywave.com/\">\n");
+  gss_html_append_image (s, "/images/template_footer.png", 812, 97, NULL);
+  g_string_append (s, "</a>");
+  g_string_append (s, "</div><!-- end footer div -->\n");
+  g_string_append (s,
       "</div><!-- end container div -->\n"
       "</body>\n"
       "</html>\n"); 
@@ -78,13 +79,12 @@ gss_html_error_404 (SoupMessage *msg)
   g_string_append (s,
       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
       "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-      "<html>\n"
       "<head>\n"
-      "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n"   
+      "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"   
       "<title>Error 404: Page not found</title>\n"
       "</head>\n"
-      "Error 404: Page not found\n"
       "<body>\n"
+      "Error 404: Page not found\n"
       "</body>\n"
       "</html>\n");
 
@@ -94,5 +94,60 @@ gss_html_error_404 (SoupMessage *msg)
       content, strlen(content));
 
   soup_message_set_status (msg, SOUP_STATUS_NOT_FOUND);
+}
+
+void
+gss_html_append_break (GString *s)
+{
+#ifdef USE_XHTML
+  g_string_append(s, "<br />");
+#else
+  g_string_append(s, "<br>");
+#endif
+}
+
+void
+gss_html_append_image (GString *s, const char *url, int width, int height,
+    const char *alt_text)
+{
+  if (alt_text == NULL) alt_text = "";
+
+  g_string_append_printf (s, "<img src='%s' alt='%s' ", url,
+      alt_text ? alt_text : "");
+  if (width > 0 && height > 0) {
+    g_string_append_printf (s, "width='%d' height='%d' ", width, height);
+  }
+
+#ifdef USE_HTML5
+  /* border is in CSS */
+#else
+  g_string_append (s, "border='0' ");
+#endif
+
+#ifdef USE_XHTML
+  g_string_append (s, "/>");
+#else
+#ifdef USE_HTML5
+  g_string_append (s, "/>");
+#else
+  g_string_append (s, ">");
+#endif
+#endif
+}
+
+void
+gss_html_append_image_printf (GString *s, const char *url_format, int width, int height,
+    const char *alt_text, ...)
+{
+  va_list args;
+  char *url;
+
+  va_start (args, alt_text);
+  url = g_strdup_vprintf (url_format, args);
+  va_end (args);
+
+  gss_html_append_image (s, url, width, height, alt_text);
+
+  g_free (url);
 }
 

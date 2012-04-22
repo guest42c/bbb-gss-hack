@@ -6,6 +6,7 @@
 #include <libsoup/soup.h>
 
 char *gss_soup_get_request_host (SoupMessage *message);
+char * gss_soup_get_base_url_http (GssServer *server, SoupMessage *msg);
 
 #endif
 

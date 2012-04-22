@@ -189,32 +189,47 @@ Field poweroff_fields[] = {
 };
 
 
+static void
+append_tab (GString *s, const char *location, const char *image,
+    const char *alt_text, const char *session_id)
+{
+  g_string_append_printf(s,
+      "<div><a href=\"%s?session_id=%s\">", location, session_id);
+  gss_html_append_image (s, image, 142, 32, alt_text);
+  g_string_append(s, "</a></div>\n");
+
+}
+
 
 static void
 admin_header (GssServer *server, GString *s, const char *session_id)
 {
 
-  gss_html_header (s, "S1000 Configuration");
+  gss_html_header (server, s, "S1000 Configuration");
 
   g_string_append_printf(s,
-      "<div id=\"header\"><img src=\"" BASE "images/template_header_nologo.png\" width=\"812\" height=\"36\" border=\"0\" alt=\"\" />\n");
+      "<div id=\"header\">");
+  gss_html_append_image (s,
+      "/images/template_header_nologo.png", 812, 36, NULL);
 
-  g_string_append_printf(s,
-      "<img src=\"" BASE "images/template_s1000.png\" width=\"812\" height=\"58\" border=\"0\" alt=\"\"/>\n");
+  gss_html_append_image (s, "/images/template_s1000.png", 812, 58, NULL);
 
   g_string_append_printf(s,
       "</div><!-- end header div -->\n"
-      "<div id=\"nav\">\n"
-      "<div><a href=\"/admin?session_id=%s\"><img src=\"" BASE "images/button_main.png\" width=\"142\" height=\"32\" border=\"0\" alt=\"MAIN\" /></a></div>\n",
-      session_id);
+      "<div id=\"nav\">\n");
 
-  g_string_append_printf(s,
-      "<div><a href=\"/admin/network?session_id=%s\"><img src=\"" BASE "images/button_network.png\" width=\"142\" height=\"32\" border=\"0\" alt=\"NETWORK\" /></a></div>\n"
-      "<div><a href=\"/admin/access?session_id=%s\"><img src=\"" BASE "images/button_access.png\" width=\"142\" height=\"32\" border=\"0\" alt=\"ACCESS\" /></a></div>\n"
-      "<div><a href=\"/admin/admin?session_id=%s\"><img src=\"" BASE "images/button_admin.png\" width=\"142\" height=\"32\" border=\"0\" alt=\"ADMIN\" /></a></div>\n"
-      "<div><a href=\"/admin/log?session_id=%s\"><img src=\"" BASE "images/button_log.png\" width=\"142\" height=\"32\" border=\"0\" alt=\"LOG\" /></a></div>\n"
-      "</div><!-- end nav div -->\n",
-      session_id, session_id, session_id, session_id);
+  append_tab (s, "/admin", "/images/button_main.png", "MAIN", session_id);
+  append_tab (s, "/admin/network", "/images/button_network.png",
+      "NETWORK", session_id);
+  append_tab (s, "/admin/access", "/images/button_access.png",
+      "ACCESS", session_id);
+  append_tab (s, "/admin/admin", "/images/button_admin.png",
+      "ACCESS", session_id);
+  append_tab (s, "/admin/log", "/images/button_log.png",
+      "LOG", session_id);
+
+  g_string_append(s,
+      "</div><!-- end nav div -->\n");
 
   g_string_append_printf(s, "<div id=\"content\">\n");
 }
@@ -433,7 +448,7 @@ admin_callback (SoupServer *server, SoupMessage *msg,
     }
 
     g_string_append (s, "</div><!-- end content div -->\n");
-    gss_html_footer (s, session->session_id);
+    gss_html_footer (ewserver, s, session->session_id);
   }
 
   content = g_string_free (s, FALSE);

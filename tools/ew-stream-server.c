@@ -32,6 +32,7 @@ gboolean cl_verbose;
 void ew_stream_server_notify_url (const char *s, void *priv);
 
 static void signal_interrupt (int signum);
+static void append_style_html (GssServer *server, GString *s, void *priv);
 
 #define N_PROGRAMS 10
 
@@ -71,6 +72,8 @@ main (int argc, char *argv[])
   g_option_context_free (context);
 
   server = gss_server_new ();
+  server->append_style_html = append_style_html;
+  server->append_style_html_priv = NULL;
 
   ew_stream_server_add_admin_callbacks (server, server->server);
   if (server->ssl_server) {
@@ -174,4 +177,29 @@ ew_stream_server_notify_url (const char *s, void *priv)
 
 }
 
+
+static void
+append_style_html (GssServer *server, GString *s, void *priv)
+{
+  g_string_append_printf (s,
+      "<style type=\"text/css\">\n"
+      "body {background-color: #998276; font-family: Verdana, Geneva, sans-serif;}\n" 
+      "div#container {width: 812px; background-image: url(/images/template_bodybg.png); background-repeat: repeat-y;}\n"
+      "div#nav {text-align: center; margin: 0 auto;}\n"
+      "div#nav div {display: inline; margin: 0 -1px;}\n"
+      "div#nav img {padding: 0; margin: 0;}\n"
+      "div#content {margin: 0 30px;}\n"
+      "form {font-size: 10pt;}\n"
+      "fieldset {margin: 10px 0;}\n"
+      "legend {color: #282a8c; font-weight: bold;}\n"
+      "input, textarea {background: -webkit-gradient(linear, left top, left bottom, from(#edeaea), to(#fff)); background: -moz-linear-gradient(top, #edeaea, #fff);}\n"
+      "table.subtab {margin-left: 15px;}\n"
+      ".indent {margin-left: 15px;}\n"
+      /* FIXME this is a hack to remove the extra space under images */
+      "img {border: 0px; margin-bottom: -5px; }\n"
+      "</style>\n"
+      "<!--[if IE 7]>\n"
+      "<link rel=\"stylesheet\" href=\"ie7.css\" type=\"text/css\"></link>\n"
+      "<![endif]-->\n");
+}
 

@@ -43,6 +43,7 @@ struct _GssProgram {
   SoupClientContext *push_client;
   int push_media_type;
 
+  gboolean running;
   gboolean enable_streaming;
 
   int n_streams;
@@ -163,6 +164,9 @@ struct _GssServer
 
   GList *messages;
   int n_messages;
+
+  void (*append_style_html) (GssServer *server, GString *s, void *priv);
+  void *append_style_html_priv;
 };
 
 struct _GssServerClass
@@ -199,6 +203,7 @@ GssServerStream * gss_program_add_stream_full (GssProgram *program,
 void gss_program_log (GssProgram *program, const char *message, ...);
 void gss_program_enable_streaming (GssProgram *program);
 void gss_program_disable_streaming (GssProgram *program);
+void gss_program_set_running (GssProgram *program, gboolean running);
 
 void gss_server_stream_add_hls (GssServerStream *stream);
 

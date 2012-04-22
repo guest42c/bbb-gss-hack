@@ -4,6 +4,7 @@
 #include "gss-server.h"
 #include "gss-html.h"
 #include "gss-session.h"
+#include "gss-soup.h"
 
 #include <glib/gstdio.h>
 
@@ -418,7 +419,7 @@ gss_server_add_static_file (SoupServer *soupserver, const char *filename,
 
   content->filename = filename;
   content->mime_type = mime_type;
-  content->etag = g_strdup_printf("%p", content);
+  content->etag = gss_session_create_id ();
 
   soup_server_add_handler (soupserver, content->filename,
       static_content_callback, content, NULL);
@@ -512,19 +513,26 @@ gss_server_add_program (GssServer *server, const char *program_name)
   program->server = server;
   program->location = g_strdup (program_name);
   program->enable_streaming = TRUE;
+  program->running = FALSE;
 
   s = g_strdup_printf ("/%s", program_name);
   soup_server_add_handler (server->server, s,
+      gss_server_handle_program, program, NULL);
+  soup_server_add_handler (server->ssl_server, s,
       gss_server_handle_program, program, NULL);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", program_name);
   soup_server_add_handler (server->server, s,
       gss_server_handle_program_frag, program, NULL);
+  soup_server_add_handler (server->ssl_server, s,
+      gss_server_handle_program_frag, program, NULL);
   g_free (s);
 
   s = g_strdup_printf ("/%s.list", program_name);
   soup_server_add_handler (server->server, s,
+      gss_server_handle_program_list, program, NULL);
+  soup_server_add_handler (server->ssl_server, s,
       gss_server_handle_program_list, program, NULL);
   g_free (s);
 
@@ -537,7 +545,6 @@ gss_server_add_program (GssServer *server, const char *program_name)
   soup_server_add_handler (server->server, s,
       gss_server_handle_program_jpeg, program, NULL);
   g_free (s);
-
 
   return program;
 }
@@ -748,7 +755,8 @@ gss_stream_handle (SoupServer *server, SoupMessage *msg,
     soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
     return;
   }
-  if (!stream->program->enable_streaming) {
+  if (!stream->program->enable_streaming ||
+      !stream->program->running) {
     soup_message_set_status (msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
@@ -885,6 +893,12 @@ gss_program_disable_streaming (GssProgram *program)
   }
 }
 
+void
+gss_program_set_running (GssProgram *program, gboolean running)
+{
+  program->running = running;
+}
+
 GssServerStream *
 gss_program_add_stream_full (GssProgram *program,
     int type, int width, int height, int bitrate, GstElement *sink)
@@ -949,6 +963,7 @@ main_page_callback (SoupServer *server, SoupMessage *msg,
   char *content;
   GssServer *ewserver = (GssServer *)user_data;
   GString *s;
+  char *base_url;
   int i;
 
   if (msg->method != SOUP_METHOD_GET) {
@@ -961,29 +976,48 @@ main_page_callback (SoupServer *server, SoupMessage *msg,
     return;
   }
 
+  if (server == ewserver->ssl_server) {
+    base_url = gss_soup_get_base_url_http (ewserver, msg);
+  } else {
+    base_url = g_strdup ("");
+  }
+
   s = g_string_new ("");
 
-  gss_html_header (s, "Entropy Wave Live Streaming");
+  gss_html_header (ewserver, s, "Entropy Wave Live Streaming");
 
   g_string_append_printf(s,
-      "<div id=\"header\">\n"
-      "<img src=\"" BASE "images/template_header_nologo.png\" width=\"812\" height=\"36\" border=\"0\" />\n"
+      "<div id=\"header\">\n");
+  gss_html_append_image (s,
+      BASE "images/template_header_nologo.png", 812, 36, NULL);
+  g_string_append_printf(s,
       "</div><!-- end header div -->\n"
       "<div id=\"content\">\n"
       "<h1>Available Streams</h1>\n");
 
   for(i=0;i<ewserver->n_programs;i++){
     GssProgram *program = ewserver->programs[i];
-    g_string_append_printf(s,"<br/>"
-        "<img src=\"/%s-snapshot.jpeg\">"
-        "<a href=\"/%s\">%s</a>\n",
-        program->location,
-        program->location, program->location);
+    gss_html_append_break(s);
+    if (program->running) {
+      gss_html_append_image_printf (s,
+          "%s/%s-snapshot.jpeg", 0, 0, "snapshot image", base_url,
+          program->location);
+      g_string_append_printf(s,
+          "<a href=\"%s/%s\">%s</a>\n",
+          base_url, program->location, program->location);
+    } else {
+      g_string_append_printf (s,
+          "<div style=\"background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;\">currently unavailable</div>\n"
+          "<a href=\"%s/%s\">%s</a>\n",
+          base_url, program->location, program->location);
+    }
   }
+
+  g_free (base_url);
 
   g_string_append (s, "</div><!-- end content div -->\n");
 
-  gss_html_footer (s, NULL);
+  gss_html_footer (ewserver, s, NULL);
 
   content = g_string_free (s, FALSE);
 
@@ -1148,6 +1182,7 @@ push_wrote_headers (SoupMessage *msg, void *user_data)
   gss_stream_create_push_pipeline (stream);
 
   gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
+  program->running = TRUE;
 }
 
 static void
@@ -1184,6 +1219,10 @@ add_video_block (GssProgram *program, GString *s, int max_width,
   int width = 0;
   int height = 0;
 
+  if (!program->running) {
+    g_string_append_printf (s, "<div style=\"background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;vertical-align:middle;\">currently unavailable</div>\n");
+  }
+
   for(i=0;i<program->n_streams;i++){
     GssServerStream *stream = program->streams[i];
     if (stream->width > width) width = stream->width;
@@ -1196,7 +1235,7 @@ add_video_block (GssProgram *program, GString *s, int max_width,
 
   if (enable_video_tag) {
   g_string_append_printf (s,
-      "<video controls=\"true\" autoplay=\"false\" "
+      "<video controls=\"controls\" autoplay=\"autoplay\" "
       "id=video width=\"%d\" height=\"%d\">\n",
       width, height);
 
@@ -1243,7 +1282,7 @@ add_video_block (GssProgram *program, GString *s, int max_width,
         g_string_append_printf (s,
             "<applet code=\"com.fluendo.player.Cortado.class\"\n"
             "  archive=\"%s/cortado.jar\" width=\"%d\" height=\"%d\">\n"
-            "    <param name=\"url\" value=\"%s/%s\"/>\n"
+            "    <param name=\"url\" value=\"%s/%s\"></param>\n"
             "</applet>\n", base_url, width, height,
             base_url, stream->name);
         break;
@@ -1294,7 +1333,8 @@ add_video_block (GssProgram *program, GString *s, int max_width,
             width, height);
 #endif
         if (program->enable_snapshot) {
-          g_string_append_printf (s, "<img src=\"%s/%s-snapshot.png\" alt=\"\">\n",
+          gss_html_append_image_printf (s,
+              "%s/%s-snapshot.png", 0, 0, "snapshot image",
               base_url, program->location);
         }
         g_string_append_printf (s, " </object>\n");
@@ -1304,7 +1344,8 @@ add_video_block (GssProgram *program, GString *s, int max_width,
     }
   } else {
     if (program->enable_snapshot) {
-      g_string_append_printf (s, "<img src=\"%s/%s-snapshot.png\" alt=\"\">\n",
+      gss_html_append_image_printf (s,
+          "%s/%s-snapshot.png", 0, 0, "snapshot image",
           base_url, program->location);
     }
   }
@@ -1352,10 +1393,12 @@ gss_server_handle_program (SoupServer *server, SoupMessage *msg,
   const char *base_url = "";
   int i;
 
-  gss_html_header (s, program->location);
+  gss_html_header (program->server, s, program->location);
   g_string_append_printf(s,
-      "<div id=\"header\">\n"
-      "<img src=\"" BASE "images/template_header_nologo.png\" width=\"812\" height=\"36\" border=\"0\" alt=\"\" />\n"
+      "<div id=\"header\">\n");
+  gss_html_append_image (s, BASE "images/template_header_nologo.png",
+      812, 36, NULL);
+  g_string_append_printf(s,
       "</div><!-- end header div -->\n"
       "<div id=\"content\">\n");
 
@@ -1364,7 +1407,7 @@ gss_server_handle_program (SoupServer *server, SoupMessage *msg,
 
   add_video_block (program, s, 0, "");
 
-  g_string_append (s, "<br/>\n");
+  gss_html_append_break(s);
   for(i=0;i<program->n_streams;i++){
     const char *typename = "Unknown";
     GssServerStream *stream = program->streams[i];
@@ -1386,22 +1429,24 @@ gss_server_handle_program (SoupServer *server, SoupMessage *msg,
         typename = "FLV";
         break;
     }
+    gss_html_append_break(s);
     g_string_append_printf (s,
-      "<br/>%d: %s %dx%d %d kbps <a href=\"%s/%s\">stream</a> "
+      "%d: %s %dx%d %d kbps <a href=\"%s/%s\">stream</a> "
       "<a href=\"%s/%s\">playlist</a>\n", i, typename,
       stream->width, stream->height, stream->bitrate/1000,
       base_url, stream->name,
       base_url, stream->playlist_name);
   }
   if (program->enable_hls) {
+    gss_html_append_break(s);
     g_string_append_printf (s,
-      "<br/><a href=\"%s/%s.m3u8\">HLS</a>\n",
+      "<a href=\"%s/%s.m3u8\">HLS</a>\n",
       base_url, program->location);
   }
 
   g_string_append (s, "</div><!-- end content div -->\n");
   
-  gss_html_footer (s, NULL);
+  gss_html_footer (program->server, s, NULL);
 
   content = g_string_free (s, FALSE);
 
@@ -1466,7 +1511,7 @@ gss_server_handle_program_image (SoupServer *server, SoupMessage *msg,
   GssProgram *program = (GssProgram *)user_data;
   GstBuffer *buffer = NULL;
 
-  if (!program->enable_streaming) {
+  if (!program->enable_streaming || !program->running) {
     soup_message_set_status (msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
@@ -1771,6 +1816,7 @@ handle_pipeline_message (GstBus *bus, GstMessage *message,
           s = g_strdup_printf ("stream %s started", stream->name);
           gss_program_log (program, s);
           g_free (s);
+          program->running = TRUE;
         }
         //gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
       }

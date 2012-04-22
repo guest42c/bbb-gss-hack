@@ -304,22 +304,44 @@ password_hash (const char *username, const char *password)
 }
 #endif
 
+#define RANDOM_BYTES 6
+
 char *
 gss_session_create_id (void)
 {
-  int fd;
-  uint32_t entropy[2];
+  static int random_fd = -1;
+  uint8_t entropy[RANDOM_BYTES];
   int n;
+  int i;
+  char *base64;
 
-  fd = open ("/dev/random", O_RDONLY);
-  g_assert (fd >= 0);
+  if (random_fd == -1) {
+    random_fd = open ("/dev/random", O_RDONLY);
+    if (random_fd < 0) {
+      g_warning ("Could not open /dev/random, exiting");
+      exit (1);
+    }
+  }
 
-  n = read (fd, entropy, 8);
-  g_assert (n == 8);
+  i = 0;
+  while (i < RANDOM_BYTES) {
+    n = read (random_fd, entropy + i, RANDOM_BYTES - i);
+    if (n < 0) {
+      g_warning ("Error reading /dev/random");
+      exit (1);
+    }
+    i += n;
+  }
 
-  close (fd);
+  base64 = g_base64_encode (entropy, RANDOM_BYTES);
 
-  return g_strdup_printf("%08x%08x", entropy[0], entropy[1]);
+  /* Convert to base64url (RFC 4648), since we use it in URLs */
+  for(i=0;base64[i];i++){
+    if (base64[i] == '+') base64[i] = '-';
+    else if (base64[i] == '/') base64[i] = '_';
+  }
+
+  return base64;
 }
 
 #define SESSION_TIMEOUT 3600
@@ -482,10 +504,11 @@ gss_session_login_callback (SoupServer *server, SoupMessage *msg,
 
   s = g_string_new ("");
 
-  gss_html_header (s, "Login");
+  gss_html_header (ewserver, s, "Login");
 
-  g_string_append_printf(s,
-      "<div id=\"header\"><img src=\"" BASE "images/template_header_nologo.png\" width=\"812\" height=\"36\" border=\"0\" alt=\"\" />\n");
+  g_string_append(s, "<div id=\"header\">");
+  gss_html_append_image (s, "/images/template_header_nologo.png",
+      812, 36, NULL);
 
   g_string_append_printf(s,
       "</div><!-- end header div -->\n");
@@ -508,7 +531,7 @@ gss_session_login_callback (SoupServer *server, SoupMessage *msg,
   g_free (location);
 
   g_string_append (s, "</div><!-- end content div -->\n");
-  gss_html_footer (s, NULL);
+  gss_html_footer (ewserver, s, NULL);
 
   content = g_string_free (s, FALSE);
   soup_message_set_status (msg, SOUP_STATUS_OK);

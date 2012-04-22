@@ -45,7 +45,7 @@ gss_config_form_add_select (GString *s, Field *item, const char *value)
     }
   }
   g_string_append_printf(s, "</select>\n");
-  g_string_append (s, "<br />\n");
+  gss_html_append_break(s);
 
 }
 
@@ -57,7 +57,7 @@ gss_config_form_add_text_input (GString *s, Field *item, const char *value)
       item->long_name,
       item->config_name,
       item->config_name, value);
-  g_string_append (s, "<br />\n");
+  gss_html_append_break(s);
 }
 
 void
@@ -68,7 +68,7 @@ gss_config_form_add_password (GString *s, Field *item, const char *value)
       item->long_name,
       item->config_name,
       item->config_name);
-  g_string_append (s, "<br />\n");
+  gss_html_append_break(s);
 }
 
 void
@@ -97,7 +97,7 @@ gss_config_form_add_checkbox (GString *s, Field *item, const char *value)
       item->config_name,
       item->config_name,
       selected ? "checked=on" : "");
-  g_string_append (s, "<br />\n");
+  gss_html_append_break(s);
 }
 
 void
@@ -108,7 +108,7 @@ gss_config_form_add_file (GString *s, Field *item, const char *value)
       item->long_name,
       item->config_name,
       item->config_name, value);
-  g_string_append (s, "<br />\n");
+  gss_html_append_break(s);
 }
 
 void
@@ -117,19 +117,20 @@ gss_config_form_add_radio (GString *s, Field *item, const char *value)
   int i;
 
   if (item->indent) g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
-  g_string_append_printf(s, "%s<br />\n", item->long_name);
+  g_string_append_printf(s, "%s\n", item->long_name);
+  gss_html_append_break(s);
   for(i=0;i<10;i++){
     if (item->options[i].long_name) {
       gboolean selected;
 
       selected = (value && g_str_equal (value, item->options[i].config_name));
       g_string_append_printf(s,
-          "<input id=\"%s\" type=\"radio\" name=\"%s\" value=\"%s\" %s>%s<br />\n",
-          item->config_name,
+          "<input type=\"radio\" name=\"%s\" value=\"%s\" %s>%s\n",
           item->config_name,
           item->options[i].config_name,
           selected ? " checked=checked" : "",
           item->options[i].long_name);
+      gss_html_append_break(s);
     }
   }
 }
@@ -137,19 +138,19 @@ gss_config_form_add_radio (GString *s, Field *item, const char *value)
 void
 gss_config_form_add_submit (GString *s, Field *item, const char *value)
 {
-  g_string_append (s, "<br />\n");
+  gss_html_append_break(s);
   g_string_append_printf (s,
-      "<input id=\"%s\" type=\"submit\" value=\"%s\"/>\n",
+      "<input id=\"%s\" type=\"submit\" value=\"%s\">\n",
       item->config_name,
       item->long_name);
-  g_string_append (s, "<br />\n");
+  gss_html_append_break(s);
 }
 
 void
 gss_config_form_add_hidden (GString *s, Field *item, const char *value)
 {
   g_string_append_printf (s,
-      "<input name=\"%s\" type=\"hidden\" value=\"%s\"/>\n",
+      "<input name=\"%s\" type=\"hidden\" value=\"%s\">\n",
       item->config_name,
       "1");
 }
@@ -179,7 +180,7 @@ gss_config_form_add_form (GssServer *server, GString * s, const char *action,
 
   if (session) {
     g_string_append_printf (s,
-        "<input name=\"session_id\" type=\"hidden\" value=\"%s\"/>\n",
+        "<input name=\"session_id\" type=\"hidden\" value=\"%s\">\n",
         session->session_id);
   }
 
@@ -223,7 +224,7 @@ gss_config_form_add_form (GssServer *server, GString * s, const char *action,
         in_fieldset = FALSE;
         break;
       case FIELD_VERTICAL_SPACE:
-        g_string_append (s, "<br />\n");
+        gss_html_append_break(s);
         break;
       case FIELD_SECTION:
         if (in_fieldset) g_string_append (s, "</fieldset>\n");
