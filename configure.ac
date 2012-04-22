@@ -59,7 +59,7 @@ fi
 
 dnl *** check for arguments to configure ***
 
-PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-base-0.10,
+PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-base-0.10 gst-rtsp-server-0.10,
     HAVE_GST=yes, HAVE_GST=no)
 PKG_CHECK_MODULES(GST_VIDEO, gstreamer-video-0.10 >= 0.10.18,
     HAVE_GST_VIDEO=yes, HAVE_GST_VIDEO=no)

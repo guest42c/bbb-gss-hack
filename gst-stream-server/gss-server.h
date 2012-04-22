@@ -4,6 +4,7 @@
 
 #include <gst/gst.h>
 #include <gst/base/gstadapter.h>
+#include <gst/rtsp-server/rtsp-server.h>
 #include <libsoup/soup.h>
 #include "gss-config.h"
 
@@ -15,6 +16,7 @@ typedef struct _GssServer GssServer;
 typedef struct _GssServerClass GssServerClass;
 typedef struct _GssConnection GssConnection;
 typedef struct _GssHLSSegment GssHLSSegment;
+typedef struct _GssRtspStream GssRtspStream;
 
 enum {
   GSS_SERVER_STREAM_UNKNOWN,
@@ -117,6 +119,8 @@ struct _GssServerStream {
 
     gboolean at_eos; /* true if sliding window is at the end of the stream */
   } hls;
+
+  GssRtspStream *rtsp_stream;
 };
 
 struct _GssConnection {
@@ -154,6 +158,8 @@ struct _GssServer
   SoupServer *server;
   SoupServer *ssl_server;
   char *base_url;
+
+  GstRTSPServer *rtsp_server;
 
   //time_t config_timestamp;
 

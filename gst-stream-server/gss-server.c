@@ -5,6 +5,7 @@
 #include "gss-html.h"
 #include "gss-session.h"
 #include "gss-soup.h"
+#include "gss-rtsp.h"
 
 #include <glib/gstdio.h>
 
@@ -123,6 +124,7 @@ gss_server_init (GssServer *server)
   server->n_programs = 0;
   server->programs = NULL;
 
+  gss_server_rtsp_init (server);
 }
 
 void
@@ -909,6 +911,10 @@ gss_program_add_stream_full (GssProgram *program,
 
   stream = gss_stream_new (type, width, height, bitrate);
   gss_program_add_stream (program, stream);
+  if (type == GSS_SERVER_STREAM_OGG) {
+    stream->rtsp_stream = gss_rtsp_stream_new (stream);
+    gss_rtsp_stream_start (stream->rtsp_stream);
+  }
 
   stream->name = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s", program->location,
       stream->width, stream->height, stream->bitrate/1000,stream->mod,
