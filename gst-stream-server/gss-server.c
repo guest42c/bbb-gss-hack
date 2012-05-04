@@ -1168,6 +1168,8 @@ push_callback (SoupServer *server, SoupMessage *msg,
       program->push_media_type = GSS_SERVER_STREAM_WEBM;
     } else if (strcmp (content_type, "video/mpeg-ts") == 0) {
       program->push_media_type = GSS_SERVER_STREAM_TS;
+    } else if (strcmp (content_type, "video/mp2t") == 0) {
+      program->push_media_type = GSS_SERVER_STREAM_TS;
     } else if (strcmp (content_type, "video/x-flv") == 0) {
       program->push_media_type = GSS_SERVER_STREAM_FLV;
     } else {
