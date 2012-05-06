@@ -349,6 +349,20 @@ gss_session_create_id (void)
 
   i = 0;
   while (i < RANDOM_BYTES) {
+    fd_set readfds;
+    struct timeval timeout;
+    int ret;
+
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 100000;
+    FD_ZERO(&readfds);
+    FD_SET(random_fd, &readfds);
+    ret = select (random_fd + 1, &readfds, NULL, NULL, &timeout);
+    if (ret == 0) {
+      g_warning ("Waited too long to read random bytes.  Please install haveged.");
+      exit (1);
+    }
+
     n = read (random_fd, entropy + i, RANDOM_BYTES - i);
     if (n < 0) {
       g_warning ("Error reading /dev/random");
