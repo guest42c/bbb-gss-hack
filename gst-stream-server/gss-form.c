@@ -43,7 +43,7 @@
 
 
 void
-gss_config_form_add_select (GString *s, Field *item, const char *value)
+gss_config_form_add_select (GString *s, GssField *item, const char *value)
 {
   int i;
 
@@ -70,7 +70,7 @@ gss_config_form_add_select (GString *s, Field *item, const char *value)
 }
 
 void
-gss_config_form_add_text_input (GString *s, Field *item, const char *value)
+gss_config_form_add_text_input (GString *s, GssField *item, const char *value)
 {
   if (item->indent) g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
   g_string_append_printf(s, "%s: <input id=\"%s\" type=\"text\" name=\"%s\" size=30 value=\"%s\">\n",
@@ -81,7 +81,7 @@ gss_config_form_add_text_input (GString *s, Field *item, const char *value)
 }
 
 void
-gss_config_form_add_password (GString *s, Field *item, const char *value)
+gss_config_form_add_password (GString *s, GssField *item, const char *value)
 {
   if (item->indent) g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
   g_string_append_printf(s, "%s: <input id=\"%s\" type=\"password\" name=\"%s\" size=20>\n",
@@ -92,7 +92,7 @@ gss_config_form_add_password (GString *s, Field *item, const char *value)
 }
 
 void
-gss_config_form_add_checkbox (GString *s, Field *item, const char *value)
+gss_config_form_add_checkbox (GString *s, GssField *item, const char *value)
 {
   gboolean selected;
 
@@ -121,7 +121,7 @@ gss_config_form_add_checkbox (GString *s, Field *item, const char *value)
 }
 
 void
-gss_config_form_add_file (GString *s, Field *item, const char *value)
+gss_config_form_add_file (GString *s, GssField *item, const char *value)
 {
   if (item->indent) g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
   g_string_append_printf(s, "%s: <input id=\"%s\" type=\"file\" name=\"%s\" value=\"%s\">\n",
@@ -132,7 +132,7 @@ gss_config_form_add_file (GString *s, Field *item, const char *value)
 }
 
 void
-gss_config_form_add_radio (GString *s, Field *item, const char *value)
+gss_config_form_add_radio (GString *s, GssField *item, const char *value)
 {
   int i;
 
@@ -156,7 +156,7 @@ gss_config_form_add_radio (GString *s, Field *item, const char *value)
 }
 
 void
-gss_config_form_add_submit (GString *s, Field *item, const char *value)
+gss_config_form_add_submit (GString *s, GssField *item, const char *value)
 {
   gss_html_append_break(s);
   g_string_append_printf (s,
@@ -167,7 +167,7 @@ gss_config_form_add_submit (GString *s, Field *item, const char *value)
 }
 
 void
-gss_config_form_add_hidden (GString *s, Field *item, const char *value)
+gss_config_form_add_hidden (GString *s, GssField *item, const char *value)
 {
   g_string_append_printf (s,
       "<input name=\"%s\" type=\"hidden\" value=\"%s\">\n",
@@ -177,7 +177,7 @@ gss_config_form_add_hidden (GString *s, Field *item, const char *value)
 
 void
 gss_config_form_add_form (GssServer *server, GString * s, const char *action,
-    const char *name, Field *fields, GssSession *session)
+    const char *name, GssField *fields, GssSession *session)
 {
   int i;
   const char *enctype;
@@ -207,7 +207,7 @@ gss_config_form_add_form (GssServer *server, GString * s, const char *action,
   //g_string_append (s, "<fieldset>\n");
   //g_string_append_printf (s, "<legend>%s</legend>\n", name);
 
-  for (i=0; fields[i].type != FIELD_NONE; i++) {
+  for (i=0; fields[i].type != GSS_FIELD_NONE; i++) {
     const char *default_value = NULL;
     
     if (fields[i].config_name) {
@@ -215,25 +215,25 @@ gss_config_form_add_form (GssServer *server, GString * s, const char *action,
     }
     if (default_value == NULL) default_value = "";
     switch (fields[i].type) {
-      case FIELD_SELECT:
+      case GSS_FIELD_SELECT:
         gss_config_form_add_select (s, fields + i, default_value);
         break;
-      case FIELD_TEXT_INPUT:
+      case GSS_FIELD_TEXT_INPUT:
         gss_config_form_add_text_input (s, fields + i, default_value);
         break;
-      case FIELD_PASSWORD:
+      case GSS_FIELD_PASSWORD:
         gss_config_form_add_password (s, fields + i, default_value);
         break;
-      case FIELD_CHECKBOX:
+      case GSS_FIELD_CHECKBOX:
         gss_config_form_add_checkbox (s, fields + i, default_value);
         break;
-      case FIELD_FILE:
+      case GSS_FIELD_FILE:
         gss_config_form_add_file (s, fields + i, default_value);
         break;
-      case FIELD_RADIO:
+      case GSS_FIELD_RADIO:
         gss_config_form_add_radio (s, fields + i, default_value);
         break;
-      case FIELD_SUBMIT:
+      case GSS_FIELD_SUBMIT:
         if (fields[i].indent) {
           gss_config_form_add_submit (s, fields + i, default_value);
           if (in_fieldset) g_string_append (s, "</fieldset>\n");
@@ -243,16 +243,16 @@ gss_config_form_add_form (GssServer *server, GString * s, const char *action,
         }
         in_fieldset = FALSE;
         break;
-      case FIELD_VERTICAL_SPACE:
+      case GSS_FIELD_VERTICAL_SPACE:
         gss_html_append_break(s);
         break;
-      case FIELD_SECTION:
+      case GSS_FIELD_SECTION:
         if (in_fieldset) g_string_append (s, "</fieldset>\n");
         g_string_append_printf (s, "<fieldset><legend>%s</legend>\n",
             fields[i].long_name);
         in_fieldset = TRUE;
         break;
-      case FIELD_HIDDEN:
+      case GSS_FIELD_HIDDEN:
         gss_config_form_add_hidden (s, fields + i, default_value);
         break;
       default:

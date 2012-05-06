@@ -31,19 +31,16 @@
 #include <glib-object.h>
 
 
-#define BASE "/"
-
-
 static void admin_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
 
-Field control_fields[] = {
-  { FIELD_SECTION, NULL, "Control" },
-  { FIELD_CHECKBOX, "enable_streaming", "Enable Public Streaming", "on", 1 },
-  { FIELD_SECTION, NULL, "Stream #0" },
-  { FIELD_TEXT_INPUT, "stream0_name", "Stream Name", "stream0", 0 },
-  { FIELD_SELECT, "stream0_type", "Connection type", "ew-follow", 0,
+GssField control_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Control" },
+  { GSS_FIELD_CHECKBOX, "enable_streaming", "Enable Public Streaming", "on", 1 },
+  { GSS_FIELD_SECTION, NULL, "Stream #0" },
+  { GSS_FIELD_TEXT_INPUT, "stream0_name", "Stream Name", "stream0", 0 },
+  { GSS_FIELD_SELECT, "stream0_type", "Connection type", "ew-follow", 0,
     {
       { "ew-follow", "E1000/S1000 follower" },
       { "http-follow", "HTTP stream follower" },
@@ -51,13 +48,13 @@ Field control_fields[] = {
       { "icecast", "Icecast contributor" }
     }
   },
-  { FIELD_TEXT_INPUT, "stream0_url", "Stream URL or E1000 IP address", "10.0.2.40", 0 },
-  //{ FIELD_TEXT_INPUT, "stream0_width", "Width", "640", 0 },
-  //{ FIELD_TEXT_INPUT, "stream0_height", "Height", "360", 0 },
-  //{ FIELD_TEXT_INPUT, "stream0_bitrate", "Bitrate", "700000", 0 },
-  { FIELD_SECTION, NULL, "Stream #1" },
-  { FIELD_TEXT_INPUT, "stream1_name", "Stream Name", "stream1", 0 },
-  { FIELD_SELECT, "stream1_type", "Connection type", "ew-follow", 0,
+  { GSS_FIELD_TEXT_INPUT, "stream0_url", "Stream URL or E1000 IP address", "10.0.2.40", 0 },
+  //{ GSS_FIELD_TEXT_INPUT, "stream0_width", "Width", "640", 0 },
+  //{ GSS_FIELD_TEXT_INPUT, "stream0_height", "Height", "360", 0 },
+  //{ GSS_FIELD_TEXT_INPUT, "stream0_bitrate", "Bitrate", "700000", 0 },
+  { GSS_FIELD_SECTION, NULL, "Stream #1" },
+  { GSS_FIELD_TEXT_INPUT, "stream1_name", "Stream Name", "stream1", 0 },
+  { GSS_FIELD_SELECT, "stream1_type", "Connection type", "ew-follow", 0,
     {
       { "ew-follow", "E1000/S1000 follower" },
       { "http-follow", "HTTP stream follower" },
@@ -65,10 +62,10 @@ Field control_fields[] = {
       { "icecast", "Icecast contributor" }
     }
   },
-  { FIELD_TEXT_INPUT, "stream1_url", "Stream URL or E1000 IP address", "", 0 },
-  { FIELD_SECTION, NULL, "Stream #2" },
-  { FIELD_TEXT_INPUT, "stream2_name", "Stream Name", "stream2", 0 },
-  { FIELD_SELECT, "stream2_type", "Connection type", "ew-follow", 0,
+  { GSS_FIELD_TEXT_INPUT, "stream1_url", "Stream URL or E1000 IP address", "", 0 },
+  { GSS_FIELD_SECTION, NULL, "Stream #2" },
+  { GSS_FIELD_TEXT_INPUT, "stream2_name", "Stream Name", "stream2", 0 },
+  { GSS_FIELD_SELECT, "stream2_type", "Connection type", "ew-follow", 0,
     {
       { "ew-follow", "E1000/S1000 follower" },
       { "http-follow", "HTTP stream follower" },
@@ -76,10 +73,10 @@ Field control_fields[] = {
       { "icecast", "Icecast contributor" }
     }
   },
-  { FIELD_TEXT_INPUT, "stream2_url", "Stream URL or E1000 IP address", "", 0 },
-  { FIELD_SECTION, NULL, "Stream #3" },
-  { FIELD_TEXT_INPUT, "stream3_name", "Stream Name", "stream3", 0 },
-  { FIELD_SELECT, "stream3_type", "Connection type", "ew-follow", 0,
+  { GSS_FIELD_TEXT_INPUT, "stream2_url", "Stream URL or E1000 IP address", "", 0 },
+  { GSS_FIELD_SECTION, NULL, "Stream #3" },
+  { GSS_FIELD_TEXT_INPUT, "stream3_name", "Stream Name", "stream3", 0 },
+  { GSS_FIELD_SELECT, "stream3_type", "Connection type", "ew-follow", 0,
     {
       { "ew-follow", "E1000/S1000 follower" },
       { "http-follow", "HTTP stream follower" },
@@ -87,10 +84,10 @@ Field control_fields[] = {
       { "icecast", "Icecast contributor" }
     }
   },
-  { FIELD_TEXT_INPUT, "stream3_url", "Stream URL or E1000 IP address", "", 0 },
-  { FIELD_SECTION, NULL, "Stream #4" },
-  { FIELD_TEXT_INPUT, "stream4_name", "Stream Name", "stream4", 0 },
-  { FIELD_SELECT, "stream4_type", "Connection type", "ew-follow", 0,
+  { GSS_FIELD_TEXT_INPUT, "stream3_url", "Stream URL or E1000 IP address", "", 0 },
+  { GSS_FIELD_SECTION, NULL, "Stream #4" },
+  { GSS_FIELD_TEXT_INPUT, "stream4_name", "Stream Name", "stream4", 0 },
+  { GSS_FIELD_SELECT, "stream4_type", "Connection type", "ew-follow", 0,
     {
       { "ew-follow", "E1000/S1000 follower" },
       { "http-follow", "HTTP stream follower" },
@@ -98,114 +95,114 @@ Field control_fields[] = {
       { "icecast", "Icecast contributor" }
     }
   },
-  { FIELD_TEXT_INPUT, "stream4_url", "Stream URL or E1000 IP address", "", 0 },
-  { FIELD_SUBMIT, "submit", "Update Configuration", NULL, 0 },
-  { FIELD_NONE }
+  { GSS_FIELD_TEXT_INPUT, "stream4_url", "Stream URL or E1000 IP address", "", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Update Configuration", NULL, 0 },
+  { GSS_FIELD_NONE }
 };
 
-Field server_fields[] = {
-  { FIELD_SECTION, NULL, "HTTP Server Configuration" },
-  { FIELD_TEXT_INPUT, "server_name", "Server Hostname", "127.0.0.1", 0 },
-  { FIELD_TEXT_INPUT, "server_port", "Server Port", "80", 0 },
-  { FIELD_TEXT_INPUT, "max_connections", "Max Connections", "10000", 0 },
-  { FIELD_TEXT_INPUT, "max_bandwidth", "Max Bandwidth (kbytes/sec)", "100000",
+GssField server_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "HTTP Server Configuration" },
+  { GSS_FIELD_TEXT_INPUT, "server_name", "Server Hostname", "127.0.0.1", 0 },
+  { GSS_FIELD_TEXT_INPUT, "server_port", "Server Port", "80", 0 },
+  { GSS_FIELD_TEXT_INPUT, "max_connections", "Max Connections", "10000", 0 },
+  { GSS_FIELD_TEXT_INPUT, "max_bandwidth", "Max Bandwidth (kbytes/sec)", "100000",
     0 },
-  { FIELD_SUBMIT, "submit", "Update Configuration", NULL, 1 },
-  { FIELD_NONE }
+  { GSS_FIELD_SUBMIT, "submit", "Update Configuration", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
-Field network_fields[] = {
-  { FIELD_CHECKBOX, "enable_os_network", "Configure network in OS", "off", 0 },
-  { FIELD_SECTION, NULL, "Primary Ethernet" },
-  { FIELD_TEXT_INPUT, "eth0_name", "eth0 Name", "e1000-0", 0 },
-  { FIELD_RADIO, "eth0_config", "IP Address", "dhcp", 0,
+GssField network_fields[] = {
+  { GSS_FIELD_CHECKBOX, "enable_os_network", "Configure network in OS", "off", 0 },
+  { GSS_FIELD_SECTION, NULL, "Primary Ethernet" },
+  { GSS_FIELD_TEXT_INPUT, "eth0_name", "eth0 Name", "e1000-0", 0 },
+  { GSS_FIELD_RADIO, "eth0_config", "IP Address", "dhcp", 0,
     {
       { "dhcp", "Automatic (DHCP)" },
       { "manual", "Manual" },
     }
   },
-  { FIELD_TEXT_INPUT, "eth0_ipaddr", "Address", "10.0.2.50", 1 },
-  { FIELD_TEXT_INPUT, "eth0_netmask", "Netmask", "255.255.255.0", 1 },
-  { FIELD_TEXT_INPUT, "eth0_gateway", "Gateway", "10.0.2.1", 1 },
-  { FIELD_SECTION, NULL, "Secondary Ethernet" },
-  { FIELD_TEXT_INPUT, "eth1_name", "eth1 Name", "e1000-1", 0 },
-  { FIELD_RADIO, "eth1_config", "IP Address", "dhcp", 0,
+  { GSS_FIELD_TEXT_INPUT, "eth0_ipaddr", "Address", "10.0.2.50", 1 },
+  { GSS_FIELD_TEXT_INPUT, "eth0_netmask", "Netmask", "255.255.255.0", 1 },
+  { GSS_FIELD_TEXT_INPUT, "eth0_gateway", "Gateway", "10.0.2.1", 1 },
+  { GSS_FIELD_SECTION, NULL, "Secondary Ethernet" },
+  { GSS_FIELD_TEXT_INPUT, "eth1_name", "eth1 Name", "e1000-1", 0 },
+  { GSS_FIELD_RADIO, "eth1_config", "IP Address", "dhcp", 0,
     {
       { "dhcp", "Automatic (DHCP)" },
       { "manual", "Manual" },
     }
   },
-  { FIELD_TEXT_INPUT, "eth1_ipaddr", "Address", "10.0.2.50", 1 },
-  { FIELD_TEXT_INPUT, "eth1_netmask", "Netmask", "255.255.255.0", 1 },
-  { FIELD_TEXT_INPUT, "eth1_gateway", "Gateway", "10.0.2.1", 1 },
-  { FIELD_SECTION, NULL, "DNS server" },
-  { FIELD_TEXT_INPUT, "dns1", "DNS #1", "", 1 },
-  { FIELD_TEXT_INPUT, "dns2", "DNS #2", "", 1 },
-  { FIELD_SECTION, NULL, "NTP server" },
-  { FIELD_TEXT_INPUT, "ntp", "NTP #1", "", 1 },
-  { FIELD_HIDDEN, "reboot", NULL, "yes", 0 },
-  { FIELD_SUBMIT, "submit", "Update Configuration and Reboot", NULL, 0 },
-  { FIELD_NONE }
+  { GSS_FIELD_TEXT_INPUT, "eth1_ipaddr", "Address", "10.0.2.50", 1 },
+  { GSS_FIELD_TEXT_INPUT, "eth1_netmask", "Netmask", "255.255.255.0", 1 },
+  { GSS_FIELD_TEXT_INPUT, "eth1_gateway", "Gateway", "10.0.2.1", 1 },
+  { GSS_FIELD_SECTION, NULL, "DNS server" },
+  { GSS_FIELD_TEXT_INPUT, "dns1", "DNS #1", "", 1 },
+  { GSS_FIELD_TEXT_INPUT, "dns2", "DNS #2", "", 1 },
+  { GSS_FIELD_SECTION, NULL, "NTP server" },
+  { GSS_FIELD_TEXT_INPUT, "ntp", "NTP #1", "", 1 },
+  { GSS_FIELD_HIDDEN, "reboot", NULL, "yes", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Update Configuration and Reboot", NULL, 0 },
+  { GSS_FIELD_NONE }
 };
 
-Field access_fields[] = {
-  { FIELD_SECTION, NULL, "Access Restrictions" },
-  { FIELD_TEXT_INPUT, "hosts_allow", "Allowed Hosts (admin)", "0.0.0.0/0", 0 },
-  //{ FIELD_TEXT_INPUT, "hosts_allow_stream", "Streaming", "0.0.0.0/0", 0 },
-  { FIELD_SUBMIT, "submit", "Update", NULL, 1 },
-  { FIELD_NONE }
+GssField access_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Access Restrictions" },
+  { GSS_FIELD_TEXT_INPUT, "hosts_allow", "Allowed Hosts (admin)", "0.0.0.0/0", 0 },
+  //{ GSS_FIELD_TEXT_INPUT, "hosts_allow_stream", "Streaming", "0.0.0.0/0", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Update", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
-Field admin_password_fields[] = {
-  { FIELD_SECTION, NULL, "Administrator Password" },
-  { FIELD_PASSWORD, "admin_token0", "Password", "", 0 },
-  { FIELD_PASSWORD, "admin_token1", "Retype", "", 0 },
-  { FIELD_SUBMIT, "submit", "Change Password", NULL, 1 },
-  { FIELD_NONE }
+GssField admin_password_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Administrator Password" },
+  { GSS_FIELD_PASSWORD, "admin_token0", "Password", "", 0 },
+  { GSS_FIELD_PASSWORD, "admin_token1", "Retype", "", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Change Password", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
-Field editor_password_fields[] = {
-  { FIELD_SECTION, NULL, "Editor Password" },
-  { FIELD_PASSWORD, "editor_token0", "Password", "", 0 },
-  { FIELD_PASSWORD, "editor_token1", "Retype", "", 0 },
-  { FIELD_SUBMIT, "submit", "Change Password", NULL, 1 },
-  { FIELD_NONE }
+GssField editor_password_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Editor Password" },
+  { GSS_FIELD_PASSWORD, "editor_token0", "Password", "", 0 },
+  { GSS_FIELD_PASSWORD, "editor_token1", "Retype", "", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Change Password", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
-Field configuration_file_fields[] = {
-  { FIELD_SECTION, NULL, "Configuration File" },
-  { FIELD_FILE, "config_file", "Upload Config", "config", 0 },
-  { FIELD_SUBMIT, "submit", "Upload Configuration", NULL, 1 },
-  { FIELD_NONE }
+GssField configuration_file_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Configuration File" },
+  { GSS_FIELD_FILE, "config_file", "Upload Config", "config", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Upload Configuration", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
-Field firmware_file_fields[] = {
-  { FIELD_SECTION, NULL, "Firmware Update" },
-  { FIELD_FILE, "firmware_file", "Upload File", "config", 0 },
-  { FIELD_SUBMIT, "submit", "Update Firmware", NULL, 1 },
-  { FIELD_NONE }
+GssField firmware_file_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Firmware Update" },
+  { GSS_FIELD_FILE, "firmware_file", "Upload File", "config", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Update Firmware", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
-Field certificate_file_fields[] = {
-  { FIELD_SECTION, NULL, "Certificate Upload" },
-  { FIELD_FILE, "cert_file", "Upload Certificate", "server.crt", 0 },
-  { FIELD_FILE, "key_file", "Upload Key", "server.key", 0 },
-  { FIELD_SUBMIT, "submit", "Update Files", NULL, 1 },
-  { FIELD_NONE }
+GssField certificate_file_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Certificate Upload" },
+  { GSS_FIELD_FILE, "cert_file", "Upload Certificate", "server.crt", 0 },
+  { GSS_FIELD_FILE, "key_file", "Upload Key", "server.key", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Update Files", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
-Field reboot_fields[] = {
-  { FIELD_SECTION, NULL, "Reboot Machine" },
-  { FIELD_HIDDEN, "reboot", NULL, "yes", 0 },
-  { FIELD_SUBMIT, "submit", "Reboot", NULL, 1 },
-  { FIELD_NONE }
+GssField reboot_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Reboot Machine" },
+  { GSS_FIELD_HIDDEN, "reboot", NULL, "yes", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Reboot", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
-Field poweroff_fields[] = {
-  { FIELD_SECTION, NULL, "Power Off Machine" },
-  { FIELD_HIDDEN, "poweroff", NULL, "yes", 0 },
-  { FIELD_SUBMIT, "submit", "Power Off", NULL, 1 },
-  { FIELD_NONE }
+GssField poweroff_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Power Off Machine" },
+  { GSS_FIELD_HIDDEN, "poweroff", NULL, "yes", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Power Off", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
 

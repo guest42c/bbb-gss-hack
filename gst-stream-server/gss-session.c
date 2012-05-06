@@ -48,12 +48,12 @@
 
 static GList *sessions;
 
-static Field login_fields[] = {
-  { FIELD_SECTION, NULL, "Login" },
-  { FIELD_TEXT_INPUT, "username", "User", "", 0 },
-  { FIELD_PASSWORD, "password", "Password", "", 0 },
-  { FIELD_SUBMIT, "submit", "Login", NULL, 1 },
-  { FIELD_NONE }
+static GssField login_fields[] = {
+  { GSS_FIELD_SECTION, NULL, "Login" },
+  { GSS_FIELD_TEXT_INPUT, "username", "User", "", 0 },
+  { GSS_FIELD_PASSWORD, "password", "Password", "", 0 },
+  { GSS_FIELD_SUBMIT, "submit", "Login", NULL, 1 },
+  { GSS_FIELD_NONE }
 };
 
 

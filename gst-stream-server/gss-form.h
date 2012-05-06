@@ -30,46 +30,46 @@
 G_BEGIN_DECLS
 
 typedef enum {
-  FIELD_NONE = 0,
-  FIELD_TEXT_INPUT,
-  FIELD_PASSWORD,
-  FIELD_CHECKBOX,
-  FIELD_SELECT,
-  FIELD_FILE,
-  FIELD_RADIO,
-  FIELD_SUBMIT,
-  FIELD_VERTICAL_SPACE,
-  FIELD_SECTION,
-  FIELD_HIDDEN
-} FieldType;
+  GSS_FIELD_NONE = 0,
+  GSS_FIELD_TEXT_INPUT,
+  GSS_FIELD_PASSWORD,
+  GSS_FIELD_CHECKBOX,
+  GSS_FIELD_SELECT,
+  GSS_FIELD_FILE,
+  GSS_FIELD_RADIO,
+  GSS_FIELD_SUBMIT,
+  GSS_FIELD_VERTICAL_SPACE,
+  GSS_FIELD_SECTION,
+  GSS_FIELD_HIDDEN
+} GssFieldType;
 
-typedef struct _Option Option;
-struct _Option {
+typedef struct _GssOption GssOption;
+struct _GssOption {
   char *config_name;
   char *long_name;
 };
 
-typedef struct _Field Field;
-struct _Field {
-  FieldType type;
+typedef struct _GssField GssField;
+struct _GssField {
+  GssFieldType type;
   char *config_name;
   char *long_name;
   char *default_value;
   int indent;
 
-  Option options[10];
+  GssOption options[10];
 };
 
-void gss_config_form_add_select (GString *s, Field *item, const char *value);
-void gss_config_form_add_text_input (GString *s, Field *item, const char *value);
-void gss_config_form_add_password (GString *s, Field *item, const char *value);
-void gss_config_form_add_checkbox (GString *s, Field *item, const char *value);
-void gss_config_form_add_file (GString *s, Field *item, const char *value);
-void gss_config_form_add_radio (GString *s, Field *item, const char *value);
-void gss_config_form_add_submit (GString *s, Field *item, const char *value);
-void gss_config_form_add_hidden (GString *s, Field *item, const char *value);
+void gss_config_form_add_select (GString *s, GssField *item, const char *value);
+void gss_config_form_add_text_input (GString *s, GssField *item, const char *value);
+void gss_config_form_add_password (GString *s, GssField *item, const char *value);
+void gss_config_form_add_checkbox (GString *s, GssField *item, const char *value);
+void gss_config_form_add_file (GString *s, GssField *item, const char *value);
+void gss_config_form_add_radio (GString *s, GssField *item, const char *value);
+void gss_config_form_add_submit (GString *s, GssField *item, const char *value);
+void gss_config_form_add_hidden (GString *s, GssField *item, const char *value);
 void gss_config_form_add_form (GssServer *server, GString * s, const char *action,
-    const char *name, Field *fields, GssSession *session);
+    const char *name, GssField *fields, GssSession *session);
 
 
 
