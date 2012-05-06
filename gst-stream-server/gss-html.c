@@ -28,9 +28,9 @@
 
 
 void
-gss_html_header (GssServer *server, GString *s, const char *title)
+gss_html_header (GssServer * server, GString * s, const char *title)
 {
-  g_string_append_printf(s,
+  g_string_append_printf (s,
 #ifdef USE_XHTML
       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
       "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
@@ -54,14 +54,11 @@ gss_html_header (GssServer *server, GString *s, const char *title)
     server->append_style_html (server, s, server->append_style_html_priv);
   }
 
-  g_string_append (s,
-      "</head>\n"
-      "<body>\n"
-      "<div id=\"container\">\n");
+  g_string_append (s, "</head>\n" "<body>\n" "<div id=\"container\">\n");
 }
 
 void
-gss_html_footer (GssServer *server, GString *s, const char *session_id)
+gss_html_footer (GssServer * server, GString * s, const char *session_id)
 {
   gss_html_append_break (s);
   g_string_append (s,
@@ -82,62 +79,57 @@ gss_html_footer (GssServer *server, GString *s, const char *session_id)
   g_string_append (s, "</a>");
   g_string_append (s, "</div><!-- end footer div -->\n");
   g_string_append (s,
-      "</div><!-- end container div -->\n"
-      "</body>\n"
-      "</html>\n"); 
+      "</div><!-- end container div -->\n" "</body>\n" "</html>\n");
 
 }
 
 void
-gss_html_error_404 (SoupMessage *msg)
+gss_html_error_404 (SoupMessage * msg)
 {
   char *content;
   GString *s;
 
   s = g_string_new ("");
-  
+
   g_string_append (s,
       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
       "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
       "<head>\n"
-      "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"   
+      "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
       "<title>Error 404: Page not found</title>\n"
       "</head>\n"
-      "<body>\n"
-      "Error 404: Page not found\n"
-      "</body>\n"
-      "</html>\n");
+      "<body>\n" "Error 404: Page not found\n" "</body>\n" "</html>\n");
 
   content = g_string_free (s, FALSE);
 
   soup_message_set_response (msg, "text/html", SOUP_MEMORY_TAKE,
-      content, strlen(content));
+      content, strlen (content));
 
   soup_message_set_status (msg, SOUP_STATUS_NOT_FOUND);
 }
 
 void
-gss_html_append_break (GString *s)
+gss_html_append_break (GString * s)
 {
 #ifdef USE_XHTML
-  g_string_append(s, "<br />");
+  g_string_append (s, "<br />");
 #else
-  g_string_append(s, "<br>");
+  g_string_append (s, "<br>");
 #endif
 }
 
 void
-gss_html_append_image (GString *s, const char *url, int width, int height,
+gss_html_append_image (GString * s, const char *url, int width, int height,
     const char *alt_text)
 {
-  if (alt_text == NULL) alt_text = "";
+  if (alt_text == NULL)
+    alt_text = "";
 
   g_string_append_printf (s, "<img src='%s' alt='%s' ", url,
       alt_text ? alt_text : "");
   if (width > 0 && height > 0) {
     g_string_append_printf (s, "width='%d' height='%d' ", width, height);
   }
-
 #ifdef USE_HTML5
   /* border is in CSS */
 #else
@@ -156,8 +148,8 @@ gss_html_append_image (GString *s, const char *url, int width, int height,
 }
 
 void
-gss_html_append_image_printf (GString *s, const char *url_format, int width, int height,
-    const char *alt_text, ...)
+gss_html_append_image_printf (GString * s, const char *url_format, int width,
+    int height, const char *alt_text, ...)
 {
   va_list args;
   char *url;
@@ -170,4 +162,3 @@ gss_html_append_image_printf (GString *s, const char *url_format, int width, int
 
   g_free (url);
 }
-

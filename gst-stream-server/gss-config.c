@@ -30,14 +30,14 @@
 
 
 static GssConfigField *
-gss_config_get_field (GssConfig *config, const char *key)
+gss_config_get_field (GssConfig * config, const char *key)
 {
   GssConfigField *field;
   field = g_hash_table_lookup (config->hash, key);
   if (field == NULL) {
     field = g_malloc0 (sizeof (GssConfigField));
     field->value = g_strdup ("");
-    g_hash_table_insert (config->hash, g_strdup(key), field);
+    g_hash_table_insert (config->hash, g_strdup (key), field);
   }
   return field;
 }
@@ -45,7 +45,7 @@ gss_config_get_field (GssConfig *config, const char *key)
 static void
 gss_config_field_free (gpointer data)
 {
-  GssConfigField *field = (GssConfigField *)data;
+  GssConfigField *field = (GssConfigField *) data;
   g_free (field->value);
 }
 
@@ -54,7 +54,7 @@ gss_config_new (void)
 {
   GssConfig *config;
 
-  config = g_malloc0 (sizeof(GssConfig));
+  config = g_malloc0 (sizeof (GssConfig));
 
   config->hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
       gss_config_field_free);
@@ -63,13 +63,14 @@ gss_config_new (void)
 }
 
 void
-gss_config_free (GssConfig *config)
+gss_config_free (GssConfig * config)
 {
   g_hash_table_unref (config->hash);
   g_free (config);
 }
 
-void gss_config_set_config_filename (GssConfig *config, const char *filename)
+void
+gss_config_set_config_filename (GssConfig * config, const char *filename)
 {
   g_free (config->config_filename);
   config->config_filename = g_strdup (filename);
@@ -89,7 +90,8 @@ get_timestamp (const char *filename)
   return 0;
 }
 
-void gss_config_check_config_file (GssConfig *config)
+void
+gss_config_check_config_file (GssConfig * config)
 {
   int timestamp;
 
@@ -102,11 +104,11 @@ void gss_config_check_config_file (GssConfig *config)
 static int
 compare (gconstpointer a, gconstpointer b)
 {
-  return strcmp ((const char *)a,(const char *)b);
+  return strcmp ((const char *) a, (const char *) b);
 }
 
 void
-gss_config_hash_to_string (GString *s, GHashTable *hash)
+gss_config_hash_to_string (GString * s, GHashTable * hash)
 {
   GList *list;
   GList *g;
@@ -114,7 +116,7 @@ gss_config_hash_to_string (GString *s, GHashTable *hash)
   list = g_hash_table_get_keys (hash);
   list = g_list_sort (list, compare);
 
-  for(g=list;g;g=g_list_next(g)){
+  for (g = list; g; g = g_list_next (g)) {
     const char *key = g->data;
     GssConfigField *field;
 
@@ -130,7 +132,7 @@ gss_config_hash_to_string (GString *s, GHashTable *hash)
 }
 
 void
-gss_config_write_config_to_file (GssConfig *config)
+gss_config_write_config_to_file (GssConfig * config)
 {
   GString *s;
 
@@ -140,36 +142,38 @@ gss_config_write_config_to_file (GssConfig *config)
   g_file_set_contents (config->config_filename, s->str, s->len, NULL);
   g_string_free (s, TRUE);
 
-  config->config_timestamp = time(NULL);
+  config->config_timestamp = time (NULL);
 }
 
 void
-gss_config_set (GssConfig *config, const char *key, const char *value)
+gss_config_set (GssConfig * config, const char *key, const char *value)
 {
   GssConfigField *field;
   field = gss_config_get_field (config, key);
-  
-  if (field->locked) return;
+
+  if (field->locked)
+    return;
 
   if (strcmp (field->value, value) != 0) {
     g_free (field->value);
     field->value = g_strdup (value);
 
-    if (field->notify) field->notify (key, field->notify_priv);
+    if (field->notify)
+      field->notify (key, field->notify_priv);
   }
 }
 
 void
-gss_config_lock (GssConfig *config, const char *key)
+gss_config_lock (GssConfig * config, const char *key)
 {
   GssConfigField *field;
   field = gss_config_get_field (config, key);
-  
+
   field->locked = TRUE;
 }
 
 const char *
-gss_config_get (GssConfig *config, const char *key)
+gss_config_get (GssConfig * config, const char *key)
 {
   GssConfigField *field;
   field = gss_config_get_field (config, key);
@@ -177,7 +181,8 @@ gss_config_get (GssConfig *config, const char *key)
 }
 
 gboolean
-gss_config_value_is_equal (GssConfig *config, const char *key, const char *value)
+gss_config_value_is_equal (GssConfig * config, const char *key,
+    const char *value)
 {
   GssConfigField *field;
   field = gss_config_get_field (config, key);
@@ -185,7 +190,7 @@ gss_config_value_is_equal (GssConfig *config, const char *key, const char *value
 }
 
 gboolean
-gss_config_value_is_on (GssConfig *config, const char *key)
+gss_config_value_is_on (GssConfig * config, const char *key)
 {
   GssConfigField *field;
   field = gss_config_get_field (config, key);
@@ -193,19 +198,23 @@ gss_config_value_is_on (GssConfig *config, const char *key)
 }
 
 gboolean
-gss_config_get_boolean (GssConfig *config, const char *key)
+gss_config_get_boolean (GssConfig * config, const char *key)
 {
   GssConfigField *field;
   field = gss_config_get_field (config, key);
-  if (strcmp (field->value, "on") == 0) return TRUE;
-  if (strcmp (field->value, "true") == 0) return TRUE;
-  if (strcmp (field->value, "yes") == 0) return TRUE;
-  if (strcmp (field->value, "1") == 0) return TRUE;
+  if (strcmp (field->value, "on") == 0)
+    return TRUE;
+  if (strcmp (field->value, "true") == 0)
+    return TRUE;
+  if (strcmp (field->value, "yes") == 0)
+    return TRUE;
+  if (strcmp (field->value, "1") == 0)
+    return TRUE;
   return FALSE;
 }
 
 int
-gss_config_get_int (GssConfig *config, const char *key)
+gss_config_get_int (GssConfig * config, const char *key)
 {
   GssConfigField *field;
   field = gss_config_get_field (config, key);
@@ -213,16 +222,16 @@ gss_config_get_int (GssConfig *config, const char *key)
 }
 
 void
-gss_config_load_defaults (GssConfig *config, GssConfigDefault *list)
+gss_config_load_defaults (GssConfig * config, GssConfigDefault * list)
 {
   int i;
-  for(i=0;list[i].name;i++){
+  for (i = 0; list[i].name; i++) {
     gss_config_set (config, list[i].name, list[i].default_value);
   }
 }
 
 void
-_gss_config_load_from_file (GssConfig *config, gboolean lock)
+_gss_config_load_from_file (GssConfig * config, gboolean lock)
 {
   gboolean ret;
   gchar *contents;
@@ -231,18 +240,20 @@ _gss_config_load_from_file (GssConfig *config, gboolean lock)
   int i;
 
   ret = g_file_get_contents (config->config_filename, &contents, &length, NULL);
-  if (!ret) return;
+  if (!ret)
+    return;
 
   lines = g_strsplit (contents, "\n", 0);
 
-  for(i=0;lines[i];i++){
+  for (i = 0; lines[i]; i++) {
     char **kv;
     kv = g_strsplit (lines[i], "=", 2);
     if (kv[0] && kv[1]) {
       char *unesc = g_strcompress (kv[1]);
       gss_config_set (config, kv[0], unesc);
       g_free (unesc);
-      if (lock) gss_config_lock (config, kv[0]);
+      if (lock)
+        gss_config_lock (config, kv[0]);
     }
     g_strfreev (kv);
   }
@@ -250,25 +261,26 @@ _gss_config_load_from_file (GssConfig *config, gboolean lock)
   g_strfreev (lines);
   g_free (contents);
 
-  config->config_timestamp = time(NULL);
+  config->config_timestamp = time (NULL);
 }
 
 void
-gss_config_load_from_file (GssConfig *config)
+gss_config_load_from_file (GssConfig * config)
 {
   _gss_config_load_from_file (config, FALSE);
 }
 
 void
-gss_config_load_from_file_locked (GssConfig *config, const char *filename)
+gss_config_load_from_file_locked (GssConfig * config, const char *filename)
 {
   char *tmp = config->config_filename;
-  config->config_filename = (char *)filename;
+  config->config_filename = (char *) filename;
   _gss_config_load_from_file (config, TRUE);
   config->config_filename = tmp;
 }
 
-void gss_config_set_notify (GssConfig *config, const char *key,
+void
+gss_config_set_notify (GssConfig * config, const char *key,
     GssConfigNotifyFunc notify, void *notify_priv)
 {
   GssConfigField *field;
@@ -280,7 +292,7 @@ void gss_config_set_notify (GssConfig *config, const char *key,
 
 
 void
-gss_config_handle_post (GssConfig *config, SoupMessage *msg)
+gss_config_handle_post (GssConfig * config, SoupMessage * msg)
 {
   GHashTable *hash;
   char *filename, *media_type;
@@ -352,14 +364,13 @@ gss_config_handle_post (GssConfig *config, SoupMessage *msg)
     g_free (filename);
     g_free (media_type);
   }
-
 #if 0
   if (hash) {
     GHashTableIter iter;
     char *key, *value;
     g_hash_table_iter_init (&iter, hash);
-    while (g_hash_table_iter_next (&iter, (gpointer)&key, (gpointer)&value)) {
-      g_print("%s=%s\n", key, value);
+    while (g_hash_table_iter_next (&iter, (gpointer) & key, (gpointer) & value)) {
+      g_print ("%s=%s\n", key, value);
     }
   }
 #endif
@@ -392,10 +403,9 @@ gss_config_handle_post (GssConfig *config, SoupMessage *msg)
       if (s && t && strcmp (s, t) == 0) {
 #define REALM "Entropy Wave E1000"
         gss_config_set (config, "admin_token",
-            soup_auth_domain_digest_encode_password("admin", REALM, s));
+            soup_auth_domain_digest_encode_password ("admin", REALM, s));
 #if 0
-        gss_config_set (config, "admin_hash",
-            password_hash ("admin", s));
+        gss_config_set (config, "admin_hash", password_hash ("admin", s));
 #endif
       }
       g_hash_table_remove (hash, "admin_token0");
@@ -409,10 +419,9 @@ gss_config_handle_post (GssConfig *config, SoupMessage *msg)
 
       if (s && t && strcmp (s, t) == 0) {
         gss_config_set (config, "editor_token",
-            soup_auth_domain_digest_encode_password("editor", REALM, s));
+            soup_auth_domain_digest_encode_password ("editor", REALM, s));
 #if 0
-        gss_config_set (config, "editor_hash",
-            password_hash ("admin", s));
+        gss_config_set (config, "editor_hash", password_hash ("admin", s));
 #endif
       }
       g_hash_table_remove (hash, "editor_token0");
@@ -420,7 +429,7 @@ gss_config_handle_post (GssConfig *config, SoupMessage *msg)
     }
 
     g_hash_table_iter_init (&iter, hash);
-    while (g_hash_table_iter_next (&iter, (gpointer)&key, (gpointer)&value)) {
+    while (g_hash_table_iter_next (&iter, (gpointer) & key, (gpointer) & value)) {
       gss_config_set (config, key, value);
     }
     gss_config_write_config_to_file (config);

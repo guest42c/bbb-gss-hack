@@ -46,7 +46,7 @@ gboolean cl_verbose;
 void ew_stream_server_notify_url (const char *s, void *priv);
 
 static void signal_interrupt (int signum);
-static void append_style_html (GssServer *server, GString *s, void *priv);
+static void append_style_html (GssServer * server, GString * s, void *priv);
 
 #define N_PROGRAMS 10
 
@@ -102,10 +102,10 @@ main (int argc, char *argv[])
   gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".perm");
   gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".package");
 
-  for(i=0;i<N_PROGRAMS;i++){
+  for (i = 0; i < N_PROGRAMS; i++) {
     char *key;
 
-    key = g_strdup_printf("stream%d_url", i);
+    key = g_strdup_printf ("stream%d_url", i);
 
     gss_config_set_notify (server->config, key,
         ew_stream_server_notify_url, GINT_TO_POINTER (i));
@@ -122,8 +122,8 @@ main (int argc, char *argv[])
   g_main_loop_run (main_loop);
 
   gss_server_free (server);
-  gss_server_deinit();
-  gst_deinit();
+  gss_server_deinit ();
+  gst_deinit ();
 
   exit (0);
 }
@@ -145,8 +145,10 @@ ew_stream_server_notify_url (const char *s, void *priv)
 
   url = gss_config_get (server->config, s);
 
-  if (url[0] == 0 && programs[i] == NULL) return;
-  if (programs[i] && strcmp(url, programs[i]->follow_host) == 0) return;
+  if (url[0] == 0 && programs[i] == NULL)
+    return;
+  if (programs[i] && strcmp (url, programs[i]->follow_host) == 0)
+    return;
 
   if (programs[i]) {
     gss_server_remove_program (server, programs[i]);
@@ -157,7 +159,7 @@ ew_stream_server_notify_url (const char *s, void *priv)
     char *stream_name;
     const char *stream_type;
     char *key;
-    
+
     key = g_strdup_printf ("stream%d_type", i);
     stream_type = gss_config_get (server->config, key);
     g_free (key);
@@ -193,11 +195,11 @@ ew_stream_server_notify_url (const char *s, void *priv)
 
 
 static void
-append_style_html (GssServer *server, GString *s, void *priv)
+append_style_html (GssServer * server, GString * s, void *priv)
 {
   g_string_append_printf (s,
       "<style type=\"text/css\">\n"
-      "body {background-color: #998276; font-family: Verdana, Geneva, sans-serif;}\n" 
+      "body {background-color: #998276; font-family: Verdana, Geneva, sans-serif;}\n"
       "div#container {width: 812px; background-image: url(/images/template_bodybg.png); background-repeat: repeat-y;}\n"
       "div#nav {text-align: center; margin: 0 auto;}\n"
       "div#nav div {display: inline; margin: 0 -1px;}\n"
@@ -207,8 +209,7 @@ append_style_html (GssServer *server, GString *s, void *priv)
       "fieldset {margin: 10px 0;}\n"
       "legend {color: #282a8c; font-weight: bold;}\n"
       "input, textarea {background: -webkit-gradient(linear, left top, left bottom, from(#edeaea), to(#fff)); background: -moz-linear-gradient(top, #edeaea, #fff);}\n"
-      "table.subtab {margin-left: 15px;}\n"
-      ".indent {margin-left: 15px;}\n"
+      "table.subtab {margin-left: 15px;}\n" ".indent {margin-left: 15px;}\n"
       /* FIXME this is a hack to remove the extra space under images */
       "img {border: 0px; margin-bottom: -5px; }\n"
       "</style>\n"
@@ -216,4 +217,3 @@ append_style_html (GssServer *server, GString *s, void *priv)
       "<link rel=\"stylesheet\" href=\"ie7.css\" type=\"text/css\"></link>\n"
       "<![endif]-->\n");
 }
-
