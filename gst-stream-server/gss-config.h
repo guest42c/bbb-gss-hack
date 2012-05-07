@@ -68,6 +68,7 @@ void gss_config_write_config_to_file (GssConfig *config);
 void gss_config_free (GssConfig *config);
 void gss_config_check_config_file (GssConfig *config);
 void gss_config_set (GssConfig *config, const char *key, const char *value);
+gboolean gss_config_exists (GssConfig *config, const char *key);
 const char * gss_config_get (GssConfig *config, const char *key);
 gboolean gss_config_get_boolean (GssConfig *config, const char *key);
 int gss_config_get_int (GssConfig *config, const char *key);

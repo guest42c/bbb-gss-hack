@@ -172,6 +172,13 @@ gss_config_lock (GssConfig * config, const char *key)
   field->locked = TRUE;
 }
 
+gboolean
+gss_config_exists (GssConfig *config, const char *key)
+{
+  if (g_hash_table_lookup (config->hash, key)) return TRUE;
+  return FALSE;
+}
+
 const char *
 gss_config_get (GssConfig * config, const char *key)
 {

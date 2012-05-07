@@ -47,10 +47,8 @@ void ew_stream_server_notify_url (const char *s, void *priv);
 
 static void signal_interrupt (int signum);
 static void append_style_html (GssServer * server, GString * s, void *priv);
+static void add_program (GssServer *server, int i);
 
-#define N_PROGRAMS 10
-
-GssProgram *programs[N_PROGRAMS];
 
 static GOptionEntry entries[] = {
   {"verbose", 'v', 0, G_OPTION_ARG_NONE, &cl_verbose, "Be verbose", NULL},
@@ -59,7 +57,6 @@ static GOptionEntry entries[] = {
 
 };
 
-#define N_ENCODERS 1
 GssServer *server;
 GMainLoop *main_loop;
 
@@ -102,15 +99,13 @@ main (int argc, char *argv[])
   gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".perm");
   gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".package");
 
-  for (i = 0; i < N_PROGRAMS; i++) {
+  for (i = 0; ; i++) {
     char *key;
 
-    key = g_strdup_printf ("stream%d_url", i);
+    key = g_strdup_printf ("stream%d_name", i);
+    if (!gss_config_exists (server->config, key)) break;
 
-    gss_config_set_notify (server->config, key,
-        ew_stream_server_notify_url, GINT_TO_POINTER (i));
-
-    ew_stream_server_notify_url (key, GINT_TO_POINTER (i));
+    add_program (server, i);
 
     g_free (key);
   }
@@ -137,58 +132,37 @@ signal_interrupt (int signum)
 }
 
 
-void
-ew_stream_server_notify_url (const char *s, void *priv)
+static void
+add_program (GssServer *server, int i)
 {
-  int i = GPOINTER_TO_INT (priv);
+  GssProgram *program;
   const char *url;
+  const char *stream_name;
+  const char *stream_type;
+  char *key;
 
-  url = gss_config_get (server->config, s);
+  key = g_strdup_printf("stream%d_name", i);
+  stream_name = gss_config_get (server->config, key);
+  g_free (key);
 
-  if (url[0] == 0 && programs[i] == NULL)
-    return;
-  if (programs[i] && strcmp (url, programs[i]->follow_host) == 0)
-    return;
+  key = g_strdup_printf ("stream%d_type", i);
+  stream_type = gss_config_get (server->config, key);
+  g_free (key);
+    
+  key = g_strdup_printf("stream%d_url", i);
+  url = gss_config_get (server->config, key);
+  g_free (key);
 
-  if (programs[i]) {
-    gss_server_remove_program (server, programs[i]);
-    programs[i] = NULL;
-  }
-
-  if (url[0]) {
-    char *stream_name;
-    const char *stream_type;
-    char *key;
-
-    key = g_strdup_printf ("stream%d_type", i);
-    stream_type = gss_config_get (server->config, key);
-    g_free (key);
-
-    key = g_strdup_printf ("stream%d_name", i);
-    stream_name = g_strdup (gss_config_get (server->config, key));
-    g_free (key);
-    if (strcmp (stream_name, "") == 0) {
-      g_free (stream_name);
-      if (i == 0) {
-        stream_name = g_strdup ("stream");
-      } else {
-        stream_name = g_strdup_printf ("stream%d", i);
-      }
-    }
-
-    programs[i] = gss_server_add_program (server, stream_name);
-    if (strcmp (stream_type, "http-follow") == 0) {
-      gss_program_http_follow (programs[i], url);
-    } else if (strcmp (stream_type, "ew-contrib") == 0) {
-      gss_program_ew_contrib (programs[i]);
-    } else if (strcmp (stream_type, "http-put") == 0) {
-      gss_program_http_put (programs[i], "stream");
-    } else {
-      /* ew-follow */
-      gss_program_follow (programs[i], url, "stream");
-    }
-
-    g_free (stream_name);
+  program = gss_server_add_program (server, stream_name);
+  if (strcmp (stream_type, "http-follow") == 0) {
+    gss_program_http_follow (program, url);
+  } else if (strcmp (stream_type, "ew-contrib") == 0) {
+    gss_program_ew_contrib (program);
+  } else if (strcmp (stream_type, "http-put") == 0) {
+    gss_program_http_put (program, "stream");
+  } else {
+    /* ew-follow */
+    gss_program_follow (program, url, "stream");
   }
 
 }
