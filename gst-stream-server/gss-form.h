@@ -40,7 +40,8 @@ typedef enum {
   GSS_FIELD_SUBMIT,
   GSS_FIELD_VERTICAL_SPACE,
   GSS_FIELD_SECTION,
-  GSS_FIELD_HIDDEN
+  GSS_FIELD_HIDDEN,
+  GSS_FIELD_ENABLE
 } GssFieldType;
 
 typedef struct _GssOption GssOption;

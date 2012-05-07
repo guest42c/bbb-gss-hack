@@ -168,12 +168,41 @@ gss_config_form_add_hidden (GString * s, GssField * item, const char *value)
 }
 
 void
+gss_config_form_add_enable (GString * s, GssField * item, const char *value)
+{
+  gboolean selected;
+
+  selected = (value && g_str_equal (value, "on"));
+  if (item->indent)
+    g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
+  g_string_append_printf (s,
+      "<script type=\"text/javascript\">\n"
+      "function toggle(node_name,e_name) {\n"
+      "var node = document.getElementById(node_name);\n"
+      "var e = document.getElementById(e_name);\n"
+      "if (node.checked) e.style.display='block';\n"
+      "else e.style.display='none';\n"
+      "}\n" "</script>\n");
+  g_string_append_printf (s, "Enable: <input type=\"hidden\" name=\"%s\" value=off>"
+      "<input id=\"%s\" type=\"checkbox\" name=\"%s\" %s "
+      "onclick=\"toggle('%s','div_%s')\">\n",
+      item->config_name,
+      item->config_name, item->config_name, selected ? "checked=on" : "",
+      item->config_name, item->config_name);
+  g_string_append_printf (s, "<div id='div_%s' %s>",
+      item->config_name,
+      selected ? "" : "style='display:none'");
+  gss_html_append_break (s);
+}
+
+void
 gss_config_form_add_form (GssServer * server, GString * s, const char *action,
     const char *name, GssField * fields, GssSession * session)
 {
   int i;
   const char *enctype;
   gboolean in_fieldset = FALSE;
+  gboolean in_enable = FALSE;
 
   enctype = "multipart/form-data";
   //enctype = "application/x-www-form-urlencoded";
@@ -241,11 +270,20 @@ gss_config_form_add_form (GssServer * server, GString * s, const char *action,
         gss_html_append_break (s);
         break;
       case GSS_FIELD_SECTION:
-        if (in_fieldset)
+        if (in_fieldset) {
+          if (in_enable) {
+            g_string_append (s, "</div>\n");
+          }
+          in_enable = FALSE;
           g_string_append (s, "</fieldset>\n");
+        }
         g_string_append_printf (s, "<fieldset><legend>%s</legend>\n",
             fields[i].long_name);
         in_fieldset = TRUE;
+        break;
+      case GSS_FIELD_ENABLE:
+        gss_config_form_add_enable (s, fields + i, default_value);
+        in_enable = TRUE;
         break;
       case GSS_FIELD_HIDDEN:
         gss_config_form_add_hidden (s, fields + i, default_value);
@@ -255,7 +293,11 @@ gss_config_form_add_form (GssServer * server, GString * s, const char *action,
     }
   }
 
-  if (in_fieldset)
+  if (in_fieldset) {
+    if (in_enable) {
+      g_string_append (s, "</div>\n");
+    }
     g_string_append (s, "</fieldset>\n");
+  }
   g_string_append (s, "</form>\n");
 }
