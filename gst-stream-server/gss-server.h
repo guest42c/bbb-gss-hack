@@ -51,6 +51,9 @@ enum {
 typedef enum {
   GSS_PROGRAM_EW_FOLLOW,
   GSS_PROGRAM_HTTP_FOLLOW,
+  GSS_PROGRAM_HTTP_PUT,
+  GSS_PROGRAM_EW_CONTRIB,
+  GSS_PROGRAM_ICECAST,
   GSS_PROGRAM_MANUAL
 } GssProgramType;
 
@@ -219,7 +222,8 @@ void gss_program_follow (GssProgram *program, const char *host,
     const char *stream);
 void gss_program_http_follow (GssProgram *progra, const char *uri);
 void gss_program_ew_contrib (GssProgram *program);
-void gss_program_http_put (GssProgram *program, const char *location);
+void gss_program_http_put (GssProgram *program);
+void gss_program_icecast (GssProgram *program);
 void gss_program_follow_get_list (GssProgram *program);
 GssServerStream * gss_program_add_ogv_stream (GssProgram *program);
 GssServerStream * gss_program_add_webm_stream (GssProgram *program);
@@ -240,6 +244,8 @@ void gss_server_deinit (void);
 void gss_program_free (GssProgram *program);
 void gss_stream_free (GssServerStream *stream);
 void gss_program_set_jpegsink (GssProgram *program, GstElement *jpegsink);
+void gss_stream_get_stats (GssServerStream *stream, guint64 *n_bytes_in,
+    guint64 *n_bytes_out);
 
 void gss_server_add_admin_callbacks (GssServer *server, SoupServer *soupserver);
 

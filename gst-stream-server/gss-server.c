@@ -705,6 +705,12 @@ gss_stream_free (GssServerStream * stream)
   g_free (stream);
 }
 
+void
+gss_stream_get_stats (GssServerStream *stream, guint64 *in, guint64 *out)
+{
+  g_object_get (stream->sink, "bytes-to-serve", in,
+      "bytes-served", out, NULL);
+}
 
 const char *
 gss_server_get_multifdsink_string (void)
@@ -1139,7 +1145,6 @@ push_callback (SoupServer * server, SoupMessage * msg,
     return;
   }
 
-  g_print ("push %s\n", msg->method);
   soup_message_headers_foreach (msg->request_headers, dump_header, user_data);
 
   if (!g_str_equal (path, "/push")) {
@@ -1148,7 +1153,7 @@ push_callback (SoupServer * server, SoupMessage * msg,
   }
 
   program = gss_server_add_program (ewserver, "push_stream");
-  program->program_type = GSS_PROGRAM_MANUAL;
+  program->program_type = GSS_PROGRAM_HTTP_PUT;
 
   content_type = soup_message_headers_get_one (msg->request_headers,
       "Content-Type");
@@ -1194,7 +1199,7 @@ push_wrote_headers (SoupMessage * msg, void *user_data)
   socket = soup_client_context_get_socket (program->push_client);
   fd = soup_socket_get_fd (socket);
 
-  stream = gss_program_add_stream_full (program, GSS_SERVER_STREAM_OGG,
+  stream = gss_program_add_stream_full (program, program->push_media_type,
       640, 360, 600000, NULL);
   stream->push_fd = fd;
   gss_stream_create_push_pipeline (stream);
@@ -1396,13 +1401,12 @@ gss_server_handle_program_frag (SoupServer * server, SoupMessage * msg,
 }
 
 static void
-gss_server_handle_program (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+gss_server_handle_program_get (GssProgram *program, SoupServer *server,
+    SoupMessage *msg, const char *path, GHashTable *query,
+    SoupClientContext *client)
 {
   const char *mime_type = "text/html";
   char *content;
-  GssProgram *program = (GssProgram *) user_data;
   GString *s = g_string_new ("");
   const char *base_url = "";
   int i;
@@ -1463,6 +1467,68 @@ gss_server_handle_program (SoupServer * server, SoupMessage * msg,
 
   soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE,
       content, strlen (content));
+}
+
+static void
+gss_server_handle_program_put (GssProgram *program, SoupServer *server,
+    SoupMessage *msg, const char *path, GHashTable *query,
+    SoupClientContext *client)
+{
+  const char *content_type;
+
+  if (program->push_client) {
+    gss_program_log (program, "busy");
+    soup_message_set_status (msg, SOUP_STATUS_CONFLICT);
+    return;
+  }
+
+  content_type = soup_message_headers_get_one (msg->request_headers,
+      "Content-Type");
+  if (content_type) {
+    if (strcmp (content_type, "application/ogg") == 0) {
+      program->push_media_type = GSS_SERVER_STREAM_OGG;
+    } else if (strcmp (content_type, "video/webm") == 0) {
+      program->push_media_type = GSS_SERVER_STREAM_WEBM;
+    } else if (strcmp (content_type, "video/mpeg-ts") == 0) {
+      program->push_media_type = GSS_SERVER_STREAM_TS;
+    } else if (strcmp (content_type, "video/mp2t") == 0) {
+      program->push_media_type = GSS_SERVER_STREAM_TS;
+    } else if (strcmp (content_type, "video/x-flv") == 0) {
+      program->push_media_type = GSS_SERVER_STREAM_FLV;
+    } else {
+      program->push_media_type = GSS_SERVER_STREAM_OGG;
+    }
+  } else {
+    program->push_media_type = GSS_SERVER_STREAM_OGG;
+  }
+
+  gss_program_start (program);
+
+  program->program_type = GSS_PROGRAM_HTTP_PUT;
+  program->push_client = client;
+
+  soup_message_set_status (msg, SOUP_STATUS_OK);
+
+  soup_message_headers_set_encoding (msg->response_headers, SOUP_ENCODING_EOF);
+
+  g_signal_connect (msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
+      program);
+}
+
+static void
+gss_server_handle_program (SoupServer * server, SoupMessage * msg,
+    const char *path, GHashTable * query, SoupClientContext * client,
+    gpointer user_data)
+{
+  GssProgram *program = (GssProgram *) user_data;
+
+  if (msg->method == SOUP_METHOD_GET) {
+    gss_server_handle_program_get (program, server, msg, path, query, client);
+    return;
+  }
+  if (msg->method == SOUP_METHOD_PUT || strcmp (msg->method, "SOURCE") == 0) {
+    gss_server_handle_program_put (program, server, msg, path, query, client);
+  }
 }
 
 static void
@@ -1862,8 +1928,22 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
       break;
     case GST_MESSAGE_EOS:
       gss_program_log (program, "end of stream");
-      stream->program->restart_delay = 5;
       gss_program_stop (program);
+      switch (program->program_type) {
+        case GSS_PROGRAM_EW_FOLLOW:
+        case GSS_PROGRAM_HTTP_FOLLOW:
+          program->restart_delay = 5;
+          break;
+        case GSS_PROGRAM_HTTP_PUT:
+        case GSS_PROGRAM_ICECAST:
+          program->push_client = NULL;
+          break;
+        case GSS_PROGRAM_EW_CONTRIB:
+          break;
+        case GSS_PROGRAM_MANUAL:
+        default:
+          break;
+      }
       break;
     case GST_MESSAGE_ELEMENT:
       break;
@@ -1882,15 +1962,17 @@ gss_program_stop (GssProgram * program)
 
   for (i = 0; i < program->n_streams; i++) {
     stream = program->streams[i];
-    gst_element_set_state (stream->pipeline, GST_STATE_NULL);
-    if (stream->follow_url) {
-      gss_stream_set_sink (stream, NULL);
+
+    gss_stream_set_sink (stream, NULL);
+    if (stream->pipeline) {
+      gst_element_set_state (stream->pipeline, GST_STATE_NULL);
+
       g_object_unref (stream->pipeline);
       stream->pipeline = NULL;
     }
   }
 
-  if (program->follow_uri) {
+  if (program->program_type != GSS_PROGRAM_MANUAL) {
     for (i = 0; i < program->n_streams; i++) {
       stream = program->streams[i];
       gss_stream_free (stream);
@@ -1914,6 +1996,8 @@ gss_program_start (GssProgram * program)
           700000, program->follow_uri);
       break;
     case GSS_PROGRAM_MANUAL:
+    case GSS_PROGRAM_ICECAST:
+    case GSS_PROGRAM_HTTP_PUT:
       break;
     default:
       g_warning ("not implemented");
@@ -2039,11 +2123,26 @@ gss_program_http_follow (GssProgram * program, const char *uri)
 void
 gss_program_ew_contrib (GssProgram * program)
 {
+  program->program_type = GSS_PROGRAM_EW_CONTRIB;
+
+  program->restart_delay = 0;
 
 }
 
 void
-gss_program_http_put (GssProgram * program, const char *location)
+gss_program_http_put (GssProgram * program)
 {
+  program->program_type = GSS_PROGRAM_HTTP_PUT;
+
+  program->restart_delay = 0;
+
+}
+
+void
+gss_program_icecast (GssProgram * program)
+{
+  program->program_type = GSS_PROGRAM_ICECAST;
+
+  program->restart_delay = 0;
 
 }

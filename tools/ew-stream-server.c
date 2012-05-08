@@ -159,7 +159,9 @@ add_program (GssServer *server, int i)
   } else if (strcmp (stream_type, "ew-contrib") == 0) {
     gss_program_ew_contrib (program);
   } else if (strcmp (stream_type, "http-put") == 0) {
-    gss_program_http_put (program, "stream");
+    gss_program_http_put (program);
+  } else if (strcmp (stream_type, "icecast") == 0) {
+    gss_program_icecast (program);
   } else {
     /* ew-follow */
     gss_program_follow (program, url, "stream");

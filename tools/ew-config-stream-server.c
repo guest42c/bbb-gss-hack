@@ -45,7 +45,8 @@ GssField control_fields[] = {
               {"ew-follow", "E1000/S1000 follower"},
               {"http-follow", "HTTP stream follower"},
               {"ew-contrib", "Entropy Wave contributor"},
-              {"icecast", "Icecast contributor"}
+              {"icecast", "Icecast contributor"},
+              {"http-put", "HTTP PUT contributor"}
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream0_url", "Stream URL or E1000 IP address",
@@ -60,7 +61,8 @@ GssField control_fields[] = {
               {"ew-follow", "E1000/S1000 follower"},
               {"http-follow", "HTTP stream follower"},
               {"ew-contrib", "Entropy Wave contributor"},
-              {"icecast", "Icecast contributor"}
+              {"icecast", "Icecast contributor"},
+              {"http-put", "HTTP PUT contributor"}
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream1_url", "Stream URL or E1000 IP address", "",
@@ -72,7 +74,8 @@ GssField control_fields[] = {
               {"ew-follow", "E1000/S1000 follower"},
               {"http-follow", "HTTP stream follower"},
               {"ew-contrib", "Entropy Wave contributor"},
-              {"icecast", "Icecast contributor"}
+              {"icecast", "Icecast contributor"},
+              {"http-put", "HTTP PUT contributor"}
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream2_url", "Stream URL or E1000 IP address", "",
@@ -84,7 +87,8 @@ GssField control_fields[] = {
               {"ew-follow", "E1000/S1000 follower"},
               {"http-follow", "HTTP stream follower"},
               {"ew-contrib", "Entropy Wave contributor"},
-              {"icecast", "Icecast contributor"}
+              {"icecast", "Icecast contributor"},
+              {"http-put", "HTTP PUT contributor"}
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream3_url", "Stream URL or E1000 IP address", "",
@@ -96,7 +100,8 @@ GssField control_fields[] = {
               {"ew-follow", "E1000/S1000 follower"},
               {"http-follow", "HTTP stream follower"},
               {"ew-contrib", "Entropy Wave contributor"},
-              {"icecast", "Icecast contributor"}
+              {"icecast", "Icecast contributor"},
+              {"http-put", "HTTP PUT contributor"}
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream4_url", "Stream URL or E1000 IP address", "",
