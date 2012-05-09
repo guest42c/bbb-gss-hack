@@ -124,6 +124,8 @@ G_DEFINE_TYPE (GssServer, gss_server, G_TYPE_OBJECT);
 #define DEFAULT_HTTP_PORT 80
 #define DEFAULT_HTTPS_PORT 443
 
+static gboolean enable_rtsp = FALSE;
+
 static void
 gss_server_init (GssServer * server)
 {
@@ -142,7 +144,7 @@ gss_server_init (GssServer * server)
   server->n_programs = 0;
   server->programs = NULL;
 
-  gss_server_rtsp_init (server);
+  if (enable_rtsp) gss_server_rtsp_init (server);
 }
 
 void
@@ -932,9 +934,11 @@ gss_program_add_stream_full (GssProgram * program,
 
   stream = gss_stream_new (type, width, height, bitrate);
   gss_program_add_stream (program, stream);
-  if (type == GSS_SERVER_STREAM_OGG) {
-    stream->rtsp_stream = gss_rtsp_stream_new (stream);
-    gss_rtsp_stream_start (stream->rtsp_stream);
+  if (enable_rtsp) {
+    if (type == GSS_SERVER_STREAM_OGG) {
+      stream->rtsp_stream = gss_rtsp_stream_new (stream);
+      gss_rtsp_stream_start (stream->rtsp_stream);
+    }
   }
 
   stream->name = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s", program->location,
