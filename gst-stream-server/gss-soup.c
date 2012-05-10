@@ -58,3 +58,22 @@ gss_soup_get_base_url_http (GssServer * server, SoupMessage * msg)
 
   return base_url;
 }
+
+char *
+gss_soup_get_base_url_https (GssServer * server, SoupMessage * msg)
+{
+  char *base_url;
+  char *host;
+
+  host = gss_soup_get_request_host (msg);
+
+  if (server->port == 80) {
+    base_url = g_strdup_printf ("https://%s", host);
+  } else {
+    base_url = g_strdup_printf ("https://%s:%d", host, server->https_port);
+  }
+  g_free (host);
+
+  return base_url;
+}
+
