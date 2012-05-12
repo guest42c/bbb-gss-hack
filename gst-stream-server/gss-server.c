@@ -126,6 +126,10 @@ G_DEFINE_TYPE (GssServer, gss_server, G_TYPE_OBJECT);
 
 static gboolean enable_rtsp = FALSE;
 
+static const gchar *soup_method_source;
+#define SOUP_METHOD_SOURCE (soup_method_source)
+
+
 static void
 gss_server_init (GssServer * server)
 {
@@ -173,6 +177,8 @@ gss_server_log (GssServer * server, char *message)
 static void
 gss_server_class_init (GssServerClass * server_class)
 {
+  soup_method_source = g_intern_static_string ("SOURCE");
+
   G_OBJECT_CLASS (server_class)->set_property = gss_server_set_property;
   G_OBJECT_CLASS (server_class)->get_property = gss_server_get_property;
 
@@ -1133,7 +1139,6 @@ dump_header (const char *name, const char *value, gpointer user_data)
   g_print ("%s: %s\n", name, value);
 }
 
-
 static void
 push_callback (SoupServer * server, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
@@ -1144,7 +1149,8 @@ push_callback (SoupServer * server, SoupMessage * msg,
   GssServer *ewserver = (GssServer *) user_data;
   const char *content_type;
 
-  if (!(msg->method == SOUP_METHOD_PUT || msg->method == SOUP_METHOD_POST) && strcmp (msg->method, "SOURCE") != 0) {
+  if (!(msg->method == SOUP_METHOD_PUT || msg->method == SOUP_METHOD_POST ||
+      msg->method == SOUP_METHOD_SOURCE) != 0) {
     soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
     return;
   }
