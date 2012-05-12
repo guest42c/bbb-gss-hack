@@ -1,0 +1,17 @@
+
+
+- http-follow doesn't work
+
+- stream configuration isn't getting updated when changed
+
+- ew follow doesn't work
+
+
+s/stream/program/
+
+programs should have descriptive names
+
+
+
+
+
