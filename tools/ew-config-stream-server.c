@@ -39,6 +39,7 @@ GssField control_fields[] = {
   {GSS_FIELD_SECTION, NULL, "Control"},
   {GSS_FIELD_CHECKBOX, "enable_streaming", "Enable Public Streaming", "on", 1},
   {GSS_FIELD_SECTION, NULL, "Stream #0"},
+  {GSS_FIELD_ENABLE, "stream0", "enable"},
   {GSS_FIELD_TEXT_INPUT, "stream0_name", "Stream Name", "stream0", 0},
   {GSS_FIELD_SELECT, "stream0_type", "Connection type", "ew-follow", 0,
         {
@@ -55,6 +56,7 @@ GssField control_fields[] = {
   //{ GSS_FIELD_TEXT_INPUT, "stream0_height", "Height", "360", 0 },
   //{ GSS_FIELD_TEXT_INPUT, "stream0_bitrate", "Bitrate", "700000", 0 },
   {GSS_FIELD_SECTION, NULL, "Stream #1"},
+  {GSS_FIELD_ENABLE, "stream1", "enable"},
   {GSS_FIELD_TEXT_INPUT, "stream1_name", "Stream Name", "stream1", 0},
   {GSS_FIELD_SELECT, "stream1_type", "Connection type", "ew-follow", 0,
         {
@@ -68,6 +70,7 @@ GssField control_fields[] = {
   {GSS_FIELD_TEXT_INPUT, "stream1_url", "Stream URL or E1000 IP address", "",
         0},
   {GSS_FIELD_SECTION, NULL, "Stream #2"},
+  {GSS_FIELD_ENABLE, "stream2", "enable"},
   {GSS_FIELD_TEXT_INPUT, "stream2_name", "Stream Name", "stream2", 0},
   {GSS_FIELD_SELECT, "stream2_type", "Connection type", "ew-follow", 0,
         {
@@ -122,41 +125,6 @@ GssField server_fields[] = {
   {GSS_FIELD_NONE}
 };
 
-GssField network_fields[] = {
-  {GSS_FIELD_CHECKBOX, "enable_os_network", "Configure network in OS", "off",
-        0},
-  {GSS_FIELD_SECTION, NULL, "Primary Ethernet"},
-  {GSS_FIELD_TEXT_INPUT, "eth0_name", "eth0 Name", "e1000-0", 0},
-  {GSS_FIELD_RADIO, "eth0_config", "IP Address", "dhcp", 0,
-        {
-              {"dhcp", "Automatic (DHCP)"},
-              {"manual", "Manual"},
-            }
-      },
-  {GSS_FIELD_TEXT_INPUT, "eth0_ipaddr", "Address", "10.0.2.50", 1},
-  {GSS_FIELD_TEXT_INPUT, "eth0_netmask", "Netmask", "255.255.255.0", 1},
-  {GSS_FIELD_TEXT_INPUT, "eth0_gateway", "Gateway", "10.0.2.1", 1},
-  {GSS_FIELD_SECTION, NULL, "Secondary Ethernet"},
-  {GSS_FIELD_TEXT_INPUT, "eth1_name", "eth1 Name", "e1000-1", 0},
-  {GSS_FIELD_RADIO, "eth1_config", "IP Address", "dhcp", 0,
-        {
-              {"dhcp", "Automatic (DHCP)"},
-              {"manual", "Manual"},
-            }
-      },
-  {GSS_FIELD_TEXT_INPUT, "eth1_ipaddr", "Address", "10.0.2.50", 1},
-  {GSS_FIELD_TEXT_INPUT, "eth1_netmask", "Netmask", "255.255.255.0", 1},
-  {GSS_FIELD_TEXT_INPUT, "eth1_gateway", "Gateway", "10.0.2.1", 1},
-  {GSS_FIELD_SECTION, NULL, "DNS server"},
-  {GSS_FIELD_TEXT_INPUT, "dns1", "DNS #1", "", 1},
-  {GSS_FIELD_TEXT_INPUT, "dns2", "DNS #2", "", 1},
-  {GSS_FIELD_SECTION, NULL, "NTP server"},
-  {GSS_FIELD_TEXT_INPUT, "ntp", "NTP #1", "", 1},
-  {GSS_FIELD_HIDDEN, "reboot", NULL, "yes", 0},
-  {GSS_FIELD_SUBMIT, "submit", "Update Configuration and Reboot", NULL, 0},
-  {GSS_FIELD_NONE}
-};
-
 GssField access_fields[] = {
   {GSS_FIELD_SECTION, NULL, "Access Restrictions"},
   {GSS_FIELD_TEXT_INPUT, "hosts_allow", "Allowed Hosts (admin)", "0.0.0.0/0",
@@ -189,32 +157,11 @@ GssField configuration_file_fields[] = {
   {GSS_FIELD_NONE}
 };
 
-GssField firmware_file_fields[] = {
-  {GSS_FIELD_SECTION, NULL, "Firmware Update"},
-  {GSS_FIELD_FILE, "firmware_file", "Upload File", "config", 0},
-  {GSS_FIELD_SUBMIT, "submit", "Update Firmware", NULL, 1},
-  {GSS_FIELD_NONE}
-};
-
 GssField certificate_file_fields[] = {
   {GSS_FIELD_SECTION, NULL, "Certificate Upload"},
   {GSS_FIELD_FILE, "cert_file", "Upload Certificate", "server.crt", 0},
   {GSS_FIELD_FILE, "key_file", "Upload Key", "server.key", 0},
   {GSS_FIELD_SUBMIT, "submit", "Update Files", NULL, 1},
-  {GSS_FIELD_NONE}
-};
-
-GssField reboot_fields[] = {
-  {GSS_FIELD_SECTION, NULL, "Reboot Machine"},
-  {GSS_FIELD_HIDDEN, "reboot", NULL, "yes", 0},
-  {GSS_FIELD_SUBMIT, "submit", "Reboot", NULL, 1},
-  {GSS_FIELD_NONE}
-};
-
-GssField poweroff_fields[] = {
-  {GSS_FIELD_SECTION, NULL, "Power Off Machine"},
-  {GSS_FIELD_HIDDEN, "poweroff", NULL, "yes", 0},
-  {GSS_FIELD_SUBMIT, "submit", "Power Off", NULL, 1},
   {GSS_FIELD_NONE}
 };
 
@@ -247,8 +194,6 @@ admin_header (GssServer * server, GString * s, const char *session_id)
       "</div><!-- end header div -->\n" "<div id=\"nav\">\n");
 
   append_tab (s, "/admin", "/images/button_main.png", "MAIN", session_id);
-  append_tab (s, "/admin/network", "/images/button_network.png",
-      "NETWORK", session_id);
   append_tab (s, "/admin/access", "/images/button_access.png",
       "ACCESS", session_id);
   append_tab (s, "/admin/admin", "/images/button_admin.png",
@@ -266,7 +211,6 @@ enum
   ADMIN_NONE = 0,
   ADMIN_CONTROL,
   ADMIN_SERVER,
-  ADMIN_NETWORK,
   ADMIN_ADMIN,
   ADMIN_LOG,
   ADMIN_STATUS,
@@ -287,11 +231,8 @@ AdminPage admin_pages[] = {
   {"/admin/", ADMIN_CONTROL, FALSE},
   {"/admin/server", ADMIN_SERVER, TRUE},
   {"/admin/admin", ADMIN_ADMIN, TRUE},
-  {"/admin/reboot", ADMIN_ADMIN, TRUE},
-  {"/admin/poweroff", ADMIN_ADMIN, TRUE},
   {"/admin/admin_password", ADMIN_ADMIN, TRUE},
   {"/admin/editor_password", ADMIN_ADMIN, FALSE},
-  {"/admin/network", ADMIN_NETWORK, TRUE},
   {"/admin/log", ADMIN_LOG, TRUE},
   {"/admin/status", ADMIN_STATUS, FALSE},
   {"/admin/config", ADMIN_CONFIG, TRUE},
@@ -432,18 +373,46 @@ admin_callback (SoupServer * server, SoupMessage * msg,
 
     switch (type) {
       case ADMIN_CONTROL:
+        {
+          int i;
+          for(i=0;i<ewserver->n_programs;i++){
+            GssProgram *program = ewserver->programs[i];
+            g_string_append_printf(s, "%s type=%d %s %s<br />\n",
+                program->location,
+                program->program_type,
+                program->follow_uri,
+                program->follow_host);
+          }
+        }
         gss_config_form_add_form (ewserver, s, "/admin", "Control",
             control_fields, session);
-        break;
-      case ADMIN_NETWORK:
-        gss_config_form_add_form (ewserver, s, "/admin/network",
-            "Network Configuration", network_fields, session);
         break;
       case ADMIN_SERVER:
         gss_config_form_add_form (ewserver, s, "/admin/server",
             "HTTP Server Configuration", server_fields, session);
         break;
       case ADMIN_LOG:
+        {
+          int i;
+          for(i=0;i<ewserver->n_programs;i++){
+            GssProgram *program = ewserver->programs[i];
+            GssServerStream *stream;
+            guint64 n_bytes_in = 0;
+            guint64 n_bytes_out = 0;
+
+            if (program->streams == NULL) continue;
+            stream = program->streams[0];
+
+            if (stream) {
+              gss_stream_get_stats (stream, &n_bytes_in, &n_bytes_out);
+            }
+
+            g_string_append_printf(s, "%s in=%" G_GUINT64_FORMAT " out=%"
+                G_GUINT64_FORMAT,
+                program->location, n_bytes_in, n_bytes_out);
+            gss_html_append_break (s);
+          }
+        }
       {
         GList *g;
         g_string_append_printf (s, "<pre>\n");
@@ -466,13 +435,7 @@ admin_callback (SoupServer * server, SoupMessage * msg,
         gss_config_form_add_form (ewserver, s, "/admin/upload_config",
             "Configuration File", configuration_file_fields, session);
         gss_config_form_add_form (ewserver, s, "/admin/status",
-            "Firmware Update", firmware_file_fields, session);
-        gss_config_form_add_form (ewserver, s, "/admin/status",
             "Upload Certificate", certificate_file_fields, session);
-        gss_config_form_add_form (ewserver, s, "/admin/reboot", "Reboot",
-            reboot_fields, session);
-        gss_config_form_add_form (ewserver, s, "/admin/poweroff", "Power Off",
-            poweroff_fields, session);
         break;
       case ADMIN_ACCESS:
         gss_config_form_add_form (ewserver, s, "/admin/access",
