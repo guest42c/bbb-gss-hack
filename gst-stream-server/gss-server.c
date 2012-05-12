@@ -1144,7 +1144,7 @@ push_callback (SoupServer * server, SoupMessage * msg,
   GssServer *ewserver = (GssServer *) user_data;
   const char *content_type;
 
-  if (msg->method != SOUP_METHOD_PUT && strcmp (msg->method, "SOURCE") != 0) {
+  if (!(msg->method == SOUP_METHOD_PUT || msg->method == SOUP_METHOD_POST) && strcmp (msg->method, "SOURCE") != 0) {
     soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
     return;
   }
@@ -1530,7 +1530,7 @@ gss_server_handle_program (SoupServer * server, SoupMessage * msg,
     gss_server_handle_program_get (program, server, msg, path, query, client);
     return;
   }
-  if (msg->method == SOUP_METHOD_PUT || strcmp (msg->method, "SOURCE") == 0) {
+  if (msg->method == SOUP_METHOD_PUT || msg->method == SOUP_METHOD_POST || strcmp (msg->method, "SOURCE") == 0) {
     gss_server_handle_program_put (program, server, msg, path, query, client);
   }
 }
