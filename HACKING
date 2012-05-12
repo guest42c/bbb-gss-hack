@@ -1,0 +1,29 @@
+
+HACKING
+=======
+
+Contributing to gss-stream-server/ew-stream-server.
+
+Source code is kept in git, at this URL:
+
+  git://code.entropywave.com/git/ew-stream-server.git
+
+Developer access is via ssh:
+
+  git+ssh://code.entropywave.com/git/ew-stream-server.git
+
+
+Bugs reports are handled on the GNOME Bugzilla:
+
+  http://bugzilla.gnome.org/
+
+  Product: GStreamer
+  Component: gst-stream-server
+
+Patches should be created from git commits using 'git format-patch'
+and attached to bug reports.  Please make sure your name and email
+is correct for proper attribution.
+
+
+
+
