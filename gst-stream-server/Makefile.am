@@ -3,8 +3,8 @@ lib_LTLIBRARIES = libgss-@GST_MAJORMINOR@.la
 
 gss_includedir = $(includedir)/gstreamer-@GST_MAJORMINOR@/gss
 
-libgss_@GST_MAJORMINOR@_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS)
-libgss_@GST_MAJORMINOR@_la_LIBS = $(GST_LIBS) $(SOUP_LIBS)
+libgss_@GST_MAJORMINOR@_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS)
+libgss_@GST_MAJORMINOR@_la_LIBS = $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS)
 libgss_@GST_MAJORMINOR@_la_SOURCES = \
 	gss-hls-server.c \
 	gss-server.c \

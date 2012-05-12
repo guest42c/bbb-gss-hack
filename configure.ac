@@ -59,35 +59,43 @@ fi
 
 dnl *** check for arguments to configure ***
 
-PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-base-0.10 gst-rtsp-server-0.10,
-    HAVE_GST=yes, HAVE_GST=no)
-PKG_CHECK_MODULES(GST_VIDEO, gstreamer-video-0.10 >= 0.10.18,
-    HAVE_GST_VIDEO=yes, HAVE_GST_VIDEO=no)
-PKG_CHECK_MODULES(GST_AUDIO, gstreamer-audio-0.10 >= 0.10.18,
-    HAVE_GST_AUDIO=yes, HAVE_GST_AUDIO=no)
-PKG_CHECK_MODULES(SOUP, libsoup-2.4, HAVE_SOUP=yes, HAVE_SOUP=no)
-if test "$HAVE_GST" != yes -o "$HAVE_GST_VIDEO" != yes -o "$HAVE_GST_AUDIO" != yes ; then
-  echo GStreamer is needed
+GLIB_REQ=2.26.0
+PKG_CHECK_MODULES(GLIB, glib-2.0 >= $GLIB_REQ, HAVE_GLIB=yes, HAVE_GLIB=no)
+if test "$HAVE_GLIB" != yes ; then
+  echo "glib-2.0 >= $GLIB_REQ is required to build"
   exit 1
 fi
 
-AM_CONDITIONAL(HAVE_GST, test "x$HAVE_GST" = "xyes")
+PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-base-0.10 gstreamer-video-0.10 gstreamer-audio-0.10,
+    HAVE_GST=yes, HAVE_GST=no)
+if test "$HAVE_GST" != yes ; then
+  echo GStreamer and gst-plugns-base are needed to build
+  exit 1
+fi
 AC_SUBST(GST_CFLAGS)
 AC_SUBST(GST_LIBS)
 
+PKG_CHECK_MODULES(GST_RTSP_SERVER, gst-rtsp-server-0.10 >= 0.10.1,
+    HAVE_GST_RTSP_SERVER=yes, HAVE_GST_RTSP_SERVER=no)
+if test "$HAVE_GST_RTSP_SERVER" != yes ; then
+  echo gst-rtsp-server is needed to build
+  exit 1
+fi
+AC_SUBST(GST_RTSP_SERVER_CFLAGS)
+AC_SUBST(GST_RTSP_SERVER_LIBS)
+
+LIBSOUP_REQ=2.38.0
+PKG_CHECK_MODULES(SOUP, libsoup-2.4 > LIBSOUP_REQ, HAVE_SOUP=yes, HAVE_SOUP=no)
+if test "$HAVE_SOUP" != yes ; then
+  echo libsoup is needed to build
+  exit 1
+fi
+AC_SUBST(SOUP_CFLAGS)
+AC_SUBST(SOUP_LIBS)
+
+
 GST_ALL_LDFLAGS="-no-undefined"
 AC_SUBST(GST_ALL_LDFLAGS)
-
-PKG_CHECK_MODULES(LIBICAL, libical, HAVE_LIBICAL=yes, HAVE_LIBICAL=no)
-AM_CONDITIONAL(HAVE_LIBICAL, test "x$HAVE_LIBICAL" = "xyes")
-AC_SUBST(LIBICAL_CFLAGS)
-AC_SUBST(LIBICAL_LIBS)
-AC_DEFINE(HAVE_LIBICAL, 1, [Defined if libical was found])
-
-PKG_CHECK_MODULES(CAIRO, cairo, HAVE_CAIRO=yes, HAVE_CAIRO=no)
-AM_CONDITIONAL(HAVE_CAIRO, test "x$HAVE_CAIRO" = "xyes")
-AC_SUBST(CAIRO_CFLAGS)
-AC_SUBST(CAIRO_LIBS)
 
 AM_CONDITIONAL(HAVE_FALSE, false)
 
