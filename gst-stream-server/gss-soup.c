@@ -76,4 +76,3 @@ gss_soup_get_base_url_https (GssServer * server, SoupMessage * msg)
 
   return base_url;
 }
-

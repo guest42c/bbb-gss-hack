@@ -173,9 +173,10 @@ gss_config_lock (GssConfig * config, const char *key)
 }
 
 gboolean
-gss_config_exists (GssConfig *config, const char *key)
+gss_config_exists (GssConfig * config, const char *key)
 {
-  if (g_hash_table_lookup (config->hash, key)) return TRUE;
+  if (g_hash_table_lookup (config->hash, key))
+    return TRUE;
   return FALSE;
 }
 

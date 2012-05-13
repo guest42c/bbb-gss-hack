@@ -181,16 +181,14 @@ gss_config_form_add_enable (GString * s, GssField * item, const char *value)
       "var node = document.getElementById(node_name);\n"
       "var e = document.getElementById(e_name);\n"
       "if (node.checked) e.style.display='block';\n"
-      "else e.style.display='none';\n"
-      "}\n" "</script>\n");
-  g_string_append_printf (s, "Enable: <input type=\"hidden\" name=\"%s\" value=off>"
+      "else e.style.display='none';\n" "}\n" "</script>\n");
+  g_string_append_printf (s,
+      "Enable: <input type=\"hidden\" name=\"%s\" value=off>"
       "<input id=\"%s\" type=\"checkbox\" name=\"%s\" %s "
-      "onclick=\"toggle('%s','div_%s')\">\n",
-      item->config_name,
+      "onclick=\"toggle('%s','div_%s')\">\n", item->config_name,
       item->config_name, item->config_name, selected ? "checked=on" : "",
       item->config_name, item->config_name);
-  g_string_append_printf (s, "<div id='div_%s' %s>",
-      item->config_name,
+  g_string_append_printf (s, "<div id='div_%s' %s>", item->config_name,
       selected ? "" : "style='display:none'");
   gss_html_append_break (s);
 }
