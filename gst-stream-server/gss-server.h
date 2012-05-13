@@ -205,7 +205,6 @@ struct _GssServerClass
 
 };
 
-extern int verbose;
 
 GType gss_server_get_type (void);
 

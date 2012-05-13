@@ -39,6 +39,8 @@
 #define enable_flash TRUE
 #define enable_cortado FALSE
 
+#define verbose FALSE
+
 enum
 {
   PROP_PORT = 1
@@ -148,7 +150,8 @@ gss_server_init (GssServer * server)
   server->n_programs = 0;
   server->programs = NULL;
 
-  if (enable_rtsp) gss_server_rtsp_init (server);
+  if (enable_rtsp)
+    gss_server_rtsp_init (server);
 }
 
 void
@@ -714,10 +717,9 @@ gss_stream_free (GssServerStream * stream)
 }
 
 void
-gss_stream_get_stats (GssServerStream *stream, guint64 *in, guint64 *out)
+gss_stream_get_stats (GssServerStream * stream, guint64 * in, guint64 * out)
 {
-  g_object_get (stream->sink, "bytes-to-serve", in,
-      "bytes-served", out, NULL);
+  g_object_get (stream->sink, "bytes-to-serve", in, "bytes-served", out, NULL);
 }
 
 const char *
@@ -1150,7 +1152,7 @@ push_callback (SoupServer * server, SoupMessage * msg,
   const char *content_type;
 
   if (!(msg->method == SOUP_METHOD_PUT || msg->method == SOUP_METHOD_POST ||
-      msg->method == SOUP_METHOD_SOURCE) != 0) {
+          msg->method == SOUP_METHOD_SOURCE) != 0) {
     soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
     return;
   }
@@ -1411,9 +1413,9 @@ gss_server_handle_program_frag (SoupServer * server, SoupMessage * msg,
 }
 
 static void
-gss_server_handle_program_get (GssProgram *program, SoupServer *server,
-    SoupMessage *msg, const char *path, GHashTable *query,
-    SoupClientContext *client)
+gss_server_handle_program_get (GssProgram * program, SoupServer * server,
+    SoupMessage * msg, const char *path, GHashTable * query,
+    SoupClientContext * client)
 {
   const char *mime_type = "text/html";
   char *content;
@@ -1480,9 +1482,9 @@ gss_server_handle_program_get (GssProgram *program, SoupServer *server,
 }
 
 static void
-gss_server_handle_program_put (GssProgram *program, SoupServer *server,
-    SoupMessage *msg, const char *path, GHashTable *query,
-    SoupClientContext *client)
+gss_server_handle_program_put (GssProgram * program, SoupServer * server,
+    SoupMessage * msg, const char *path, GHashTable * query,
+    SoupClientContext * client)
 {
   const char *content_type;
 
@@ -1536,7 +1538,8 @@ gss_server_handle_program (SoupServer * server, SoupMessage * msg,
     gss_server_handle_program_get (program, server, msg, path, query, client);
     return;
   }
-  if (msg->method == SOUP_METHOD_PUT || msg->method == SOUP_METHOD_POST || strcmp (msg->method, "SOURCE") == 0) {
+  if (msg->method == SOUP_METHOD_PUT || msg->method == SOUP_METHOD_POST
+      || strcmp (msg->method, "SOURCE") == 0) {
     gss_server_handle_program_put (program, server, msg, path, query, client);
   }
 }
