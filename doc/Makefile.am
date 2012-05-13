@@ -66,7 +66,7 @@ HTML_IMAGES=
 
 # Extra SGML files that are included by $(DOC_MAIN_SGML_FILE).
 # e.g. content_files=running.sgml building.sgml changes-2.0.sgml
-content_files=building.xml concepts.xml opcode_table.xml opcodes.xml running.xml tutorial.xml table.xml
+content_files=
 
 # SGML files where gtk-doc abbrevations (#GtkWidget) are expanded
 # These files must be listed here *and* in content_files
@@ -78,8 +78,8 @@ expand_content_files=
 # signals and properties.
 # e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-GTKDOC_CFLAGS=
-GTKDOC_LIBS=
+GTKDOC_CFLAGS=$(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS)
+GTKDOC_LIBS=$(top_builddir)/gst-stream-server/libgss-@GST_MAJORMINOR@.la $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS)
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make

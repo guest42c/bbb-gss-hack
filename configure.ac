@@ -126,6 +126,7 @@ pkgconfig/Makefile
 pkgconfig/gst-stream-server-uninstalled.pc
 pkgconfig/gst-stream-server.pc
 tools/Makefile
+doc/version.entities
 ])
 AC_OUTPUT
 
