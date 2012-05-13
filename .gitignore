@@ -33,5 +33,28 @@ pkgconfig/gst-stream-server-0.10-uninstalled.pc
 pkgconfig/gst-stream-server-0.10.pc
 pkgconfig/gst-stream-server-uninstalled.pc
 pkgconfig/gst-stream-server.pc
+tools/server.crt
+tools/server.key
+doc/gst-stream-server-decl-list.txt
+doc/gst-stream-server-decl.txt
+doc/gst-stream-server-undeclared.txt
+doc/gst-stream-server-undocumented.txt
+doc/gst-stream-server-unused.txt
+doc/gst-stream-server.args
+doc/gst-stream-server.hierarchy
+doc/gst-stream-server.interfaces
+doc/gst-stream-server.prerequisites
+doc/gst-stream-server.signals
+doc/html-build.stamp
+doc/html.stamp
+doc/html/
+doc/scan-build.stamp
+doc/sgml-build.stamp
+doc/sgml.stamp
+doc/tmpl-build.stamp
+doc/tmpl.stamp
+doc/tmpl/
+doc/version.entities
+doc/xml/
 
 
