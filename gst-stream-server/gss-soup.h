@@ -30,6 +30,8 @@ G_BEGIN_DECLS
 char *gss_soup_get_request_host (SoupMessage *message);
 char * gss_soup_get_base_url_http (GssServer *server, SoupMessage *msg);
 char * gss_soup_get_base_url_https (GssServer * server, SoupMessage * msg);
+GHashTable * gss_soup_parse_json (const char *s, int len);
+
 
 G_END_DECLS
 

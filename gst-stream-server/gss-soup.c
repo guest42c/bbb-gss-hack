@@ -24,6 +24,7 @@
 #include "gss-html.h"
 
 #include <string.h>
+#include <json-glib/json-glib.h>
 
 
 
@@ -83,4 +84,64 @@ gss_soup_get_base_url_https (GssServer * server, SoupMessage * msg)
   g_free (host);
 
   return base_url;
+}
+
+static void
+dump_node (JsonNode * node, int indent)
+{
+  g_print ("%*snode: %d\n", indent, "", JSON_NODE_TYPE (node));
+  switch (JSON_NODE_TYPE (node)) {
+    case JSON_NODE_OBJECT:
+    {
+      GList *g;
+      JsonObject *obj = json_node_get_object (node);
+      g_print ("%*s  OBJECT\n", indent, "");
+      for (g = json_object_get_members (obj); g; g = g_list_next (g)) {
+        g_print ("%*s    %s\n", indent, "", (char *) g->data);
+        dump_node (json_object_get_member (obj, (char *) g->data), indent + 6);
+      }
+    }
+      break;
+    case JSON_NODE_ARRAY:
+      g_print ("%*s  ARRAY\n", indent, "");
+      break;
+    case JSON_NODE_VALUE:
+    {
+      GValue val = G_VALUE_INIT;
+      char *s;
+      json_node_get_value (node, &val);
+      s = g_strdup_value_contents (&val);
+      g_print ("%*s  VALUE %s\n", indent, "", s);
+      g_free (s);
+      g_value_unset (&val);
+    }
+      break;
+    case JSON_NODE_NULL:
+      g_print ("%*s  NULL\n", indent, "");
+      break;
+    default:
+      break;
+  }
+
+}
+
+GHashTable *
+gss_soup_parse_json (const char *s, int len)
+{
+  JsonParser *jp;
+  JsonNode *node;
+  GError *error;
+
+  s = "{\"status\":\"okay\",\"email\":\"ds@schleef.org\",\"audience\":\"localhost\",\"expires\":1337410108556,\"issuer\":\"browserid.org\"}";
+  len = strlen (s);
+
+  jp = json_parser_new ();
+
+  json_parser_load_from_data (jp, s, len, &error);
+
+  node = json_parser_get_root (jp);
+
+  dump_node (node, 1);
+
+  return NULL;
 }
