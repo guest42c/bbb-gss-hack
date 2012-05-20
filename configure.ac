@@ -12,6 +12,14 @@ AC_SUBST(GST_MAJORMINOR)
 
 AM_CONFIG_HEADER(config.h)
 
+dnl CURRENT, REVISION, AGE
+dnl - library source changed -> increment REVISION
+dnl - interfaces added/removed/changed -> increment CURRENT, REVISION = 0
+dnl - interfaces added -> increment AGE
+dnl - interfaces removed -> AGE = 0
+GSS_LIBVERSION="0:0:0"
+AC_SUBST(GSS_LIBVERSION)
+
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 AM_PROG_AS
