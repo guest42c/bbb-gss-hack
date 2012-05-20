@@ -24,6 +24,7 @@
 
 #include <glib.h>
 #include "gss-server.h"
+#include "gss-session.h"
 #include <libsoup/soup.h>
 
 G_BEGIN_DECLS
@@ -39,6 +40,7 @@ void gss_html_append_image (GString *s, const char *url, int width, int height,
     const char *alt_text);
 void gss_html_append_image_printf (GString *s, const char *url,
     int width, int height, const char *alt_text, ...);
+void gss_html_bootstrap_doc (GString *s, GssSession *session);
 
 G_END_DECLS
 

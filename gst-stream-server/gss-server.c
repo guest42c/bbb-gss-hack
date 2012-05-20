@@ -58,6 +58,7 @@ static void log_resource (GssTransaction *transaction);
 #if 0
 static void push_resource (GssTransaction *transaction);
 #endif
+static void bs_resource (GssTransaction *transaction);
 
 static void push_wrote_headers (SoupMessage * msg, void *user_data);
 static void file_resource (GssTransaction *transaction);
@@ -388,6 +389,9 @@ setup_paths (GssServer * server)
       push_resource, NULL, NULL);
 #endif
 
+  gss_server_add_resource (server, "/bs", GSS_RESOURCE_UI, bs_resource,
+      NULL, NULL, server);
+
   if (enable_cortado) {
     gss_server_add_file_resource (server, "/cortado.jar", 0,
         "application/java-archive");
@@ -429,6 +433,24 @@ setup_paths (GssServer * server)
 
   gss_server_add_file_resource (server,
       "/include.js", 0, "text/javascript");
+
+  gss_server_add_file_resource (server,
+      "/bootstrap/css/bootstrap-responsive.css", 0, "text/css");
+  gss_server_add_file_resource (server,
+      "/bootstrap/css/bootstrap.css", 0, "text/css");
+
+  gss_server_add_file_resource (server,
+      "/bootstrap/js/bootstrap.js", 0, "text/javascript");
+  gss_server_add_file_resource (server,
+      "/bootstrap/js/jquery.js", 0, "text/javascript");
+
+  gss_server_add_file_resource (server,
+      "/bootstrap/img/glyphicons-halflings.png", 0, "image/png");
+  gss_server_add_file_resource (server,
+      "/bootstrap/img/glyphicons-halflings-white.png", 0, "image/png");
+
+  gss_server_add_file_resource (server,
+      "/bootstrap/fluid.html", 0, "text/html");
 }
 
 typedef struct _GssStaticResource GssStaticResource;
@@ -1069,6 +1091,25 @@ gss_stream_set_sink (GssServerStream * stream, GstElement * sink)
       gss_server_stream_add_hls (stream);
     }
   }
+}
+
+static void
+bs_resource (GssTransaction *t)
+{
+  GString *s;
+  char *content;
+  GssSession *login_session = NULL;
+
+  s = g_string_new ("");
+
+  gss_html_bootstrap_doc (s, login_session);
+
+  content = g_string_free (s, FALSE);
+
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
+
+  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
+      content, strlen (content));
 }
 
 static void
