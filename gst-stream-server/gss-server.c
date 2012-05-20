@@ -763,8 +763,8 @@ client_fd_removed (GstElement * e, int fd, gpointer user_data)
     soup_socket_disconnect (socket);
     fd_table[fd] = NULL;
   } else {
-    stream->program->special_client_fd_removed (stream, fd,
-        stream->program->special_user_data);
+    stream->custom_client_fd_removed (stream, fd,
+        stream->custom_user_data);
   }
 }
 

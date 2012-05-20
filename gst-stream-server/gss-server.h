@@ -94,10 +94,6 @@ struct _GssProgram {
     gboolean have_iv;
     guint32 init_vector[4];
   } hls;
-
-  void (*special_client_fd_removed) (GssServerStream *stream, int fd,
-      gpointer user_data);
-  gpointer special_user_data;
 };
 
 struct _GssHLSSegment {
@@ -145,6 +141,10 @@ struct _GssServerStream {
   } hls;
 
   GssRtspStream *rtsp_stream;
+
+  void (*custom_client_fd_removed) (GssServerStream *stream, int fd,
+      gpointer user_data);
+  gpointer custom_user_data;
 };
 
 struct _GssConnection {
