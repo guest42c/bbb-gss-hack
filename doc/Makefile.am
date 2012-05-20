@@ -79,7 +79,7 @@ expand_content_files=
 # e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
 GTKDOC_CFLAGS=$(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS)
-GTKDOC_LIBS=$(top_builddir)/gst-stream-server/libgss-@GST_MAJORMINOR@.la $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS)
+GTKDOC_LIBS=$(top_builddir)/gst-stream-server/libgss-@GST_MAJORMINOR@.la $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS) $(JSON_GLIB_LIBS)
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
