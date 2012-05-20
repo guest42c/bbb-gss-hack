@@ -307,11 +307,13 @@ gss_server_new (void)
 
   server->ssl_server = soup_server_new (SOUP_SERVER_PORT,
       DEFAULT_HTTPS_PORT,
-      "ssl-cert-file", "server.crt", "ssl-key-file", "server.key", NULL);
+      SOUP_SERVER_SSL_CERT_FILE, "server.crt",
+      SOUP_SERVER_SSL_KEY_FILE, "server.key", NULL);
   if (!server->ssl_server) {
     server->ssl_server = soup_server_new (SOUP_SERVER_PORT,
         8000 + DEFAULT_HTTPS_PORT,
-        "ssl-cert-file", "server.crt", "ssl-key-file", "server.key", NULL);
+        SOUP_SERVER_SSL_CERT_FILE, "server.crt",
+        SOUP_SERVER_SSL_KEY_FILE, "server.key", NULL);
   }
 
   if (server->ssl_server) {
