@@ -376,6 +376,9 @@ setup_paths (GssServer * server, SoupServer * soupserver)
   IMAGE ("template_navnet.png");
   IMAGE ("template_s1000.png");
 
+  gss_server_add_static_string (soupserver, "/robots.txt",
+      "text/plain", "User-agent: *\nDisallow: /\n");
+
   soup_server_run_async (soupserver);
 }
 
