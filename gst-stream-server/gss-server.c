@@ -426,6 +426,9 @@ setup_paths (GssServer * server)
 
   gss_server_add_string_resource (server, "/robots.txt", 0,
       "text/plain", "User-agent: *\nDisallow: /\n");
+
+  gss_server_add_file_resource (server,
+      "/include.js", 0, "text/javascript");
 }
 
 typedef struct _GssStaticResource GssStaticResource;

@@ -25,9 +25,11 @@
 #include "gss-config.h"
 #include "gss-form.h"
 #include "gss-html.h"
+#include "gss-soup.h"
 
 #include <glib/gstdio.h>
 #include <glib-object.h>
+#include <json-glib/json-glib.h>
 
 #include <fcntl.h>
 
@@ -435,6 +437,92 @@ gss_session_new (const char *username)
   return session;
 }
 
+#if 0
+static void
+dump_hash (GHashTable *hash)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+
+  g_hash_table_iter_init (&iter, hash);
+  while (g_hash_table_iter_next (&iter, &key, &value)) 
+  {
+    g_print("%s: %s\n", (gchar *)key, (gchar *)value);
+  }
+}
+#endif
+
+typedef struct _BrowserIDVerify BrowserIDVerify;
+struct _BrowserIDVerify {
+  GssServer *ewserver;
+  SoupServer *server;
+  SoupMessage *msg;
+};
+
+static void
+browserid_verify_done (SoupSession *session, SoupMessage *msg,
+    gpointer user_data)
+{
+  GssSession *login_session;
+  BrowserIDVerify *v = (BrowserIDVerify *)user_data;
+  JsonParser *jp;
+  JsonNode *node;
+  JsonNode *node2;
+  JsonObject *object;
+  GError *error = NULL;
+  const char *s;
+  gboolean ret;
+  char *location;
+
+  jp = json_parser_new ();
+  ret = json_parser_load_from_data (jp, msg->response_body->data,
+      msg->response_body->length, &error);
+  if (!ret) {
+    g_error_free (error);
+    goto err;
+  }
+  node = json_parser_get_root (jp);
+  if (node == NULL) {
+    goto err;
+  }
+  object = json_node_get_object (node);
+  if (object == NULL) {
+    goto err;
+  }
+
+  node2 = json_object_get_member (object, "status");
+  s = json_node_get_string (node2);
+  if (!s && strcmp (s, "okay") != 0) {
+    goto err;
+  }
+
+  node2 = json_object_get_member (object, "email");
+  s = json_node_get_string (node2);
+  if (!s) {
+    goto err;
+  }
+
+  login_session = gss_session_new (s);
+
+  location = g_strdup_printf ("%s/bs?session_id=%s",
+      gss_soup_get_base_url_https (v->ewserver, v->msg),
+      login_session->session_id);
+
+  soup_message_headers_append (v->msg->response_headers, "Location", location);
+  soup_message_set_response (v->msg, "text/plain", SOUP_MEMORY_STATIC, "", 0);
+  soup_message_set_status (v->msg, SOUP_STATUS_SEE_OTHER);
+
+  soup_server_unpause_message (v->server, v->msg);
+
+  g_object_unref (jp);
+  g_free (v);
+  return;
+err:
+  g_object_unref (jp);
+  soup_message_set_status (v->msg, SOUP_STATUS_UNAUTHORIZED);
+  soup_server_unpause_message (v->server, v->msg);
+}
+
 static void
 session_login_post_resource (GssTransaction *t)
 {
@@ -485,11 +573,61 @@ session_login_post_resource (GssTransaction *t)
   }
 
   if (valid) {
-    GssSession *session;
+    GssSession *session = NULL;
     char *location;
     char *redirect_url;
 
-    session = gss_session_new (username);
+    if (query_hash) {
+      const char *assertion = g_hash_table_lookup (query_hash, "assertion");
+
+      if (assertion) {
+        SoupMessage *client_msg;
+        BrowserIDVerify *v;
+        char *s;
+
+        soup_server_pause_message (t->soupserver, t->msg);
+
+        v = g_malloc0 (sizeof(BrowserIDVerify));
+        v->ewserver = ewserver;
+        v->server = t->soupserver;
+        v->msg = t->msg;
+
+        s = g_strdup_printf ("https://browserid.org/verify?assertion=%s&audience=localhost",
+            assertion);
+        client_msg = soup_message_new ("POST", s);
+        g_free (s);
+        soup_message_headers_replace (client_msg->request_headers,
+            "Content-Type", "application/x-www-form-urlencoded");
+
+        soup_session_queue_message (ewserver->client_session, client_msg,
+            browserid_verify_done, v);
+
+        return;
+      }
+    }
+
+    if (query_hash) {
+      username = g_hash_table_lookup (query_hash, "username");
+      password = g_hash_table_lookup (query_hash, "password");
+    }
+
+    if (username && password) {
+#if 0
+      hash = password_hash (username, password);
+      valid = (strcmp (username, "admin") == 0) &&
+          gss_config_value_is_equal (ewserver->config, "admin_hash", hash);
+      g_free (hash);
+#endif
+      hash = soup_auth_domain_digest_encode_password (username, REALM,
+          password);
+      valid = (strcmp (username, "admin") == 0) &&
+          gss_config_value_is_equal (ewserver->config, "admin_token", hash);
+      g_free (hash);
+    }
+
+    if (query_hash) {
+      g_hash_table_unref (query_hash);
+    }
 
     redirect_url = "/admin";
     if (t->query) {
