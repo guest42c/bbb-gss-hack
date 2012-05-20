@@ -32,8 +32,12 @@ gss_soup_get_request_host (SoupMessage * msg)
 {
   char *host;
   char *colon;
+  const char *s;
 
-  host = strdup (soup_message_headers_get (msg->request_headers, "Host"));
+  s = soup_message_headers_get (msg->request_headers, "Host");
+  if (s == NULL)
+    return NULL;
+  host = strdup (s);
   colon = strchr (host, ':');
   if (colon)
     colon[0] = 0;
@@ -48,6 +52,8 @@ gss_soup_get_base_url_http (GssServer * server, SoupMessage * msg)
   char *host;
 
   host = gss_soup_get_request_host (msg);
+  if (host == NULL)
+    host = g_strdup (server->server_name);
 
   if (server->port == 80) {
     base_url = g_strdup_printf ("http://%s", host);
@@ -66,8 +72,10 @@ gss_soup_get_base_url_https (GssServer * server, SoupMessage * msg)
   char *host;
 
   host = gss_soup_get_request_host (msg);
+  if (host == NULL)
+    host = g_strdup (server->server_name);
 
-  if (server->port == 80) {
+  if (server->https_port == 443) {
     base_url = g_strdup_printf ("https://%s", host);
   } else {
     base_url = g_strdup_printf ("https://%s:%d", host, server->https_port);
