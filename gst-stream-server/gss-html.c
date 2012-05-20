@@ -224,6 +224,10 @@ gss_html_bootstrap_doc (GString *s, GssSession *session)
   "              <i class='icon-user'></i> %s\n"
   "              <span class='caret'></span>\n", session->username);
   } else {
+    g_string_append (s,
+  "<a href='#' id='browserid' title='Sign-in with BrowserID'>\n"
+  "<img src='/images/sign_in_blue.png' alt='Sign in' onclick='navigator.id.get(gotAssertion);'>\n"
+  "</a>\n");
   }
 
   g_string_append (s,
@@ -323,6 +327,33 @@ gss_html_bootstrap_doc (GString *s, GssSession *session)
   "\n"
   "    <script src='/bootstrap/js/jquery.js'></script>\n"
   "    <script src='/bootstrap/js/bootstrap.js'></script>\n"
+#if 0
+  "<script type=\"text/javascript\">\n"
+  "$(function() {  $('#browserid').click(function() {  navigator.id.get(gotAssertion);  return false;  });  });\n"
+  "</script>\n"
+#endif
+  "<script type=\"text/javascript\">\n"
+  "function gotAssertion(assertion) {\n"
+  "if(assertion!==null){\n"
+  //"document.body.innerHTML += '<form id=\"dynForm\" action=\"/meep\"method=\"post\"><input type=\"hidden\" name=\"q\" value=\"a\"></form>'; \n"
+  //"document.getElementById('dynForm').submit();\n"
+  //"var form = createElement(\"form\",{action:'/meep',method:'POST',style:'display: none'});\n"
+  "var form = document.createElement(\"form\");\n"
+  "form.setAttribute('method', 'POST');\n"
+  "form.setAttribute('action', 'http://localhost:8080/login');\n"
+  //"var form = document.createElement('img',{src:'/images/button_main.png'});\n"
+  //"form.appendChild(document.createElement(\"input\", {type: \"hidden\", name: 'assertion', value: assertion}));\n"
+  "var ip = document.createElement(\"input\");\n"
+  "ip.setAttribute('type', 'hidden');\n"
+  "ip.setAttribute('name', 'assertion');\n"
+  "ip.setAttribute('value', assertion);\n"
+  "form.appendChild(ip);\n"
+  "document.body.appendChild(form);\n"
+  "form.submit();\n"
+  //"document.body.removeChild(form);\n"
+  "}\n"
+  "}\n"
+  "</script>\n"
   "\n"
   "  </body>\n"
   "</html>\n");
