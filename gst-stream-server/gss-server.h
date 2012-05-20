@@ -184,6 +184,8 @@ struct _GssServer
   SoupSession *client_session;
   char *base_url;
 
+  gboolean enable_public_ui;
+
   GstRTSPServer *rtsp_server;
 
   //time_t config_timestamp;

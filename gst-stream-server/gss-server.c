@@ -277,6 +277,8 @@ gss_server_new (void)
       server);
   gss_config_set_notify (server->config, "server_port", gss_server_notify,
       server);
+  gss_config_set_notify (server->config, "enable_public_ui", gss_server_notify,
+      server);
 
   //server->config_filename = "/opt/entropywave/ew-oberon/config";
   server->server_name = gethostname_alloc ();
@@ -517,6 +519,8 @@ gss_server_notify (const char *key, void *priv)
     server->max_bitrate = G_MAXINT64;
   }
 
+  server->enable_public_ui = gss_config_value_is_on (server->config,
+      "enable_public_ui");
 }
 
 void
@@ -1031,6 +1035,11 @@ main_page_callback (SoupServer * server, SoupMessage * msg,
     return;
   }
 
+  if (!ewserver->enable_public_ui && server == ewserver->server) {
+    gss_html_error_404 (msg);
+    return;
+  }
+
   if (server == ewserver->ssl_server) {
     base_url = gss_soup_get_base_url_http (ewserver, msg);
   } else {
@@ -1091,6 +1100,11 @@ list_callback (SoupServer * server, SoupMessage * msg,
   GString *s = g_string_new ("");
   int i;
 
+  if (!ewserver->enable_public_ui && server == ewserver->server) {
+    gss_html_error_404 (msg);
+    return;
+  }
+
   if (msg->method != SOUP_METHOD_GET) {
     soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
     return;
@@ -1125,6 +1139,11 @@ log_callback (SoupServer * server, SoupMessage * msg,
   GString *s = g_string_new ("");
   GList *g;
   char *t;
+
+  if (!ewserver->enable_public_ui && server == ewserver->server) {
+    gss_html_error_404 (msg);
+    return;
+  }
 
   if (msg->method != SOUP_METHOD_GET) {
     soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
@@ -1551,6 +1570,11 @@ gss_server_handle_program (SoupServer * server, SoupMessage * msg,
     gpointer user_data)
 {
   GssProgram *program = (GssProgram *) user_data;
+
+  if (!program->server->enable_public_ui && server == program->server->server) {
+    gss_html_error_404 (msg);
+    return;
+  }
 
   if (msg->method == SOUP_METHOD_GET) {
     gss_server_handle_program_get (program, server, msg, path, query, client);
