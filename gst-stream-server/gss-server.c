@@ -116,8 +116,6 @@ void gss_stream_set_sink (GssServerStream * stream, GstElement * sink);
 void gss_stream_create_follow_pipeline (GssServerStream * stream);
 void gss_stream_create_push_pipeline (GssServerStream * stream);
 
-static SoupSession *session;
-
 #define MAX_FDS 65536
 static void *fd_table[MAX_FDS];
 
@@ -135,9 +133,7 @@ static const gchar *soup_method_source;
 static void
 gss_server_init (GssServer * server)
 {
-  if (session == NULL) {
-    session = soup_session_async_new ();
-  }
+  server->client_session = soup_session_async_new ();
 
   if (getuid () == 0) {
     server->port = DEFAULT_HTTP_PORT;
@@ -157,9 +153,7 @@ gss_server_init (GssServer * server)
 void
 gss_server_deinit (void)
 {
-  if (session)
-    g_object_unref (session);
-  session = NULL;
+
 }
 
 void
@@ -2098,7 +2092,8 @@ gss_program_follow_get_list (GssProgram * program)
 
   message = soup_message_new ("GET", program->follow_uri);
 
-  soup_session_queue_message (session, message, follow_callback, program);
+  soup_session_queue_message (program->server->client_session, message,
+      follow_callback, program);
 }
 
 

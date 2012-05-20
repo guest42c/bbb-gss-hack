@@ -181,6 +181,7 @@ struct _GssServer
 
   SoupServer *server;
   SoupServer *ssl_server;
+  SoupSession *client_session;
   char *base_url;
 
   GstRTSPServer *rtsp_server;
