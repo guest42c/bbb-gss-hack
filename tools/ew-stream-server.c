@@ -33,25 +33,29 @@
 #include <unistd.h>
 
 
-#define GETTEXT_PACKAGE "ew-streaming-server"
+#define GETTEXT_PACKAGE "ew-stream-server"
 
-//#define CONFIG_FILENAME "/opt/entropywave/ew-oberon/config"
 #define CONFIG_FILENAME "config"
+
+#define LOG g_print
+
 
 extern GssConfigDefault config_defaults[];
 
 gboolean verbose = TRUE;
 gboolean cl_verbose;
+gboolean enable_daemon = FALSE;
 
 void ew_stream_server_notify_url (const char *s, void *priv);
 
 static void signal_interrupt (int signum);
 static void append_style_html (GssServer * server, GString * s, void *priv);
-static void add_program (GssServer *server, int i);
+static void add_program (GssServer * server, int i);
 
 
 static GOptionEntry entries[] = {
   {"verbose", 'v', 0, G_OPTION_ARG_NONE, &cl_verbose, "Be verbose", NULL},
+  {"daemon", 'd', 0, G_OPTION_ARG_NONE, &enable_daemon, "Daemonize", NULL},
 
   {NULL}
 
@@ -59,6 +63,69 @@ static GOptionEntry entries[] = {
 
 GssServer *server;
 GMainLoop *main_loop;
+
+static void
+do_quit (int signal)
+{
+  LOG ("caught signal %d", signal);
+
+  kill (0, SIGTERM);
+
+  exit (0);
+}
+
+static void
+daemonize (void)
+{
+  int ret;
+  int fd;
+  char s[20];
+
+#if 0
+  ret = chdir ("/var/log");
+  if (ret < 0)
+    exit (1);
+#endif
+
+  ret = fork ();
+  if (ret < 0)
+    exit (1);                   /* fork error */
+  if (ret > 0)
+    exit (0);                   /* parent */
+
+  ret = setpgid (0, 0);
+  if (ret < 0) {
+    g_print ("could not set process group\n");
+  }
+  ret = setuid (65534);
+  if (ret < 0) {
+    g_print ("could not switch user to 'nobody'\n");
+  }
+  umask (0022);
+
+  fd = open ("/dev/null", O_RDWR);
+  dup2 (fd, 0);
+  close (fd);
+
+#if 0
+  fd = open ("/tmp/ew-stream-server.log", O_RDWR | O_CREAT | O_TRUNC, 0644);
+#else
+  fd = open ("/dev/null", O_RDWR | O_CREAT | O_TRUNC, 0644);
+#endif
+  dup2 (fd, 1);
+  dup2 (fd, 2);
+  close (fd);
+
+  fd = open ("/var/run/ew-stream-server.pid", O_RDWR | O_CREAT | O_TRUNC, 0644);
+  sprintf (s, "%d\n", getpid ());
+  ret = write (fd, s, strlen (s));
+  close (fd);
+
+  //signal (SIGCHLD, SIG_IGN);
+  signal (SIGHUP, do_quit);
+  signal (SIGTERM, do_quit);
+
+}
 
 int
 main (int argc, char *argv[])
@@ -73,7 +140,7 @@ main (int argc, char *argv[])
   signal (SIGPIPE, SIG_IGN);
   signal (SIGINT, signal_interrupt);
 
-  context = g_option_context_new ("- FIXME");
+  context = g_option_context_new ("- Entropy Wave Streaming Server");
   g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
   g_option_context_add_group (context, gst_init_get_option_group ());
   if (!g_option_context_parse (context, &argc, &argv, &error)) {
@@ -83,6 +150,10 @@ main (int argc, char *argv[])
   g_option_context_free (context);
 
   server = gss_server_new ();
+
+  if (enable_daemon)
+    daemonize ();
+
   server->append_style_html = append_style_html;
   server->append_style_html_priv = NULL;
 
@@ -99,11 +170,12 @@ main (int argc, char *argv[])
   gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".perm");
   gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".package");
 
-  for (i = 0; ; i++) {
+  for (i = 0;; i++) {
     char *key;
 
     key = g_strdup_printf ("stream%d_name", i);
-    if (!gss_config_exists (server->config, key)) break;
+    if (!gss_config_exists (server->config, key))
+      break;
 
     add_program (server, i);
 
@@ -133,7 +205,7 @@ signal_interrupt (int signum)
 
 
 static void
-add_program (GssServer *server, int i)
+add_program (GssServer * server, int i)
 {
   GssProgram *program;
   const char *url;
@@ -141,15 +213,15 @@ add_program (GssServer *server, int i)
   const char *stream_type;
   char *key;
 
-  key = g_strdup_printf("stream%d_name", i);
+  key = g_strdup_printf ("stream%d_name", i);
   stream_name = gss_config_get (server->config, key);
   g_free (key);
 
   key = g_strdup_printf ("stream%d_type", i);
   stream_type = gss_config_get (server->config, key);
   g_free (key);
-    
-  key = g_strdup_printf("stream%d_url", i);
+
+  key = g_strdup_printf ("stream%d_url", i);
   url = gss_config_get (server->config, key);
   g_free (key);
 
