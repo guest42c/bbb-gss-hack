@@ -254,9 +254,10 @@ void add_video_block (GssProgram *program, GString *s, int max_width,
 
 void gss_server_log (GssServer *server, char *message);
 
-void
-gss_server_add_static_file (SoupServer *soupserver, const char *filename,
+void gss_server_add_static_file (SoupServer *soupserver, const char *filename,
     const char *mime_type);
+void gss_server_add_static_string (SoupServer * soupserver,
+    const char *filename, const char *mime_type, const char *string);
 
 G_END_DECLS
 

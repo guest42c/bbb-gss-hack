@@ -451,6 +451,25 @@ gss_server_add_static_file (SoupServer * soupserver, const char *filename,
 }
 
 void
+gss_server_add_static_string (SoupServer * soupserver, const char *filename,
+    const char *mime_type, const char *string)
+{
+  StaticContent *content;
+
+  content = g_malloc0 (sizeof (StaticContent));
+
+  content->filename = filename;
+  content->mime_type = mime_type;
+  content->contents = g_strdup (string);
+  content->size = strlen (string);
+  content->etag = gss_session_create_id ();
+
+  soup_server_add_handler (soupserver, content->filename,
+      static_content_callback, content, NULL);
+
+}
+
+void
 gss_server_free (GssServer * server)
 {
   int i;
