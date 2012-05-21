@@ -59,21 +59,12 @@ static void push_resource (GssTransaction *transaction);
 
 static void push_wrote_headers (SoupMessage * msg, void *user_data);
 static void file_resource (GssTransaction *transaction);
-static void gss_server_handle_program (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
-static void gss_server_handle_program_frag (SoupServer * server,
-    SoupMessage * msg, const char *path, GHashTable * query,
-    SoupClientContext * client, gpointer user_data);
-static void gss_server_handle_program_list (SoupServer * server,
-    SoupMessage * msg, const char *path, GHashTable * query,
-    SoupClientContext * client, gpointer user_data);
-static void gss_server_handle_program_image (SoupServer * server,
-    SoupMessage * msg, const char *path, GHashTable * query,
-    SoupClientContext * client, gpointer user_data);
-static void gss_server_handle_program_jpeg (SoupServer * server,
-    SoupMessage * msg, const char *path, GHashTable * query,
-    SoupClientContext * client, gpointer user_data);
+static void program_get_resource (GssTransaction *transaction);
+static void program_put_resource (GssTransaction *transaction);
+static void program_frag_resource (GssTransaction *transaction);
+static void program_list_resource (GssTransaction *transaction);
+static void program_png_resource (GssTransaction *transaction);
+static void program_jpeg_resource (GssTransaction *transaction);
 
 static void gss_server_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
@@ -604,34 +595,28 @@ gss_server_add_program (GssServer * server, const char *program_name)
   program->running = FALSE;
 
   s = g_strdup_printf ("/%s", program_name);
-  soup_server_add_handler (server->server, s,
-      gss_server_handle_program, program, NULL);
-  soup_server_add_handler (server->ssl_server, s,
-      gss_server_handle_program, program, NULL);
+  gss_server_add_resource (server, s, 0, program_get_resource,
+      program_put_resource, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", program_name);
-  soup_server_add_handler (server->server, s,
-      gss_server_handle_program_frag, program, NULL);
-  soup_server_add_handler (server->ssl_server, s,
-      gss_server_handle_program_frag, program, NULL);
+  gss_server_add_resource (server, s, 0, program_frag_resource,
+      NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.list", program_name);
-  soup_server_add_handler (server->server, s,
-      gss_server_handle_program_list, program, NULL);
-  soup_server_add_handler (server->ssl_server, s,
-      gss_server_handle_program_list, program, NULL);
+  gss_server_add_resource (server, s, 0, program_list_resource,
+      NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.png", program_name);
-  soup_server_add_handler (server->server, s,
-      gss_server_handle_program_image, program, NULL);
+  gss_server_add_resource (server, s, 0, program_png_resource,
+      NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.jpeg", program_name);
-  soup_server_add_handler (server->server, s,
-      gss_server_handle_program_jpeg, program, NULL);
+  gss_server_add_resource (server, s, 0, program_jpeg_resource,
+      NULL, NULL, program);
   g_free (s);
 
   return program;
@@ -1486,17 +1471,14 @@ add_video_block (GssProgram * program, GString * s, int max_width,
 }
 
 static void
-gss_server_handle_program_frag (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+program_frag_resource (GssTransaction *t)
 {
-  const char *mime_type = "text/html";
   char *content;
-  GssProgram *program = (GssProgram *) user_data;
+  GssProgram *program = (GssProgram *) t->resource->priv;
   GString *s = g_string_new ("");
 
   if (!program->enable_streaming) {
-    soup_message_set_status (msg, SOUP_STATUS_NO_CONTENT);
+    soup_message_set_status (t->msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
 
@@ -1504,18 +1486,16 @@ gss_server_handle_program_frag (SoupServer * server, SoupMessage * msg,
 
   content = g_string_free (s, FALSE);
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE,
+  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
       content, strlen (content));
 }
 
 static void
-gss_server_handle_program_get (GssProgram * program, SoupServer * server,
-    SoupMessage * msg, const char *path, GHashTable * query,
-    SoupClientContext * client)
+program_get_resource (GssTransaction *t)
 {
-  const char *mime_type = "text/html";
+  GssProgram *program = (GssProgram *) t->resource->priv;
   char *content;
   GString *s = g_string_new ("");
   const char *base_url = "";
@@ -1573,26 +1553,25 @@ gss_server_handle_program_get (GssProgram * program, SoupServer * server,
 
   content = g_string_free (s, FALSE);
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE,
+  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
       content, strlen (content));
 }
 
 static void
-gss_server_handle_program_put (GssProgram * program, SoupServer * server,
-    SoupMessage * msg, const char *path, GHashTable * query,
-    SoupClientContext * client)
+program_put_resource (GssTransaction *t)
 {
+  GssProgram *program = (GssProgram *) t->resource->priv;
   const char *content_type;
 
   if (program->push_client) {
     gss_program_log (program, "busy");
-    soup_message_set_status (msg, SOUP_STATUS_CONFLICT);
+    soup_message_set_status (t->msg, SOUP_STATUS_CONFLICT);
     return;
   }
 
-  content_type = soup_message_headers_get_one (msg->request_headers,
+  content_type = soup_message_headers_get_one (t->msg->request_headers,
       "Content-Type");
   if (content_type) {
     if (strcmp (content_type, "application/ogg") == 0) {
@@ -1615,46 +1594,21 @@ gss_server_handle_program_put (GssProgram * program, SoupServer * server,
   gss_program_start (program);
 
   program->program_type = GSS_PROGRAM_HTTP_PUT;
-  program->push_client = client;
+  program->push_client = t->client;
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_headers_set_encoding (msg->response_headers, SOUP_ENCODING_EOF);
+  soup_message_headers_set_encoding (t->msg->response_headers, SOUP_ENCODING_EOF);
 
-  g_signal_connect (msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
+  g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
       program);
 }
 
 static void
-gss_server_handle_program (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+program_list_resource (GssTransaction *t)
 {
-  GssProgram *program = (GssProgram *) user_data;
-
-  if (!program->server->enable_public_ui && server == program->server->server) {
-    gss_html_error_404 (msg);
-    return;
-  }
-
-  if (msg->method == SOUP_METHOD_GET) {
-    gss_server_handle_program_get (program, server, msg, path, query, client);
-    return;
-  }
-  if (msg->method == SOUP_METHOD_PUT || msg->method == SOUP_METHOD_POST
-      || strcmp (msg->method, "SOURCE") == 0) {
-    gss_server_handle_program_put (program, server, msg, path, query, client);
-  }
-}
-
-static void
-gss_server_handle_program_list (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
-{
-  const char *mime_type = "text/plain";
+  GssProgram *program = (GssProgram *) t->resource->priv;
   char *content;
-  GssProgram *program = (GssProgram *) user_data;
   GString *s = g_string_new ("");
   int i;
   const char *base_url = "";
@@ -1686,23 +1640,20 @@ gss_server_handle_program_list (SoupServer * server, SoupMessage * msg,
 
   content = g_string_free (s, FALSE);
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE,
+  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
       content, strlen (content));
 }
 
 static void
-gss_server_handle_program_image (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+program_png_resource (GssTransaction *t)
 {
-  const char *mime_type = "image/png";
-  GssProgram *program = (GssProgram *) user_data;
+  GssProgram *program = (GssProgram *) t->resource->priv;
   GstBuffer *buffer = NULL;
 
   if (!program->enable_streaming || !program->running) {
-    soup_message_set_status (msg, SOUP_STATUS_NO_CONTENT);
+    soup_message_set_status (t->msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
 
@@ -1710,45 +1661,42 @@ gss_server_handle_program_image (SoupServer * server, SoupMessage * msg,
     g_object_get (program->pngappsink, "last-buffer", &buffer, NULL);
   }
 
-  if (buffer != NULL) {
+  if (buffer) {
+    soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-    soup_message_set_status (msg, SOUP_STATUS_OK);
-
-    soup_message_set_response (msg, mime_type, SOUP_MEMORY_COPY,
+    soup_message_set_response (t->msg, "image/png", SOUP_MEMORY_COPY,
         (void *) GST_BUFFER_DATA (buffer), GST_BUFFER_SIZE (buffer));
 
     gst_buffer_unref (buffer);
   } else {
-    gss_html_error_404 (msg);
+    gss_html_error_404 (t->msg);
   }
 
 }
 
 static void
-gss_server_handle_program_jpeg (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+program_jpeg_resource (GssTransaction *t)
 {
-  GssProgram *program = (GssProgram *) user_data;
+  GssProgram *program = (GssProgram *) t->resource->priv;
   GssConnection *connection;
 
   if (!program->enable_streaming || program->jpegsink == NULL) {
-    soup_message_set_status (msg, SOUP_STATUS_NO_CONTENT);
+    soup_message_set_status (t->msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
 
   connection = g_malloc0 (sizeof (GssConnection));
-  connection->msg = msg;
-  connection->client = client;
+  connection->msg = t->msg;
+  connection->client = t->client;
   connection->program = program;
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_headers_set_encoding (msg->response_headers, SOUP_ENCODING_EOF);
-  soup_message_headers_replace (msg->response_headers, "Content-Type",
+  soup_message_headers_set_encoding (t->msg->response_headers, SOUP_ENCODING_EOF);
+  soup_message_headers_replace (t->msg->response_headers, "Content-Type",
       "multipart/x-mixed-replace;boundary=myboundary");
 
-  g_signal_connect (msg, "wrote-headers", G_CALLBACK (jpeg_wrote_headers),
+  g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (jpeg_wrote_headers),
       connection);
 }
 
