@@ -98,6 +98,11 @@ void gss_stream_set_sink (GssServerStream * stream, GstElement * sink);
 void gss_stream_create_follow_pipeline (GssServerStream * stream);
 void gss_stream_create_push_pipeline (GssServerStream * stream);
 
+static void onetime_redirect (GssTransaction *t);
+static void onetime_resource (GssTransaction *t);
+static gboolean onetime_expire (gpointer priv);
+
+
 #define MAX_FDS 65536
 static void *fd_table[MAX_FDS];
 
@@ -1062,13 +1067,6 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
     }
   }
 
-  if (resource->flags & GSS_RESOURCE_HTTP_ONLY) {
-    if (soupserver != server->server) {
-      gss_html_error_404 (msg);
-      return;
-    }
-  }
-
   session = gss_session_message_get_session (msg, query);
 
   if (resource->flags & GSS_RESOURCE_ADMIN) {
@@ -1100,6 +1098,14 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
   transaction->session = session;
   transaction->done = FALSE;
 
+  if (resource->flags & GSS_RESOURCE_HTTP_ONLY) {
+    if (soupserver != server->server) {
+      onetime_redirect (transaction);
+      g_free (transaction);
+      return;
+    }
+  }
+
   if (msg->method == SOUP_METHOD_GET && resource->get_callback) {
     resource->get_callback (transaction);
   } else if (msg->method == SOUP_METHOD_PUT && resource->put_callback) {
@@ -1115,6 +1121,74 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
   g_free (transaction);
 }
 
+typedef struct _GssOnetimeResource GssOnetimeResource;
+struct _GssOnetimeResource
+{
+  GssResource resource;
+
+  GssServer *server;
+  guint timeout_id;
+  GssResource *underlying_resource;
+};
+
+static void
+onetime_redirect (GssTransaction *t)
+{
+  GssOnetimeResource *or;
+  char *s;
+  char *id;
+  char *url;
+  char *base_url;
+
+  or = g_new0 (GssOnetimeResource, 1);
+
+  id = gss_session_create_id ();
+  s = g_strdup_printf("/%s", id);
+  g_free (id);
+  or->resource.location = s;
+  or->resource.flags = 0;
+  or->resource.get_callback = onetime_resource;
+
+  or->underlying_resource = t->resource;
+  or->server = t->server;
+  or->timeout_id = g_timeout_add_full (G_PRIORITY_DEFAULT, 5000,
+      onetime_expire, or, NULL);
+
+  g_hash_table_replace (t->server->resources, or->resource.location,
+      (GssResource *)or);
+
+  base_url = gss_soup_get_base_url_http (t->server, t->msg);
+  url = g_strdup_printf("%s%s", base_url, s);
+  g_free (base_url);
+  soup_message_headers_append (t->msg->response_headers, "Location", url);
+  soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
+  g_free (url);
+}
+
+static gboolean
+onetime_expire (gpointer priv)
+{
+  GssOnetimeResource *or = (GssOnetimeResource *)priv;
+
+  gss_server_remove_resource (or->server, or->resource.location);
+  g_free (or);
+
+  return FALSE;
+}
+
+static void
+onetime_resource (GssTransaction *t)
+{
+  GssOnetimeResource *or = (GssOnetimeResource *)t->resource;
+  GssResource *r = or->underlying_resource;
+
+  t->resource = or->underlying_resource;
+  r->get_callback (t);
+
+  gss_server_remove_resource (t->server, or->resource.location);
+  g_source_remove (or->timeout_id);
+  g_free (or);
+}
 
 static void
 main_page_resource (GssTransaction *t)
