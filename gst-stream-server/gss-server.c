@@ -48,22 +48,17 @@ enum
 
 char *get_time_string (void);
 
-static void main_page_callback (SoupServer * server, SoupMessage * msg,
+static void resource_callback (SoupServer * soupserver, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
     gpointer user_data);
-static void list_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
-static void log_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
-static void push_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
+
+static void main_page_resource (GssTransaction *transaction);
+static void list_resource (GssTransaction *transaction);
+static void log_resource (GssTransaction *transaction);
+static void push_resource (GssTransaction *transaction);
+
 static void push_wrote_headers (SoupMessage * msg, void *user_data);
-static void file_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
+static void file_resource (GssTransaction *transaction);
 static void gss_server_handle_program (SoupServer * server, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
     gpointer user_data);
@@ -79,15 +74,12 @@ static void gss_server_handle_program_image (SoupServer * server,
 static void gss_server_handle_program_jpeg (SoupServer * server,
     SoupMessage * msg, const char *path, GHashTable * query,
     SoupClientContext * client, gpointer user_data);
-static void static_content_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
 
 static void gss_server_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gss_server_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
-static void setup_paths (GssServer * server, SoupServer * soupserver);
+static void setup_paths (GssServer * server);
 
 static void gss_server_notify (const char *key, void *priv);
 
@@ -133,6 +125,8 @@ static const gchar *soup_method_source;
 static void
 gss_server_init (GssServer * server)
 {
+  server->resources = g_hash_table_new (g_str_hash, g_str_equal);
+
   server->client_session = soup_session_async_new ();
 
   if (getuid () == 0) {
@@ -305,7 +299,8 @@ gss_server_new (void)
     return NULL;
   }
 
-  setup_paths (server, server->server);
+  soup_server_add_handler (server->server, "/", resource_callback,
+      server, NULL);
 
   server->ssl_server = soup_server_new (SOUP_SERVER_PORT,
       DEFAULT_HTTPS_PORT,
@@ -319,8 +314,14 @@ gss_server_new (void)
   }
 
   if (server->ssl_server) {
-    setup_paths (server, server->ssl_server);
+    soup_server_add_handler (server->ssl_server, "/", resource_callback,
+        server, NULL);
   }
+
+  setup_paths (server);
+
+  soup_server_run_async (server->server);
+  if (server->ssl_server) soup_server_run_async (server->ssl_server);
 
   g_timeout_add (1000, (GSourceFunc) periodic_timer, server);
 
@@ -330,32 +331,58 @@ gss_server_new (void)
   return server;
 }
 
+void
+gss_server_add_resource (GssServer *server, const char *location,
+    GssResourceFlags flags, GssTransactionCallback get_callback,
+    GssTransactionCallback put_callback, GssTransactionCallback post_callback,
+    gpointer priv)
+{
+  GssResource *resource;
+
+  resource = g_new0 (GssResource, 1);
+  resource->location = g_strdup (location);
+  resource->flags = flags;
+  resource->get_callback = get_callback;
+  resource->put_callback = put_callback;
+  resource->post_callback = post_callback;
+  resource->priv = priv;
+
+  g_hash_table_replace (server->resources, resource->location, resource);
+}
+
+void
+gss_server_remove_resource (GssServer *server, const char *location)
+{
+  g_hash_table_remove (server->resources, location);
+}
 
 static void
-setup_paths (GssServer * server, SoupServer * soupserver)
+setup_paths (GssServer * server)
 {
-  gss_session_add_session_callbacks (soupserver, server);
+  //gss_session_add_session_callbacks (soupserver, server);
 
-  soup_server_add_handler (soupserver, "/", main_page_callback, server, NULL);
-  soup_server_add_handler (soupserver, "/list", list_callback, server, NULL);
-  soup_server_add_handler (soupserver, "/log", log_callback, server, NULL);
-  soup_server_add_handler (soupserver, "/push", push_callback, server, NULL);
+  gss_server_add_resource (server, "/", GSS_RESOURCE_UI, main_page_resource,
+      NULL, NULL, NULL);
+  gss_server_add_resource (server, "/list", GSS_RESOURCE_UI, list_resource,
+      NULL, NULL, NULL);
+  gss_server_add_resource (server, "/log", GSS_RESOURCE_UI, log_resource,
+      NULL, NULL, NULL);
+  gss_server_add_resource (server, "/push", GSS_RESOURCE_UI, NULL,
+      push_resource, NULL, NULL);
 
   if (enable_cortado) {
-    soup_server_add_handler (soupserver, "/cortado.jar", file_callback,
-        "application/java-archive", NULL);
+    gss_server_add_file_resource (server, "/cortado.jar", 0,
+        "application/java-archive");
   }
 
   if (enable_flash) {
-    soup_server_add_handler (soupserver, "/OSplayer.swf", file_callback,
-        "application/x-shockwave-flash", NULL);
-    soup_server_add_handler (soupserver, "/AC_RunActiveContent.js",
-        file_callback, "application/javascript", NULL);
-    soup_server_add_handler (soupserver, "/test.flv", file_callback,
-        "video/x-flv", NULL);
+    gss_server_add_file_resource (server, "/OSplayer.swf", 0,
+        "application/x-shockwave-flash");
+    gss_server_add_file_resource (server, "/AC_RunActiveContent.js", 0,
+        "application/javascript");
   }
 #define IMAGE(image) \
-  gss_server_add_static_file (soupserver, "/images/" image , "image/png")
+  gss_server_add_file_resource (server, "/images/" image , 0, "image/png")
 
   IMAGE ("button_access.png");
   IMAGE ("button_admin.png");
@@ -370,7 +397,6 @@ setup_paths (GssServer * server, SoupServer * soupserver)
   IMAGE ("template_c1000.png");
   IMAGE ("template_e1000.png");
   IMAGE ("template_footer.png");
-  IMAGE ("template_header.png");
   IMAGE ("template_header_nologo.png");
   IMAGE ("template_navadmin.png");
   IMAGE ("template_navlog.png");
@@ -378,100 +404,111 @@ setup_paths (GssServer * server, SoupServer * soupserver)
   IMAGE ("template_navnet.png");
   IMAGE ("template_s1000.png");
 
-  gss_server_add_static_string (soupserver, "/robots.txt",
+  gss_server_add_string_resource (server, "/robots.txt", 0,
       "text/plain", "User-agent: *\nDisallow: /\n");
-
-  soup_server_run_async (soupserver);
 }
 
-typedef struct _StaticContent StaticContent;
-struct _StaticContent
+typedef struct _GssStaticResource GssStaticResource;
+struct _GssStaticResource
 {
+  GssResource resource;
+
   const char *filename;
   const char *mime_type;
-  char *etag;
   char *contents;
   gsize size;
 };
 
 static void
-static_content_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+generate_etag (GssStaticResource *sr)
 {
-  StaticContent *content = (StaticContent *) user_data;
+  GChecksum *checksum;
+  gsize n;
+  guchar digest[32];
+
+  n = g_checksum_type_get_length (G_CHECKSUM_MD5);
+  g_assert (n <= 32);
+  checksum = g_checksum_new (G_CHECKSUM_MD5);
+
+  g_checksum_update (checksum, (guchar *)sr->contents, sr->size);
+  g_checksum_get_digest (checksum, digest, &n);
+  sr->resource.etag = g_base64_encode (digest, n);
+  /* remove the trailing = (for MD5) */
+  sr->resource.etag[22] = 0;
+  g_checksum_free (checksum);
+}
+
+static void
+file_resource (GssTransaction *t)
+{
+  GssStaticResource *sr = (GssStaticResource *)t->resource;
+
+  soup_message_headers_replace (t->msg->response_headers, "Keep-Alive",
+      "timeout=5, max=100");
+  soup_message_headers_append (t->msg->response_headers, "Etag",
+      sr->resource.etag);
+
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
+
+  soup_message_set_response (t->msg, sr->mime_type,
+      SOUP_MEMORY_STATIC, sr->contents, sr->size);
+}
+
+void
+gss_server_add_file_resource (GssServer *server,
+    const char *filename, GssResourceFlags flags, const char *mime_type)
+{
+  GssStaticResource *sr;
+  gsize size = 0;
+  char *contents;
   gboolean ret;
   GError *error = NULL;
-  const char *inm;
 
-  if (msg->method != SOUP_METHOD_GET) {
-    soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
+  ret = g_file_get_contents (filename + 1, &contents, &size,
+      &error);
+  if (!ret) {
+    g_error_free (error);
+    if (verbose) g_print ("missing file %s\n", filename);
     return;
   }
 
-  if (content->contents == NULL) {
-    ret = g_file_get_contents (path + 1, &content->contents, &content->size,
-        &error);
-    if (!ret) {
-      g_error_free (error);
-      gss_html_error_404 (msg);
-      if (verbose)
-        g_print ("missing file %s\n", path);
-      return;
-    }
-  }
+  sr = g_new0 (GssStaticResource, 1);
 
-  soup_message_headers_replace (msg->response_headers, "Keep-Alive",
-      "timeout=5, max=100");
-  soup_message_headers_append (msg->response_headers, "Etag", content->etag);
+  sr->filename = filename;
+  sr->mime_type = mime_type;
+  sr->contents = contents;
+  sr->size = size;
 
-  inm = soup_message_headers_get_one (msg->request_headers, "If-None-Match");
-  if (inm && !strcmp (inm, content->etag)) {
-    soup_message_set_status (msg, SOUP_STATUS_NOT_MODIFIED);
-    return;
-  }
+  sr->resource.location = g_strdup (filename);
+  sr->resource.flags = flags;
+  sr->resource.get_callback = file_resource;
+  generate_etag (sr);
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
-
-  soup_message_set_response (msg, content->mime_type,
-      SOUP_MEMORY_STATIC, content->contents, content->size);
-}
-
-
-void
-gss_server_add_static_file (SoupServer * soupserver, const char *filename,
-    const char *mime_type)
-{
-  StaticContent *content;
-
-  content = g_malloc0 (sizeof (StaticContent));
-
-  content->filename = filename;
-  content->mime_type = mime_type;
-  content->etag = gss_session_create_id ();
-
-  soup_server_add_handler (soupserver, content->filename,
-      static_content_callback, content, NULL);
-
+  g_hash_table_replace (server->resources, sr->resource.location,
+      (GssResource *)sr);
 }
 
 void
-gss_server_add_static_string (SoupServer * soupserver, const char *filename,
-    const char *mime_type, const char *string)
+gss_server_add_string_resource (GssServer * server, const char *filename,
+    GssResourceFlags flags, const char *mime_type, const char *string)
 {
-  StaticContent *content;
+  GssStaticResource *sr;
 
-  content = g_malloc0 (sizeof (StaticContent));
+  sr = g_new0 (GssStaticResource, 1);
 
-  content->filename = filename;
-  content->mime_type = mime_type;
-  content->contents = g_strdup (string);
-  content->size = strlen (string);
-  content->etag = gss_session_create_id ();
+  sr->filename = filename;
+  sr->mime_type = mime_type;
+  sr->resource.etag = gss_session_create_id ();
+  sr->contents = g_strdup (string);
+  sr->size = strlen (string);
+  generate_etag (sr);
 
-  soup_server_add_handler (soupserver, content->filename,
-      static_content_callback, content, NULL);
+  sr->resource.location = g_strdup (filename);
+  sr->resource.flags = flags;
+  sr->resource.get_callback = file_resource;
 
+  g_hash_table_replace (server->resources, sr->resource.location,
+      (GssResource *)sr);
 }
 
 void
@@ -1012,43 +1049,112 @@ gss_stream_set_sink (GssServerStream * stream, GstElement * sink)
   }
 }
 
-
 static void
-main_page_callback (SoupServer * server, SoupMessage * msg,
+resource_callback (SoupServer * soupserver, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
     gpointer user_data)
 {
+  GssServer *server = (GssServer *)user_data;
+  GssResource *resource;
+  GssTransaction *transaction;
+  GssSession *session;
+
+  resource = g_hash_table_lookup (server->resources, path);
+
+  if (!resource) {
+    gss_html_error_404 (msg);
+    return;
+  }
+
+  if (resource->flags & GSS_RESOURCE_UI) {
+    if (!server->enable_public_ui && soupserver == server->server) {
+      gss_html_error_404 (msg);
+      return;
+    }
+  }
+
+  if (resource->flags & GSS_RESOURCE_SSL_ONLY) {
+    if (soupserver == server->server) {
+      gss_html_error_404 (msg);
+      return;
+    }
+  }
+
+  session = gss_session_message_get_session (msg, query);
+
+  if (resource->flags & GSS_RESOURCE_ADMIN) {
+    if (session == NULL) {
+      gss_html_error_404 (msg);
+      return;
+    }
+  }
+
+  if (resource->etag) {
+    const char *inm;
+
+    inm = soup_message_headers_get_one (msg->request_headers,
+        "If-None-Match");
+    if (inm && !strcmp (inm, resource->etag)) {
+      soup_message_set_status (msg, SOUP_STATUS_NOT_MODIFIED);
+      return;
+    }
+  }
+
+  transaction = g_new0 (GssTransaction, 1);
+  transaction->server = server;
+  transaction->soupserver = soupserver;
+  transaction->msg = msg;
+  transaction->path = path;
+  transaction->query = query;
+  transaction->client = client;
+  transaction->resource = resource;
+  transaction->session = session;
+  transaction->done = FALSE;
+
+  if (msg->method == SOUP_METHOD_GET && resource->get_callback) {
+    resource->get_callback (transaction);
+  } else if (msg->method == SOUP_METHOD_PUT && resource->put_callback) {
+    resource->put_callback (transaction);
+  } else if (msg->method == SOUP_METHOD_POST && resource->post_callback) {
+    resource->post_callback (transaction);
+  } else if (msg->method == SOUP_METHOD_SOURCE && resource->put_callback) {
+    resource->put_callback (transaction);
+  } else {
+    gss_html_error_404 (msg);
+  }
+
+  g_free (transaction);
+}
+
+
+static void
+main_page_resource (GssTransaction *t)
+{
   const char *mime_type = "text/html";
   char *content;
-  GssServer *ewserver = (GssServer *) user_data;
   GString *s;
   char *base_url;
   int i;
 
-  if (msg->method != SOUP_METHOD_GET) {
-    soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
+  if (t->msg->method != SOUP_METHOD_GET) {
+    soup_message_set_status (t->msg, SOUP_STATUS_NOT_IMPLEMENTED);
     return;
   }
 
-  if (!g_str_equal (path, "/")) {
-    gss_html_error_404 (msg);
+  if (!t->server->enable_public_ui && t->soupserver == t->server->server) {
+    gss_html_error_404 (t->msg);
     return;
   }
 
-  if (!ewserver->enable_public_ui && server == ewserver->server) {
-    gss_html_error_404 (msg);
-    return;
-  }
-
-  if (server == ewserver->ssl_server) {
-    base_url = gss_soup_get_base_url_http (ewserver, msg);
+  if (t->soupserver == t->server->ssl_server) {
+    base_url = gss_soup_get_base_url_http (t->server, t->msg);
   } else {
     base_url = g_strdup ("");
   }
 
   s = g_string_new ("");
 
-  gss_html_header (ewserver, s, "Entropy Wave Live Streaming");
+  gss_html_header (t->server, s, "Entropy Wave Live Streaming");
 
   g_string_append_printf (s, "<div id=\"header\">\n");
   gss_html_append_image (s,
@@ -1057,8 +1163,8 @@ main_page_callback (SoupServer * server, SoupMessage * msg,
       "</div><!-- end header div -->\n"
       "<div id=\"content\">\n" "<h1>Available Streams</h1>\n");
 
-  for (i = 0; i < ewserver->n_programs; i++) {
-    GssProgram *program = ewserver->programs[i];
+  for (i = 0; i < t->server->n_programs; i++) {
+    GssProgram *program = t->server->programs[i];
     gss_html_append_break (s);
     if (program->running) {
       gss_html_append_image_printf (s,
@@ -1079,99 +1185,62 @@ main_page_callback (SoupServer * server, SoupMessage * msg,
 
   g_string_append (s, "</div><!-- end content div -->\n");
 
-  gss_html_footer (ewserver, s, NULL);
+  gss_html_footer (t->server, s, NULL);
 
   content = g_string_free (s, FALSE);
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE,
+  soup_message_set_response (t->msg, mime_type, SOUP_MEMORY_TAKE,
       content, strlen (content));
 }
 
 static void
-list_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+list_resource (GssTransaction *t)
 {
-  const char *mime_type = "text/plain";
   char *content;
-  GssServer *ewserver = (GssServer *) user_data;
   GString *s = g_string_new ("");
   int i;
 
-  if (!ewserver->enable_public_ui && server == ewserver->server) {
-    gss_html_error_404 (msg);
-    return;
-  }
-
-  if (msg->method != SOUP_METHOD_GET) {
-    soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
-    return;
-  }
-
-  if (!g_str_equal (path, "/list")) {
-    gss_html_error_404 (msg);
-    return;
-  }
-
-  for (i = 0; i < ewserver->n_programs; i++) {
-    GssProgram *program = ewserver->programs[i];
+  for (i = 0; i < t->server->n_programs; i++) {
+    GssProgram *program = t->server->programs[i];
     g_string_append_printf (s, "%s\n", program->location);
   }
 
   content = g_string_free (s, FALSE);
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE,
+  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
       content, strlen (content));
 }
 
 static void
-log_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+log_resource (GssTransaction *t)
 {
-  const char *mime_type = "text/plain";
   char *content;
-  GssServer *ewserver = (GssServer *) user_data;
   GString *s = g_string_new ("");
   GList *g;
-  char *t;
+  char *time_string;
 
-  if (!ewserver->enable_public_ui && server == ewserver->server) {
-    gss_html_error_404 (msg);
-    return;
-  }
-
-  if (msg->method != SOUP_METHOD_GET) {
-    soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
-    return;
-  }
-
-  if (!g_str_equal (path, "/log")) {
-    gss_html_error_404 (msg);
-    return;
-  }
-
-  t = get_time_string ();
-  g_string_append_printf (s, "Server time: %s\n", t);
-  g_free (t);
+  time_string = get_time_string ();
+  g_string_append_printf (s, "Server time: %s\n", time_string);
+  g_free (time_string);
   g_string_append_printf (s, "Recent log messages:\n");
 
-  for (g = g_list_first (ewserver->messages); g; g = g_list_next (g)) {
+  for (g = g_list_first (t->server->messages); g; g = g_list_next (g)) {
     g_string_append_printf (s, "%s\n", (char *) g->data);
   }
 
   content = g_string_free (s, FALSE);
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE,
+  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
       content, strlen (content));
 }
 
+#if 0
 static void
 dump_header (const char *name, const char *value, gpointer user_data)
 {
@@ -1179,32 +1248,22 @@ dump_header (const char *name, const char *value, gpointer user_data)
 }
 
 static void
-push_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+gss_transaction_dump (GssTransaction *t)
+{
+  soup_message_headers_foreach (t->msg->request_headers, dump_header, NULL);
+}
+#endif
+
+static void
+push_resource (GssTransaction *t)
 {
   GssProgram *program;
-  //const char *mime_type = "text/plain";
-  GssServer *ewserver = (GssServer *) user_data;
   const char *content_type;
 
-  if (!(msg->method == SOUP_METHOD_PUT || msg->method == SOUP_METHOD_POST ||
-          msg->method == SOUP_METHOD_SOURCE) != 0) {
-    soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
-    return;
-  }
-
-  soup_message_headers_foreach (msg->request_headers, dump_header, user_data);
-
-  if (!g_str_equal (path, "/push")) {
-    gss_html_error_404 (msg);
-    return;
-  }
-
-  program = gss_server_add_program (ewserver, "push_stream");
+  program = gss_server_add_program (t->server, "push_stream");
   program->program_type = GSS_PROGRAM_HTTP_PUT;
 
-  content_type = soup_message_headers_get_one (msg->request_headers,
+  content_type = soup_message_headers_get_one (t->msg->request_headers,
       "Content-Type");
   if (content_type) {
     if (strcmp (content_type, "application/ogg") == 0) {
@@ -1226,13 +1285,13 @@ push_callback (SoupServer * server, SoupMessage * msg,
 
   gss_program_start (program);
 
-  program->push_client = client;
+  program->push_client = t->client;
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_headers_set_encoding (msg->response_headers, SOUP_ENCODING_EOF);
+  soup_message_headers_set_encoding (t->msg->response_headers, SOUP_ENCODING_EOF);
 
-  g_signal_connect (msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
+  g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
       program);
 
 }
@@ -1257,6 +1316,7 @@ push_wrote_headers (SoupMessage * msg, void *user_data)
   program->running = TRUE;
 }
 
+#if 0
 static void
 file_callback (SoupServer * server, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
@@ -1280,6 +1340,7 @@ file_callback (SoupServer * server, SoupMessage * msg,
 
   soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE, contents, size);
 }
+#endif
 
 
 

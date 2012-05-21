@@ -27,6 +27,7 @@
 #include <gst/rtsp-server/rtsp-server.h>
 #include <libsoup/soup.h>
 #include "gss-config.h"
+#include "gss-session.h"
 
 G_BEGIN_DECLS
 
@@ -154,6 +155,42 @@ struct _GssConnection {
   GssProgram *program;
 };
 
+typedef enum {
+  GSS_RESOURCE_ADMIN = (1<<0),
+  GSS_RESOURCE_UI = (1<<1),
+  GSS_RESOURCE_SSL_ONLY = (1<<2),
+} GssResourceFlags;
+
+typedef struct _GssResource GssResource;
+typedef struct _GssTransaction GssTransaction;
+
+typedef void (GssTransactionCallback)(GssTransaction *transaction);
+
+struct _GssResource {
+  char *location;
+  char *etag;
+
+  GssResourceFlags flags;
+
+  GssTransactionCallback *get_callback;
+  GssTransactionCallback *put_callback;
+  GssTransactionCallback *post_callback;
+
+  gpointer priv;
+};
+
+struct _GssTransaction {
+  GssServer *server;
+  SoupServer *soupserver;
+  SoupMessage *msg;
+  const char *path;
+  GHashTable *query;
+  SoupClientContext *client;
+  GssResource *resource;
+  GssSession *session;
+  gboolean done;
+};
+
 
 #define GSS_TYPE_SERVER \
   (gss_server_get_type())
@@ -183,6 +220,7 @@ struct _GssServer
   SoupServer *ssl_server;
   SoupSession *client_session;
   char *base_url;
+  GHashTable *resources;
 
   gboolean enable_public_ui;
 
@@ -260,6 +298,17 @@ void gss_server_add_static_file (SoupServer *soupserver, const char *filename,
     const char *mime_type);
 void gss_server_add_static_string (SoupServer * soupserver,
     const char *filename, const char *mime_type, const char *string);
+
+void gss_server_add_resource (GssServer *server, const char *location,
+    GssResourceFlags flags, GssTransactionCallback get_callback,
+    GssTransactionCallback put_callback, GssTransactionCallback post_callback,
+    gpointer priv);
+void gss_server_remove_resource (GssServer *server, const char *location);
+void gss_server_add_file_resource (GssServer *server,
+    const char *filename, GssResourceFlags flags, const char *mime_type);
+void gss_server_add_string_resource (GssServer * server, const char *filename,
+    GssResourceFlags flags, const char *mime_type, const char *string);
+
 
 G_END_DECLS
 
