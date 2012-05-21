@@ -80,10 +80,7 @@ static void
 client_removed (GstElement * e, int arg0, int arg1, gpointer user_data);
 static void client_fd_removed (GstElement * e, int fd, gpointer user_data);
 static void msg_wrote_headers (SoupMessage * msg, void *user_data);
-static void
-gss_stream_handle (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
+static void stream_resource (GssTransaction *transaction);
 static void
 gss_stream_handle_m3u8 (SoupServer * server, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
@@ -826,49 +823,41 @@ client_fd_removed (GstElement * e, int fd, gpointer user_data)
 }
 
 
-static void
-gss_stream_handle (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+static void stream_resource (GssTransaction *t)
 {
-  GssServerStream *stream = (GssServerStream *) user_data;
-  GssServer *ewserver = stream->program->server;
+  GssServerStream *stream = (GssServerStream *) t->resource->priv;
   GssConnection *connection;
 
-  if (msg->method != SOUP_METHOD_GET) {
-    soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
-    return;
-  }
   if (!stream->program->enable_streaming || !stream->program->running) {
-    soup_message_set_status (msg, SOUP_STATUS_NO_CONTENT);
+    soup_message_set_status (t->msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
 
-  if (ewserver->n_clients >= ewserver->max_connections ||
-      ewserver->current_bitrate + stream->bitrate >= ewserver->max_bitrate) {
+  if (t->server->n_clients >= t->server->max_connections ||
+      t->server->current_bitrate + stream->bitrate >= t->server->max_bitrate) {
     if (verbose)
       g_print ("n_clients %d max_connections %d\n",
-          ewserver->n_clients, ewserver->max_connections);
+          t->server->n_clients, t->server->max_connections);
     if (verbose)
       g_print ("current bitrate %" G_GINT64_FORMAT " bitrate %d max_bitrate %"
-          G_GINT64_FORMAT "\n", ewserver->current_bitrate, stream->bitrate,
-          ewserver->max_bitrate);
-    soup_message_set_status (msg, SOUP_STATUS_SERVICE_UNAVAILABLE);
+          G_GINT64_FORMAT "\n", t->server->current_bitrate, stream->bitrate,
+          t->server->max_bitrate);
+    soup_message_set_status (t->msg, SOUP_STATUS_SERVICE_UNAVAILABLE);
     return;
   }
 
   connection = g_malloc0 (sizeof (GssConnection));
-  connection->msg = msg;
-  connection->client = client;
+  connection->msg = t->msg;
+  connection->client = t->client;
   connection->stream = stream;
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_headers_set_encoding (msg->response_headers, SOUP_ENCODING_EOF);
-  soup_message_headers_replace (msg->response_headers, "Content-Type",
+  soup_message_headers_set_encoding (t->msg->response_headers, SOUP_ENCODING_EOF);
+  soup_message_headers_replace (t->msg->response_headers, "Content-Type",
       stream->mime_type);
 
-  g_signal_connect (msg, "wrote-headers", G_CALLBACK (msg_wrote_headers),
+  g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (msg_wrote_headers),
       connection);
 }
 
@@ -1004,7 +993,8 @@ gss_program_add_stream_full (GssProgram * program,
       stream->width, stream->height, stream->bitrate / 1000, stream->mod,
       stream->ext);
   s = g_strdup_printf ("/%s", stream->name);
-  soup_server_add_handler (soupserver, s, gss_stream_handle, stream, NULL);
+  gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
+      stream_resource, NULL, NULL, stream);
   g_free (s);
 
   stream->playlist_name = g_strdup_printf ("%s-%dx%d-%dkbps%s-%s.m3u8",
