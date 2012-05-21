@@ -597,22 +597,22 @@ gss_server_add_program (GssServer * server, const char *program_name)
   program->running = FALSE;
 
   s = g_strdup_printf ("/%s", program_name);
-  gss_server_add_resource (server, s, 0, program_get_resource,
+  gss_server_add_resource (server, s, GSS_RESOURCE_UI, program_get_resource,
       program_put_resource, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", program_name);
-  gss_server_add_resource (server, s, 0, program_frag_resource,
+  gss_server_add_resource (server, s, GSS_RESOURCE_UI, program_frag_resource,
       NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.list", program_name);
-  gss_server_add_resource (server, s, 0, program_list_resource,
+  gss_server_add_resource (server, s, GSS_RESOURCE_UI, program_list_resource,
       NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.png", program_name);
-  gss_server_add_resource (server, s, 0, program_png_resource,
+  gss_server_add_resource (server, s, GSS_RESOURCE_UI, program_png_resource,
       NULL, NULL, program);
   g_free (s);
 
@@ -1129,16 +1129,6 @@ main_page_resource (GssTransaction *t)
   GString *s;
   char *base_url;
   int i;
-
-  if (t->msg->method != SOUP_METHOD_GET) {
-    soup_message_set_status (t->msg, SOUP_STATUS_NOT_IMPLEMENTED);
-    return;
-  }
-
-  if (!t->server->enable_public_ui && t->soupserver == t->server->server) {
-    gss_html_error_404 (t->msg);
-    return;
-  }
 
   if (t->soupserver == t->server->ssl_server) {
     base_url = gss_soup_get_base_url_http (t->server, t->msg);
