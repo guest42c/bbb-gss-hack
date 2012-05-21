@@ -386,6 +386,8 @@ setup_paths (GssServer * server)
   IMAGE ("button_network.png");
   IMAGE ("button_server.png");
   IMAGE ("button_video.png");
+  IMAGE ("button_input.png");
+  IMAGE ("button_output.png");
   IMAGE ("template_bodybg.png");
   IMAGE ("template_c1000.png");
   IMAGE ("template_e1000.png");
