@@ -55,7 +55,9 @@ static void resource_callback (SoupServer * soupserver, SoupMessage * msg,
 static void main_page_resource (GssTransaction *transaction);
 static void list_resource (GssTransaction *transaction);
 static void log_resource (GssTransaction *transaction);
+#if 0
 static void push_resource (GssTransaction *transaction);
+#endif
 
 static void push_wrote_headers (SoupMessage * msg, void *user_data);
 static void file_resource (GssTransaction *transaction);
@@ -360,8 +362,10 @@ setup_paths (GssServer * server)
       NULL, NULL, NULL);
   gss_server_add_resource (server, "/log", GSS_RESOURCE_UI, log_resource,
       NULL, NULL, NULL);
+#if 0
   gss_server_add_resource (server, "/push", GSS_RESOURCE_UI, NULL,
       push_resource, NULL, NULL);
+#endif
 
   if (enable_cortado) {
     gss_server_add_file_resource (server, "/cortado.jar", 0,
@@ -1240,6 +1244,7 @@ gss_transaction_dump (GssTransaction *t)
 }
 #endif
 
+#if 0
 static void
 push_resource (GssTransaction *t)
 {
@@ -1281,6 +1286,7 @@ push_resource (GssTransaction *t)
       program);
 
 }
+#endif
 
 static void
 push_wrote_headers (SoupMessage * msg, void *user_data)
