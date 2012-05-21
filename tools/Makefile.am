@@ -11,20 +11,3 @@ ew_stream_server_SOURCES = \
 	ew-config-stream-server.c
 
 
-
-
-
-ew_prefix=/opt/entropywave/ew-media-sdk-linux-x86_64-2011.04/
-appname=ew-stream-server-$(shell date +%Y%m%d)
-
-app:
-	rm -rf ew-stream-server-*
-	mkdir $(appname)
-	tar -xzf $(ew_prefix)/runtime/runtime.tgz --directory $(appname)
-	cp ew-stream-server $(appname)/bin/ew-stream-server
-	cp ${ew_prefix}/runtime/wrapper $(appname)/ew-stream-server
-	cp ${ew_prefix}/runtime/wrapper $(appname)/gst-inspect-0.10
-	cp ${ew_prefix}/runtime/wrapper $(appname)/gst-launch-0.10
-	cp -ar ../ew-encoder/images $(appname)/
-	tar -czf $(appname).tgz $(appname)
-
