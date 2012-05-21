@@ -29,6 +29,8 @@
 
 G_BEGIN_DECLS
 
+struct _GssServer;
+
 typedef struct _GssSession GssSession;
 struct _GssSession {
   char *session_id;
@@ -37,7 +39,7 @@ struct _GssSession {
 };
 
 GssSession * gss_session_new (const char *username);
-void gss_session_add_session_callbacks (SoupServer *soupserver, gpointer priv);
+void gss_session_add_session_callbacks (struct _GssServer * server);
 void gss_session_notify_hosts_allow (const char *key, void *priv);
 gboolean gss_addr_address_check (SoupClientContext *context);
 gboolean gss_addr_is_localhost (SoupClientContext *context);

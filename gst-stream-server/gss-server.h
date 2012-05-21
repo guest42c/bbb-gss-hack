@@ -158,7 +158,9 @@ struct _GssConnection {
 typedef enum {
   GSS_RESOURCE_ADMIN = (1<<0),
   GSS_RESOURCE_UI = (1<<1),
-  GSS_RESOURCE_SSL_ONLY = (1<<2),
+  GSS_RESOURCE_HTTP_ONLY = (1<<2),
+  GSS_RESOURCE_HTTPS_ONLY = (1<<3),
+  GSS_RESOURCE_ONETIME = (1<<4),
 } GssResourceFlags;
 
 typedef struct _GssResource GssResource;

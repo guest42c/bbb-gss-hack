@@ -312,7 +312,9 @@ gss_server_new (void)
   setup_paths (server);
 
   soup_server_run_async (server->server);
-  if (server->ssl_server) soup_server_run_async (server->ssl_server);
+  if (server->ssl_server) {
+    soup_server_run_async (server->ssl_server);
+  }
 
   g_timeout_add (1000, (GSourceFunc) periodic_timer, server);
 
@@ -350,7 +352,7 @@ gss_server_remove_resource (GssServer *server, const char *location)
 static void
 setup_paths (GssServer * server)
 {
-  //gss_session_add_session_callbacks (soupserver, server);
+  gss_session_add_session_callbacks (server);
 
   gss_server_add_resource (server, "/", GSS_RESOURCE_UI, main_page_resource,
       NULL, NULL, NULL);
@@ -615,8 +617,8 @@ gss_server_add_program (GssServer * server, const char *program_name)
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.jpeg", program_name);
-  gss_server_add_resource (server, s, 0, program_jpeg_resource,
-      NULL, NULL, program);
+  gss_server_add_resource (server, s, GSS_RESOURCE_HTTP_ONLY,
+      program_jpeg_resource, NULL, NULL, program);
   g_free (s);
 
   return program;
@@ -1058,8 +1060,15 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
     }
   }
 
-  if (resource->flags & GSS_RESOURCE_SSL_ONLY) {
-    if (soupserver == server->server) {
+  if (resource->flags & GSS_RESOURCE_HTTPS_ONLY) {
+    if (soupserver != server->ssl_server) {
+      gss_html_error_404 (msg);
+      return;
+    }
+  }
+
+  if (resource->flags & GSS_RESOURCE_HTTP_ONLY) {
+    if (soupserver != server->server) {
       gss_html_error_404 (msg);
       return;
     }

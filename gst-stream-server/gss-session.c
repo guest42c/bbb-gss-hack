@@ -30,17 +30,6 @@
 #include <glib-object.h>
 
 #include <fcntl.h>
-#if 0
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <string.h>
-#endif
 
 
 #define REALM "Entropy Wave E1000"
@@ -66,20 +55,21 @@ struct _AddrRange
 AddrRange *hosts_allow;
 int n_hosts_allow;
 
+static void session_login_post_resource (GssTransaction *t);
+static void session_login_get_resource (GssTransaction *t);
+static void session_logout_resource (GssTransaction *t);
 
 void
-gss_session_add_session_callbacks (SoupServer * soupserver, gpointer priv)
+gss_session_add_session_callbacks (GssServer * server)
 {
-  GssServer *ewserver = (GssServer *) priv;
+  gss_server_add_resource (server, "/login", GSS_RESOURCE_HTTPS_ONLY,
+      session_login_get_resource, NULL, session_login_post_resource, NULL);
+  gss_server_add_resource (server, "/logout", GSS_RESOURCE_HTTPS_ONLY,
+      session_logout_resource, NULL, NULL, NULL);
 
-  soup_server_add_handler (soupserver, "/login", gss_session_login_callback,
-      ewserver, NULL);
-  soup_server_add_handler (soupserver, "/logout", gss_session_logout_callback,
-      ewserver, NULL);
-
-  gss_config_set_notify (ewserver->config, "hosts_allow",
-      gss_session_notify_hosts_allow, ewserver);
-  gss_session_notify_hosts_allow ("hosts_allow", ewserver);
+  gss_config_set_notify (server->config, "hosts_allow",
+      gss_session_notify_hosts_allow, server);
+  gss_session_notify_hosts_allow ("hosts_allow", server);
 }
 
 void
@@ -445,101 +435,94 @@ gss_session_new (const char *username)
   return session;
 }
 
-void
-gss_session_login_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+static void
+session_login_post_resource (GssTransaction *t)
 {
-  GssServer *ewserver = (GssServer *) user_data;
+  GssServer *ewserver = (GssServer *) t->server;
+  gboolean valid = FALSE;
+  char *hash;
+  GHashTable *query_hash;
+  const char *username = NULL;
+  const char *password = NULL;
+  const char *content_type;
+
+  content_type = soup_message_headers_get_one (t->msg->request_headers,
+      "Content-Type");
+
+  query_hash = NULL;
+  if (g_str_equal (content_type, "application/x-www-form-urlencoded")) {
+    query_hash = soup_form_decode (t->msg->request_body->data);
+  } else if (g_str_has_prefix (content_type, "multipart/form-data")) {
+    char *filename;
+    char *media_type;
+    SoupBuffer *buffer;
+
+    query_hash = soup_form_decode_multipart (t->msg, "dont_care",
+        &filename, &media_type, &buffer);
+  }
+
+  if (query_hash) {
+    username = g_hash_table_lookup (query_hash, "username");
+    password = g_hash_table_lookup (query_hash, "password");
+  }
+
+  if (username && password) {
+#if 0
+    hash = password_hash (username, password);
+    valid = (strcmp (username, "admin") == 0) &&
+        gss_config_value_is_equal (ewserver->config, "admin_hash", hash);
+    g_free (hash);
+#endif
+    hash = soup_auth_domain_digest_encode_password (username, REALM,
+        password);
+    valid = (strcmp (username, "admin") == 0) &&
+        gss_config_value_is_equal (ewserver->config, "admin_token", hash);
+    g_free (hash);
+  }
+
+  if (query_hash) {
+    g_hash_table_unref (query_hash);
+  }
+
+  if (valid) {
+    GssSession *session;
+    char *location;
+    char *redirect_url;
+
+    session = gss_session_new (username);
+
+    redirect_url = "/admin";
+    if (t->query) {
+      redirect_url = g_hash_table_lookup (t->query, "redirect_url");
+    }
+    location = g_strdup_printf ("%s?session_id=%s", redirect_url,
+        session->session_id);
+
+    soup_message_headers_append (t->msg->response_headers, "Location", location);
+    soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_STATIC, "", 0);
+    soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
+
+    return;
+  }
+#if 0
+  gss_html_error_404 (t->msg);
+
+  return;
+#endif
+
+}
+
+static void
+session_login_get_resource (GssTransaction *t)
+{
+  GssServer *ewserver = (GssServer *) t->server;
   const char *content = "login\n";
   GString *s;
   char *redirect_url;
   char *location;
 
-#if 0
-  if (msg->method == SOUP_METHOD_GET) {
-    g_print ("GET %s\n", path);
-  } else if (msg->method == SOUP_METHOD_POST) {
-    g_print ("POST %s\n", path);
-  }
-#endif
+  if (t->soupserver == t->server->server) {
 
-  if (msg->method != SOUP_METHOD_GET && msg->method != SOUP_METHOD_POST) {
-    soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
-    return;
-  }
-
-  if (msg->method == SOUP_METHOD_POST) {
-    gboolean valid = FALSE;
-    char *hash;
-    GHashTable *query_hash;
-    const char *username = NULL;
-    const char *password = NULL;
-    const char *content_type;
-
-    content_type = soup_message_headers_get_one (msg->request_headers,
-        "Content-Type");
-
-    query_hash = NULL;
-    if (g_str_equal (content_type, "application/x-www-form-urlencoded")) {
-      query_hash = soup_form_decode (msg->request_body->data);
-    } else if (g_str_has_prefix (content_type, "multipart/form-data")) {
-      char *filename;
-      char *media_type;
-      SoupBuffer *buffer;
-
-      query_hash = soup_form_decode_multipart (msg, "dont_care",
-          &filename, &media_type, &buffer);
-    }
-
-    if (query_hash) {
-      username = g_hash_table_lookup (query_hash, "username");
-      password = g_hash_table_lookup (query_hash, "password");
-    }
-
-    if (username && password) {
-#if 0
-      hash = password_hash (username, password);
-      valid = (strcmp (username, "admin") == 0) &&
-          gss_config_value_is_equal (ewserver->config, "admin_hash", hash);
-      g_free (hash);
-#endif
-      hash = soup_auth_domain_digest_encode_password (username, REALM,
-          password);
-      valid = (strcmp (username, "admin") == 0) &&
-          gss_config_value_is_equal (ewserver->config, "admin_token", hash);
-      g_free (hash);
-    }
-
-    if (query_hash) {
-      g_hash_table_unref (query_hash);
-    }
-
-    if (valid) {
-      GssSession *session;
-      char *location;
-
-      session = gss_session_new (username);
-
-      redirect_url = "/admin";
-      if (query) {
-        redirect_url = g_hash_table_lookup (query, "redirect_url");
-      }
-      location = g_strdup_printf ("%s?session_id=%s", redirect_url,
-          session->session_id);
-
-      soup_message_headers_append (msg->response_headers, "Location", location);
-      soup_message_set_response (msg, "text/plain", SOUP_MEMORY_STATIC, "", 0);
-      //soup_message_set_status (msg, SOUP_STATUS_FOUND);
-      soup_message_set_status (msg, SOUP_STATUS_SEE_OTHER);
-
-      return;
-    }
-#if 0
-    gss_html_error_404 (msg);
-
-    return;
-#endif
   }
 
   s = g_string_new ("");
@@ -554,8 +537,8 @@ gss_session_login_callback (SoupServer * server, SoupMessage * msg,
   g_string_append_printf (s, "<div id=\"content\">\n");
 
   redirect_url = NULL;
-  if (query) {
-    redirect_url = g_hash_table_lookup (query, "redirect_url");
+  if (t->query) {
+    redirect_url = g_hash_table_lookup (t->query, "redirect_url");
   }
   if (redirect_url) {
     char *e;
@@ -573,29 +556,24 @@ gss_session_login_callback (SoupServer * server, SoupMessage * msg,
   gss_html_footer (ewserver, s, NULL);
 
   content = g_string_free (s, FALSE);
-  soup_message_set_status (msg, SOUP_STATUS_OK);
-  soup_message_set_response (msg, "text/html", SOUP_MEMORY_TAKE,
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
+  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
       content, strlen (content));
 }
 
-void
-gss_session_logout_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+static void
+session_logout_resource (GssTransaction *t)
 {
-  //GssServer *ewserver = (GssServer *)user_data;
-  GssSession *session;
 
-  session = gss_session_message_get_session (msg, query);
-
-  if (session == NULL) {
-    soup_message_headers_append (msg->response_headers, "Location", "/login");
-    soup_message_set_status (msg, SOUP_STATUS_TEMPORARY_REDIRECT);
+  if (t->session == NULL) {
+    soup_message_headers_append (t->msg->response_headers, "Location", "/login");
+    soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
     return;
   }
 
-  sessions = g_list_remove (sessions, session);
+  sessions = g_list_remove (sessions, t->session);
 
-  soup_message_headers_append (msg->response_headers, "Location", "/login");
-  soup_message_set_status (msg, SOUP_STATUS_TEMPORARY_REDIRECT);
+  soup_message_headers_append (t->msg->response_headers, "Location", "/login");
+  soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
 }
+
