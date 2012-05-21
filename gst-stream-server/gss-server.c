@@ -1335,6 +1335,7 @@ add_video_block (GssProgram * program, GString * s, int max_width,
   int i;
   int width = 0;
   int height = 0;
+  int flash_only = TRUE;
 
   if (!program->running) {
     g_string_append_printf (s,
@@ -1347,13 +1348,16 @@ add_video_block (GssProgram * program, GString * s, int max_width,
       width = stream->width;
     if (stream->height > height)
       height = stream->height;
+    if (stream->type != GSS_SERVER_STREAM_FLV) {
+      flash_only = FALSE;
+    }
   }
   if (max_width != 0 && width > max_width) {
     height = max_width * 9 / 16;
     width = max_width;
   }
 
-  if (enable_video_tag) {
+  if (enable_video_tag && !flash_only) {
     g_string_append_printf (s,
         "<video controls=\"controls\" autoplay=\"autoplay\" "
         "id=video width=\"%d\" height=\"%d\">\n", width, height);
@@ -1463,7 +1467,7 @@ add_video_block (GssProgram * program, GString * s, int max_width,
     }
   }
 
-  if (enable_video_tag) {
+  if (enable_video_tag && !flash_only) {
     g_string_append (s, "</video>\n");
   }
 
@@ -1487,7 +1491,7 @@ program_frag_resource (GssTransaction *t)
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
+  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
       content, strlen (content));
 }
 
