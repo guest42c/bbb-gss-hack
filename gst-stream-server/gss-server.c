@@ -497,7 +497,6 @@ gss_server_add_string_resource (GssServer * server, const char *filename,
 
   sr->filename = filename;
   sr->mime_type = mime_type;
-  sr->resource.etag = gss_session_create_id ();
   sr->contents = g_strdup (string);
   sr->size = strlen (string);
   generate_etag (sr);
