@@ -248,6 +248,21 @@ gethostname_alloc (void)
   return t;
 }
 
+static void
+dump_header (const char *name, const char *value, gpointer user_data)
+{
+  g_print ("%s: %s\n", name, value);
+}
+
+static void
+request_read (SoupServer * server, SoupMessage * msg,
+    SoupClientContext * client, gpointer user_data)
+{
+  g_print ("request_read\n");
+
+  soup_message_headers_foreach (msg->request_headers, dump_header, NULL);
+}
+
 GssServer *
 gss_server_new (void)
 {
@@ -319,6 +334,9 @@ gss_server_new (void)
   if (server->ssl_server) {
     soup_server_run_async (server->ssl_server);
   }
+
+  g_signal_connect (server->server, "request-read", G_CALLBACK (request_read),
+      server);
 
   g_timeout_add (1000, (GSourceFunc) periodic_timer, server);
 
