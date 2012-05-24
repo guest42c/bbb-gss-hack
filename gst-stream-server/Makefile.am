@@ -16,7 +16,8 @@ libgss_@GST_MAJORMINOR@_la_SOURCES = \
 	gss-form.c \
 	gss-html.c \
 	gss-soup.c \
-	gss-rtsp.c
+	gss-rtsp.c \
+	gss-metrics.c
 
 gss_include_HEADERS = \
 	gss-hls-server.h \

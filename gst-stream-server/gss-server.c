@@ -272,6 +272,7 @@ gss_server_new (void)
   server = g_object_new (GSS_TYPE_SERVER, NULL);
 
   server->config = gss_config_new ();
+  server->metrics = gss_metrics_new ();
 
   gss_config_set_notify (server->config, "max_connections", gss_server_notify,
       server);
@@ -546,6 +547,7 @@ gss_server_free (GssServer * server)
   g_list_foreach (server->messages, (GFunc) g_free, NULL);
   g_list_free (server->messages);
 
+  gss_metrics_free (server->metrics);
   g_free (server->base_url);
   g_free (server->server_name);
   g_free (server->programs);
@@ -610,6 +612,7 @@ gss_server_add_program (GssServer * server, const char *program_name)
   char *s;
 
   program = g_malloc0 (sizeof (GssProgram));
+  program->metrics = gss_metrics_new ();
 
   server->programs = g_realloc (server->programs,
       sizeof (GssProgram *) * (server->n_programs + 1));
@@ -698,6 +701,7 @@ gss_program_free (GssProgram * program)
     g_object_unref (program->pngappsink);
   if (program->jpegsink)
     g_object_unref (program->jpegsink);
+  gss_metrics_free (program->metrics);
   g_free (program->location);
   g_free (program->streams);
   g_free (program->follow_uri);
@@ -781,8 +785,11 @@ gss_stream_free (GssServerStream * stream)
     gst_element_set_state (GST_ELEMENT (stream->pipeline), GST_STATE_NULL);
     g_object_unref (stream->pipeline);
   }
+  if (stream->sink)
+    g_object_unref (stream->sink);
   if (stream->adapter)
     g_object_unref (stream->adapter);
+  gss_metrics_free (stream->metrics);
 
   g_free (stream);
 }
@@ -824,8 +831,10 @@ client_removed (GstElement * e, int fd, int status, gpointer user_data)
 
   if (fd_table[fd]) {
     if (stream) {
-      stream->n_clients--;
-      stream->program->server->n_clients--;
+      gss_metrics_remove_client (stream->metrics, stream->bitrate);
+      gss_metrics_remove_client (stream->program->metrics, stream->bitrate);
+      gss_metrics_remove_client (stream->program->server->metrics,
+          stream->bitrate);
     }
   }
 }
@@ -856,14 +865,14 @@ static void stream_resource (GssTransaction *t)
     return;
   }
 
-  if (t->server->n_clients >= t->server->max_connections ||
-      t->server->current_bitrate + stream->bitrate >= t->server->max_bitrate) {
+  if (t->server->metrics->n_clients >= t->server->max_connections ||
+      t->server->metrics->bitrate + stream->bitrate >= t->server->max_bitrate) {
     if (verbose)
       g_print ("n_clients %d max_connections %d\n",
-          t->server->n_clients, t->server->max_connections);
+          t->server->metrics->n_clients, t->server->max_connections);
     if (verbose)
       g_print ("current bitrate %" G_GINT64_FORMAT " bitrate %d max_bitrate %"
-          G_GINT64_FORMAT "\n", t->server->current_bitrate, stream->bitrate,
+          G_GINT64_FORMAT "\n", t->server->metrics->bitrate, stream->bitrate,
           t->server->max_bitrate);
     soup_message_set_status (t->msg, SOUP_STATUS_SERVICE_UNAVAILABLE);
     return;
@@ -895,13 +904,16 @@ msg_wrote_headers (SoupMessage * msg, void *user_data)
   fd = soup_socket_get_fd (socket);
 
   if (connection->stream->sink) {
+    GssServerStream *stream = connection->stream;
+
     g_signal_emit_by_name (connection->stream->sink, "add", fd);
 
     g_assert (fd < MAX_FDS);
     fd_table[fd] = socket;
 
-    connection->stream->n_clients++;
-    connection->stream->program->server->n_clients++;
+    gss_metrics_add_client (stream->metrics, stream->bitrate);
+    gss_metrics_add_client (stream->program->metrics, stream->bitrate);
+    gss_metrics_add_client (stream->program->server->metrics, stream->bitrate);
   } else {
     soup_socket_disconnect (socket);
   }
@@ -934,6 +946,8 @@ gss_stream_new (int type, int width, int height, int bitrate)
   GssServerStream *stream;
 
   stream = g_malloc0 (sizeof (GssServerStream));
+
+  stream->metrics = gss_metrics_new ();
 
   stream->type = type;
   stream->width = width;
@@ -1327,7 +1341,9 @@ gss_transaction_dump (GssTransaction *t)
 
 #if 0
 static void
-push_resource (GssTransaction *t)
+push_callback (SoupServer * server, SoupMessage * msg,
+    const char *path, GHashTable * query, SoupClientContext * client,
+    gpointer user_data)
 {
   GssProgram *program;
   const char *content_type;

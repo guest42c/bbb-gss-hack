@@ -39,6 +39,7 @@ typedef struct _GssServerClass GssServerClass;
 typedef struct _GssConnection GssConnection;
 typedef struct _GssHLSSegment GssHLSSegment;
 typedef struct _GssRtspStream GssRtspStream;
+typedef struct _GssMetrics GssMetrics;
 
 enum {
   GSS_SERVER_STREAM_UNKNOWN,
@@ -58,6 +59,13 @@ typedef enum {
   GSS_PROGRAM_MANUAL
 } GssProgramType;
 
+struct _GssMetrics {
+  int n_clients;
+  int max_clients;
+  guint64 bitrate;
+  guint64 max_bitrate;
+};
+
 struct _GssProgram {
   GssServer *server;
 
@@ -75,6 +83,7 @@ struct _GssProgram {
 
   int n_streams;
   GssServerStream **streams;
+  GssMetrics *metrics;
 
   gboolean enable_ogv;
   gboolean enable_webm;
@@ -116,6 +125,7 @@ struct _GssServerStream {
   int type;
   char *follow_url;
   int push_fd;
+  GssMetrics *metrics;
 
   GstElement *pipeline;
   GstElement *sink;
@@ -126,7 +136,6 @@ struct _GssServerStream {
   int width;
   int height;
   int bitrate;
-  int n_clients;
   gboolean is_hls;
 
   GstAdapter *adapter;
@@ -217,6 +226,7 @@ struct _GssServer
 
   int n_programs;
   GssProgram **programs;
+  GssMetrics *metrics;
 
   SoupServer *server;
   SoupServer *ssl_server;
@@ -232,8 +242,6 @@ struct _GssServer
 
   int max_connections;
   gint64 max_bitrate;
-  int n_clients;
-  gint64 current_bitrate;
 
   GList *messages;
   int n_messages;
@@ -311,6 +319,11 @@ void gss_server_add_file_resource (GssServer *server,
 void gss_server_add_string_resource (GssServer * server, const char *filename,
     GssResourceFlags flags, const char *mime_type, const char *string);
 
+
+GssMetrics * gss_metrics_new (void);
+void gss_metrics_free (GssMetrics * metrics);
+void gss_metrics_add_client (GssMetrics * metrics, int bitrate);
+void gss_metrics_remove_client (GssMetrics * metrics, int bitrate);
 
 G_END_DECLS
 

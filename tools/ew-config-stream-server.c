@@ -51,7 +51,7 @@ GssField control_fields[] = {
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream0_url", "Stream URL or E1000 IP address",
-        "10.0.2.40", 0},
+      "10.0.2.40", 0},
   //{ GSS_FIELD_TEXT_INPUT, "stream0_width", "Width", "640", 0 },
   //{ GSS_FIELD_TEXT_INPUT, "stream0_height", "Height", "360", 0 },
   //{ GSS_FIELD_TEXT_INPUT, "stream0_bitrate", "Bitrate", "700000", 0 },
@@ -68,7 +68,7 @@ GssField control_fields[] = {
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream1_url", "Stream URL or E1000 IP address", "",
-        0},
+      0},
   {GSS_FIELD_SECTION, NULL, "Program #2"},
   {GSS_FIELD_ENABLE, "stream2", "enable"},
   {GSS_FIELD_TEXT_INPUT, "stream2_name", "Stream Name", "stream2", 0},
@@ -82,7 +82,7 @@ GssField control_fields[] = {
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream2_url", "Stream URL or E1000 IP address", "",
-        0},
+      0},
   {GSS_FIELD_SECTION, NULL, "Program #3"},
   {GSS_FIELD_TEXT_INPUT, "stream3_name", "Stream Name", "stream3", 0},
   {GSS_FIELD_SELECT, "stream3_type", "Connection type", "ew-follow", 0,
@@ -95,7 +95,7 @@ GssField control_fields[] = {
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream3_url", "Stream URL or E1000 IP address", "",
-        0},
+      0},
   {GSS_FIELD_SECTION, NULL, "Program #4"},
   {GSS_FIELD_TEXT_INPUT, "stream4_name", "Stream Name", "stream4", 0},
   {GSS_FIELD_SELECT, "stream4_type", "Connection type", "ew-follow", 0,
@@ -108,7 +108,7 @@ GssField control_fields[] = {
             }
       },
   {GSS_FIELD_TEXT_INPUT, "stream4_url", "Stream URL or E1000 IP address", "",
-        0},
+      0},
   {GSS_FIELD_SUBMIT, "submit", "Update Configuration", NULL, 0},
   {GSS_FIELD_NONE}
 };
@@ -128,7 +128,7 @@ GssField server_fields[] = {
 GssField access_fields[] = {
   {GSS_FIELD_SECTION, NULL, "Access Restrictions"},
   {GSS_FIELD_TEXT_INPUT, "hosts_allow", "Allowed Hosts (admin)", "0.0.0.0/0",
-        0},
+      0},
   //{ GSS_FIELD_TEXT_INPUT, "hosts_allow_stream", "Streaming", "0.0.0.0/0", 0 },
   {GSS_FIELD_SUBMIT, "submit", "Update", NULL, 1},
   {GSS_FIELD_NONE}
@@ -373,17 +373,17 @@ admin_callback (SoupServer * server, SoupMessage * msg,
 
     switch (type) {
       case ADMIN_CONTROL:
-        {
-          int i;
-          for(i=0;i<ewserver->n_programs;i++){
-            GssProgram *program = ewserver->programs[i];
-            g_string_append_printf(s, "%s type=%d %s %s<br />\n",
-                program->location,
-                program->program_type,
-                program->follow_uri,
-                program->follow_host);
-          }
+#if 0
+      {
+        int i;
+        for (i = 0; i < ewserver->n_programs; i++) {
+          GssProgram *program = ewserver->programs[i];
+          g_string_append_printf (s, "%s type=%d %s %s<br />\n",
+              program->location,
+              program->program_type, program->follow_uri, program->follow_host);
         }
+      }
+#endif
         gss_config_form_add_form (ewserver, s, "/admin", "Control",
             control_fields, session);
         break;
@@ -392,35 +392,49 @@ admin_callback (SoupServer * server, SoupMessage * msg,
             "HTTP Server Configuration", server_fields, session);
         break;
       case ADMIN_LOG:
-        {
-          int i;
-          for(i=0;i<ewserver->n_programs;i++){
-            GssProgram *program = ewserver->programs[i];
-            GssServerStream *stream;
-            guint64 n_bytes_in = 0;
-            guint64 n_bytes_out = 0;
+      {
+        int i;
+        g_string_append_printf (s, "<pre>\n");
+        g_string_append_printf (s, "Streams:\n");
+        for (i = 0; i < ewserver->n_programs; i++) {
+          GssProgram *program = ewserver->programs[i];
+          GssServerStream *stream;
+          guint64 n_bytes_in = 0;
+          guint64 n_bytes_out = 0;
+          int j;
 
-            if (program->streams == NULL) continue;
-            stream = program->streams[0];
+          g_string_append_printf (s, "Program: %s\n", program->location);
 
-            if (stream) {
-              gss_stream_get_stats (stream, &n_bytes_in, &n_bytes_out);
-            }
+          for (j = 0; j < program->n_streams; j++) {
+            if (program->streams == NULL)
+              continue;
+            stream = program->streams[j];
 
-            g_string_append_printf(s, "%s in=%" G_GUINT64_FORMAT " out=%"
+            gss_stream_get_stats (stream, &n_bytes_in, &n_bytes_out);
+
+            g_string_append_printf (s, "  %s clients=%d max_clients%d "
+                "bitrate=%" G_GUINT64_FORMAT " max_bitrate=%"
+                G_GUINT64_FORMAT " in=%" G_GUINT64_FORMAT " out=%"
                 G_GUINT64_FORMAT,
-                program->location, n_bytes_in, n_bytes_out);
+                program->location,
+                program->metrics->n_clients,
+                program->metrics->max_clients,
+                program->metrics->bitrate,
+                program->metrics->max_bitrate, n_bytes_in, n_bytes_out);
             gss_html_append_break (s);
           }
         }
-      {
-        GList *g;
-        g_string_append_printf (s, "<pre>\n");
-        for (g = ewserver->messages; g; g = g_list_next (g)) {
-          g_string_append_printf (s, "%s\n", (char *) g->data);
-        }
         g_string_append_printf (s, "</pre>\n");
       }
+        {
+          GList *g;
+          g_string_append_printf (s, "<pre>\n");
+          g_string_append_printf (s, "Log:\n");
+          for (g = ewserver->messages; g; g = g_list_next (g)) {
+            g_string_append_printf (s, "%s\n", (char *) g->data);
+          }
+          g_string_append_printf (s, "</pre>\n");
+        }
         break;
       case ADMIN_ADMIN:
         g_string_append_printf (s, "Firmware Version: %s<br />\n",
