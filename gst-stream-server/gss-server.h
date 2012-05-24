@@ -128,6 +128,7 @@ struct _GssServerStream {
   GssMetrics *metrics;
 
   GstElement *pipeline;
+  GstElement *src;
   GstElement *sink;
   int level;
   int profile;

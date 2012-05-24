@@ -1388,21 +1388,16 @@ push_callback (SoupServer * server, SoupMessage * msg,
 static void
 push_wrote_headers (SoupMessage * msg, void *user_data)
 {
-  GssProgram *program = (GssProgram *) user_data;
+  GssServerStream *stream = (GssServerStream *) user_data;
   SoupSocket *socket;
-  GssServerStream *stream;
-  int fd;
 
-  socket = soup_client_context_get_socket (program->push_client);
-  fd = soup_socket_get_fd (socket);
+  socket = soup_client_context_get_socket (stream->program->push_client);
+  stream->push_fd = soup_socket_get_fd (socket);
 
-  stream = gss_program_add_stream_full (program, program->push_media_type,
-      640, 360, 600000, NULL);
-  stream->push_fd = fd;
   gss_stream_create_push_pipeline (stream);
 
   gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
-  program->running = TRUE;
+  stream->program->running = TRUE;
 }
 
 #if 0
@@ -1667,16 +1662,29 @@ program_get_resource (GssTransaction *t)
       content, strlen (content));
 }
 
+
 static void
 program_put_resource (GssTransaction *t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   const char *content_type;
+  GssServerStream *stream;
+  gboolean is_icecast;
 
+#if 0
   if (program->push_client) {
     gss_program_log (program, "busy");
     soup_message_set_status (t->msg, SOUP_STATUS_CONFLICT);
     return;
+  }
+#endif
+
+  soup_message_headers_foreach (t->msg->request_headers, dump_header, NULL);
+
+  is_icecast = FALSE;
+  if (soup_message_headers_get_one (t->msg->request_headers, "ice-name")) {
+    g_print ("is icecast\n");
+    is_icecast = TRUE;
   }
 
   content_type = soup_message_headers_get_one (t->msg->request_headers,
@@ -1699,17 +1707,50 @@ program_put_resource (GssTransaction *t)
     program->push_media_type = GSS_SERVER_STREAM_OGG;
   }
 
-  gss_program_start (program);
+  if (program->push_client == NULL) {
+    if (is_icecast) {
+      program->program_type = GSS_PROGRAM_ICECAST;
+    } else {
+      program->program_type = GSS_PROGRAM_HTTP_PUT;
+    }
 
-  program->program_type = GSS_PROGRAM_HTTP_PUT;
-  program->push_client = t->client;
+    stream = gss_program_add_stream_full (program, program->push_media_type,
+        640, 360, 600000, NULL);
+
+    if (!is_icecast) {
+      gss_stream_create_push_pipeline (stream);
+
+      gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
+      program->running = TRUE;
+    }
+
+    gss_program_start (program);
+
+    program->push_client = t->client;
+  }
+
+  stream = program->streams[0];
+
+  if (is_icecast) {
+    soup_message_headers_set_encoding (t->msg->response_headers,
+        SOUP_ENCODING_EOF);
+
+    g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
+        stream);
+  } else {
+    if (t->msg->request_body) {
+      GstBuffer *buffer;
+      GstFlowReturn flow_ret;
+
+      buffer = gst_buffer_new_and_alloc (t->msg->request_body->length);
+      memcpy (GST_BUFFER_DATA (buffer), t->msg->request_body->data,
+          t->msg->request_body->length);
+
+      g_signal_emit_by_name (stream->src, "push-buffer", buffer, &flow_ret);
+    }
+  }
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
-
-  soup_message_headers_set_encoding (t->msg->response_headers, SOUP_ENCODING_EOF);
-
-  g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
-      program);
 }
 
 static void
@@ -1986,7 +2027,11 @@ gss_stream_create_push_pipeline (GssServerStream * stream)
 
   pipe_desc = g_string_new ("");
 
-  g_string_append_printf (pipe_desc, "fdsrc name=src do-timestamp=true ! ");
+  if (stream->program->program_type == GSS_PROGRAM_ICECAST) {
+    g_string_append_printf (pipe_desc, "fdsrc name=src do-timestamp=true ! ");
+  } else {
+    g_string_append_printf (pipe_desc, "appsrc name=src do-timestamp=true ! ");
+  }
   switch (stream->type) {
     case GSS_SERVER_STREAM_OGG:
       g_string_append (pipe_desc, "oggparse name=parse ! ");
@@ -2016,10 +2061,12 @@ gss_stream_create_push_pipeline (GssServerStream * stream)
 
   e = gst_bin_get_by_name (GST_BIN (pipe), "src");
   g_assert (e != NULL);
-  g_object_set (e, "fd", stream->push_fd, NULL);
+  if (stream->program->program_type == GSS_PROGRAM_ICECAST) {
+    g_object_set (e, "fd", stream->push_fd, NULL);
+  }
+  stream->src = e;
   gst_pad_add_data_probe (gst_element_get_pad (e, "src"),
       G_CALLBACK (push_data_probe_callback), stream);
-  g_object_unref (e);
 
   e = gst_bin_get_by_name (GST_BIN (pipe), "sink");
   g_assert (e != NULL);
