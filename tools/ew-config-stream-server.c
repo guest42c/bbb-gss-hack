@@ -119,7 +119,6 @@ GssField server_fields[] = {
       0},
 
   {GSS_FIELD_TEXT_INPUT, "server_name", "Server Hostname", "127.0.0.1", 0},
-  {GSS_FIELD_TEXT_INPUT, "server_port", "Server Port", "80", 0},
   {GSS_FIELD_TEXT_INPUT, "max_connections", "Max Connections", "10000", 0},
   {GSS_FIELD_TEXT_INPUT, "max_bandwidth", "Max Bandwidth (kbytes/sec)",
         "100000",
