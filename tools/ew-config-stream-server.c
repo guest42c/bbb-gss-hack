@@ -198,8 +198,10 @@ admin_header (GssServer * server, GString * s, const char *session_id)
   append_tab (s, "/admin", "/images/button_main.png", "MAIN", session_id);
   append_tab (s, "/admin/access", "/images/button_access.png",
       "ACCESS", session_id);
+  append_tab (s, "/admin/server", "/images/button_server.png",
+      "SERVER", session_id);
   append_tab (s, "/admin/admin", "/images/button_admin.png",
-      "ACCESS", session_id);
+      "ADMIN", session_id);
   append_tab (s, "/admin/log", "/images/button_log.png", "LOG", session_id);
 
   g_string_append (s, "</div><!-- end nav div -->\n");
