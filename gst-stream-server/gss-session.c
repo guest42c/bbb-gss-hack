@@ -528,7 +528,6 @@ static void
 session_login_post_resource (GssTransaction * t)
 {
   GssServer *ewserver = (GssServer *) t->server;
-  gboolean valid = FALSE;
   char *hash;
   GHashTable *query_hash;
   const char *username = NULL;
@@ -551,11 +550,48 @@ session_login_post_resource (GssTransaction * t)
   }
 
   if (query_hash) {
+    const char *assertion;
+
+    assertion = g_hash_table_lookup (query_hash, "assertion");
+
+    if (assertion) {
+      SoupMessage *client_msg;
+      BrowserIDVerify *v;
+      char *s;
+
+      g_print ("verifying assertion\n");
+      soup_server_pause_message (t->soupserver, t->msg);
+
+      v = g_malloc0 (sizeof (BrowserIDVerify));
+      v->ewserver = ewserver;
+      v->server = t->soupserver;
+      v->msg = t->msg;
+
+      s = g_strdup_printf
+          ("https://browserid.org/verify?assertion=%s&audience=localhost",
+          assertion);
+      client_msg = soup_message_new ("POST", s);
+      g_free (s);
+      soup_message_headers_replace (client_msg->request_headers,
+          "Content-Type", "application/x-www-form-urlencoded");
+
+      soup_session_queue_message (ewserver->client_session, client_msg,
+          browserid_verify_done, v);
+
+      g_hash_table_unref (query_hash);
+
+      return;
+    }
+  }
+
+  if (query_hash) {
     username = g_hash_table_lookup (query_hash, "username");
     password = g_hash_table_lookup (query_hash, "password");
   }
 
   if (username && password) {
+    gboolean valid = FALSE;
+
 #if 0
     hash = password_hash (username, password);
     valid = (strcmp (username, "admin") == 0) &&
@@ -566,90 +602,35 @@ session_login_post_resource (GssTransaction * t)
     valid = (strcmp (username, "admin") == 0) &&
         gss_config_value_is_equal (ewserver->config, "admin_token", hash);
     g_free (hash);
+
+    if (valid) {
+      GssSession *login_session;
+      gchar *location;
+
+      login_session = gss_session_new (username);
+
+      location = g_strdup_printf ("%s/bs?session_id=%s",
+          gss_soup_get_base_url_https (t->server, t->msg),
+          login_session->session_id);
+
+      soup_message_headers_append (t->msg->response_headers, "Location",
+          location);
+      soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_STATIC, "",
+          0);
+      soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
+      g_free (location);
+
+      g_hash_table_unref (query_hash);
+
+      return;
+    }
   }
 
   if (query_hash) {
     g_hash_table_unref (query_hash);
   }
 
-  if (valid) {
-    GssSession *session = NULL;
-    char *location;
-    char *redirect_url;
-
-    if (query_hash) {
-      const char *assertion = g_hash_table_lookup (query_hash, "assertion");
-
-      if (assertion) {
-        SoupMessage *client_msg;
-        BrowserIDVerify *v;
-        char *s;
-
-        soup_server_pause_message (t->soupserver, t->msg);
-
-        v = g_malloc0 (sizeof (BrowserIDVerify));
-        v->ewserver = ewserver;
-        v->server = t->soupserver;
-        v->msg = t->msg;
-
-        s = g_strdup_printf
-            ("https://browserid.org/verify?assertion=%s&audience=localhost",
-            assertion);
-        client_msg = soup_message_new ("POST", s);
-        g_free (s);
-        soup_message_headers_replace (client_msg->request_headers,
-            "Content-Type", "application/x-www-form-urlencoded");
-
-        soup_session_queue_message (ewserver->client_session, client_msg,
-            browserid_verify_done, v);
-
-        return;
-      }
-    }
-
-    if (query_hash) {
-      username = g_hash_table_lookup (query_hash, "username");
-      password = g_hash_table_lookup (query_hash, "password");
-    }
-
-    if (username && password) {
-#if 0
-      hash = password_hash (username, password);
-      valid = (strcmp (username, "admin") == 0) &&
-          gss_config_value_is_equal (ewserver->config, "admin_hash", hash);
-      g_free (hash);
-#endif
-      hash = soup_auth_domain_digest_encode_password (username, REALM,
-          password);
-      valid = (strcmp (username, "admin") == 0) &&
-          gss_config_value_is_equal (ewserver->config, "admin_token", hash);
-      g_free (hash);
-    }
-
-    if (query_hash) {
-      g_hash_table_unref (query_hash);
-    }
-
-    redirect_url = "/admin";
-    if (t->query) {
-      redirect_url = g_hash_table_lookup (t->query, "redirect_url");
-    }
-    location = g_strdup_printf ("%s?session_id=%s", redirect_url,
-        session->session_id);
-
-    soup_message_headers_append (t->msg->response_headers, "Location",
-        location);
-    soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_STATIC, "", 0);
-    soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
-
-    return;
-  }
-#if 0
   gss_html_error_404 (t->msg);
-
-  return;
-#endif
-
 }
 
 static void

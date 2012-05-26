@@ -36,6 +36,7 @@ struct _GssSession {
   char *session_id;
   char *username;
   time_t last_time;
+  gboolean is_admin;
 };
 
 GssSession * gss_session_new (const char *username);
