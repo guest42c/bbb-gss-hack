@@ -608,6 +608,7 @@ session_login_post_resource (GssTransaction * t)
       gchar *location;
 
       login_session = gss_session_new (username);
+      login_session->is_admin = TRUE;
 
       location = g_strdup_printf ("%s/bs?session_id=%s",
           gss_soup_get_base_url_https (t->server, t->msg),
