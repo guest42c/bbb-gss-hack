@@ -458,6 +458,7 @@ struct _BrowserIDVerify
   GssServer *ewserver;
   SoupServer *server;
   SoupMessage *msg;
+  gchar *redirect_url;
 };
 
 static void
@@ -505,8 +506,7 @@ browserid_verify_done (SoupSession * session, SoupMessage * msg,
 
   login_session = gss_session_new (s);
 
-  location = g_strdup_printf ("%s/bs?session_id=%s",
-      gss_soup_get_base_url_https (v->ewserver, v->msg),
+  location = g_strdup_printf ("%s?session_id=%s", v->redirect_url,
       login_session->session_id);
 
   soup_message_headers_append (v->msg->response_headers, "Location", location);
@@ -516,12 +516,15 @@ browserid_verify_done (SoupSession * session, SoupMessage * msg,
   soup_server_unpause_message (v->server, v->msg);
 
   g_object_unref (jp);
+  g_free (v->redirect_url);
   g_free (v);
   return;
 err:
   g_object_unref (jp);
   soup_message_set_status (v->msg, SOUP_STATUS_UNAUTHORIZED);
   soup_server_unpause_message (v->server, v->msg);
+  g_free (v->redirect_url);
+  g_free (v);
 }
 
 static void
@@ -566,6 +569,16 @@ session_login_post_resource (GssTransaction * t)
       v->server = t->soupserver;
       v->msg = t->msg;
 
+      s = g_hash_table_lookup (t->query, "redirect_url");
+      if (s) {
+        v->redirect_url = g_uri_unescape_string (s, NULL);
+      } else {
+        char *base_url;
+        base_url = gss_soup_get_base_url_https (t->server, t->msg);
+        v->redirect_url = g_strdup_printf ("%s/", base_url);
+        g_free (base_url);
+      }
+
       s = g_strdup_printf
           ("https://browserid.org/verify?assertion=%s&audience=localhost",
           assertion);
@@ -605,13 +618,25 @@ session_login_post_resource (GssTransaction * t)
     if (valid) {
       GssSession *login_session;
       gchar *location;
+      const gchar *s;
+      gchar *redirect_url;
 
       login_session = gss_session_new (username);
       login_session->is_admin = TRUE;
 
-      location = g_strdup_printf ("%s/bs?session_id=%s",
-          gss_soup_get_base_url_https (t->server, t->msg),
-          login_session->session_id);
+      s = g_hash_table_lookup (t->query, "redirect_url");
+      if (s) {
+        redirect_url = g_uri_unescape_string (s, NULL);
+      } else {
+        char *base_url;
+        base_url = gss_soup_get_base_url_https (t->server, t->msg);
+        redirect_url = g_strdup_printf ("%s/", base_url);
+        g_free (base_url);
+      }
+
+      location = g_strdup_printf ("%s?session_id=%s",
+          redirect_url, login_session->session_id);
+      g_free (redirect_url);
 
       soup_message_headers_append (t->msg->response_headers, "Location",
           location);

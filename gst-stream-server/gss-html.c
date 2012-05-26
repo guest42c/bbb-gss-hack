@@ -296,7 +296,7 @@ gss_html_footer (GssTransaction * t)
       "if(assertion!==null){\n"
       "var form = document.createElement(\"form\");\n"
       "form.setAttribute('method', 'POST');\n"
-      "form.setAttribute('action', '%s/login');\n"
+      "form.setAttribute('action', '%s/login?redirect_url=%s');\n"
       "var ip = document.createElement(\"input\");\n"
       "ip.setAttribute('type', 'hidden');\n"
       "ip.setAttribute('name', 'assertion');\n"
@@ -305,7 +305,8 @@ gss_html_footer (GssTransaction * t)
       "document.body.appendChild(form);\n" "form.submit();\n"
       //"document.body.removeChild(form);\n"
       "}\n"
-      "}\n" "</script>\n", gss_soup_get_base_url_https (t->server, t->msg));
+      "}\n" "</script>\n", gss_soup_get_base_url_https (t->server, t->msg),
+      t->path);
   g_string_append (s, "\n" "  </body>\n" "</html>\n");
 
 }
