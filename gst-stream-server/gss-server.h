@@ -217,6 +217,8 @@ struct _GssTransaction {
 #define GSS_IS_SERVER_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GSS_TYPE_SERVER))
 
+typedef void (GssFooterHtml) (GssServer *server, GString *s, void *priv);
+
 struct _GssServer
 {
   GObject object;
@@ -249,6 +251,9 @@ struct _GssServer
   GList *messages;
   int n_messages;
 
+  GssFooterHtml *footer_html;
+  void *footer_html_priv;
+
   void (*append_style_html) (GssServer *server, GString *s, void *priv);
   void *append_style_html_priv;
 };
@@ -270,6 +275,8 @@ void gss_server_read_config (GssServer *server, const char *config_filename);
 GssProgram * gss_server_add_program (GssServer *server, const char *program_name);
 void gss_server_remove_program (GssServer *server, GssProgram *program);
 void gss_server_follow_all (GssProgram *program, const char *host);
+void gss_server_set_footer_html (GssServer *server, GssFooterHtml footer_html,
+    gpointer priv);
 
 void gss_program_follow (GssProgram *program, const char *host,
     const char *stream);

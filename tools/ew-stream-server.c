@@ -50,6 +50,7 @@ void ew_stream_server_notify_url (const char *s, void *priv);
 
 static void signal_interrupt (int signum);
 static void append_style_html (GssServer * server, GString * s, void *priv);
+static void footer_html (GssServer * server, GString * s, void *priv);
 static void add_program (GssServer * server, int i);
 
 
@@ -157,6 +158,8 @@ main (int argc, char *argv[])
   server->append_style_html = append_style_html;
   server->append_style_html_priv = NULL;
 
+  gss_server_set_footer_html (server, footer_html, NULL);
+
   ew_stream_server_add_admin_callbacks (server, server->server);
   if (server->ssl_server) {
     ew_stream_server_add_admin_callbacks (server, server->ssl_server);
@@ -241,6 +244,18 @@ add_program (GssServer * server, int i)
 
 }
 
+static void
+footer_html (GssServer * server, GString * s, void *priv)
+{
+  g_string_append (s,
+      "        <div class='span4'>\n"
+      "          <p>&copy; Entropy Wave Inc 2012</p>\n"
+      "        </div>\n"
+      "        <div class='span4'>\n"
+      "          <a href='http://entropywave.com'>\n"
+      "            <img src='/images/footer-entropywave.png'>\n"
+      "          </a>\n" "        </div>\n");
+}
 
 static void
 append_style_html (GssServer * server, GString * s, void *priv)

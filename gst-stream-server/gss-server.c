@@ -207,6 +207,14 @@ gss_server_get_property (GObject * object, guint prop_id,
   }
 }
 
+void
+gss_server_set_footer_html (GssServer * server, GssFooterHtml footer_html,
+    gpointer priv)
+{
+  server->footer_html = footer_html;
+  server->footer_html_priv = priv;
+}
+
 char *
 get_ip_address_string (const char *interface)
 {
@@ -430,6 +438,7 @@ setup_paths (GssServer * server)
   IMAGE ("template_navmain.png");
   IMAGE ("template_navnet.png");
   IMAGE ("template_s1000.png");
+  IMAGE ("footer-entropywave.png");
 
   gss_server_add_string_resource (server, "/robots.txt", 0,
       "text/plain", "User-agent: *\nDisallow: /\n");

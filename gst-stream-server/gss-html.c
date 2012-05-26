@@ -325,14 +325,22 @@ gss_html_bootstrap_doc (GssTransaction * t)
       "            </div><!--/span-->\n"
       "          </div><!--/row-->\n"
       "        </div><!--/span-->\n"
-      "      </div><!--/row-->\n"
-      "      <hr>\n"
-      "      <footer>\n"
-      "        <p>&copy; Company 2012</p>\n"
+      "      </div><!--/row-->\n" "      <hr>\n" "      <footer>\n");
+
+  if (t->server->footer_html) {
+    t->server->footer_html (t->server, s, t->server->footer_html_priv);
+  } else {
+    g_string_append (s,
+        "        <div class='span4'>\n"
+        "          <p>&copy; Entropy Wave Inc 2012</p>\n" "        </div>\n");
+  }
+
+  g_string_append (s,
       "      </footer>\n"
       "    </div><!--/.fluid-container-->\n"
       "    <script src='/bootstrap/js/jquery.js'></script>\n"
       "    <script src='/bootstrap/js/bootstrap.js'></script>\n");
+
   g_string_append_printf (s,
       "<script type=\"text/javascript\">\n"
       "function gotAssertion(assertion) {\n"
