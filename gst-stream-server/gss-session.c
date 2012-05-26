@@ -559,7 +559,6 @@ session_login_post_resource (GssTransaction * t)
       BrowserIDVerify *v;
       char *s;
 
-      g_print ("verifying assertion\n");
       soup_server_pause_message (t->soupserver, t->msg);
 
       v = g_malloc0 (sizeof (BrowserIDVerify));
