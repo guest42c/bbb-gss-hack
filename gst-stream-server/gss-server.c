@@ -337,8 +337,9 @@ gss_server_new (void)
     soup_server_run_async (server->ssl_server);
   }
 
-  g_signal_connect (server->server, "request-read", G_CALLBACK (request_read),
-      server);
+  if (0)
+    g_signal_connect (server->server, "request-read", G_CALLBACK (request_read),
+        server);
 
   g_timeout_add (1000, (GSourceFunc) periodic_timer, server);
 
