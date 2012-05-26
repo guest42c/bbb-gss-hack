@@ -57,17 +57,18 @@ struct _AddrRange
 AddrRange *hosts_allow;
 int n_hosts_allow;
 
-static void session_login_post_resource (GssTransaction *t);
-static void session_login_get_resource (GssTransaction *t);
-static void session_logout_resource (GssTransaction *t);
+static void session_login_post_resource (GssTransaction * t);
+static void session_login_get_resource (GssTransaction * t);
+static void session_logout_resource (GssTransaction * t);
 
 void
 gss_session_add_session_callbacks (GssServer * server)
 {
   gss_server_add_resource (server, "/login", GSS_RESOURCE_HTTPS_ONLY,
+      "text/html",
       session_login_get_resource, NULL, session_login_post_resource, NULL);
   gss_server_add_resource (server, "/logout", GSS_RESOURCE_HTTPS_ONLY,
-      session_logout_resource, NULL, NULL, NULL);
+      "text/html", session_logout_resource, NULL, NULL, NULL);
 
   gss_config_set_notify (server->config, "hosts_allow",
       gss_session_notify_hosts_allow, server);
@@ -439,32 +440,32 @@ gss_session_new (const char *username)
 
 #if 0
 static void
-dump_hash (GHashTable *hash)
+dump_hash (GHashTable * hash)
 {
   GHashTableIter iter;
   gpointer key, value;
 
   g_hash_table_iter_init (&iter, hash);
-  while (g_hash_table_iter_next (&iter, &key, &value)) 
-  {
-    g_print("%s: %s\n", (gchar *)key, (gchar *)value);
+  while (g_hash_table_iter_next (&iter, &key, &value)) {
+    g_print ("%s: %s\n", (gchar *) key, (gchar *) value);
   }
 }
 #endif
 
 typedef struct _BrowserIDVerify BrowserIDVerify;
-struct _BrowserIDVerify {
+struct _BrowserIDVerify
+{
   GssServer *ewserver;
   SoupServer *server;
   SoupMessage *msg;
 };
 
 static void
-browserid_verify_done (SoupSession *session, SoupMessage *msg,
+browserid_verify_done (SoupSession * session, SoupMessage * msg,
     gpointer user_data)
 {
   GssSession *login_session;
-  BrowserIDVerify *v = (BrowserIDVerify *)user_data;
+  BrowserIDVerify *v = (BrowserIDVerify *) user_data;
   JsonParser *jp;
   JsonNode *node;
   JsonNode *node2;
@@ -524,7 +525,7 @@ err:
 }
 
 static void
-session_login_post_resource (GssTransaction *t)
+session_login_post_resource (GssTransaction * t)
 {
   GssServer *ewserver = (GssServer *) t->server;
   gboolean valid = FALSE;
@@ -561,8 +562,7 @@ session_login_post_resource (GssTransaction *t)
         gss_config_value_is_equal (ewserver->config, "admin_hash", hash);
     g_free (hash);
 #endif
-    hash = soup_auth_domain_digest_encode_password (username, REALM,
-        password);
+    hash = soup_auth_domain_digest_encode_password (username, REALM, password);
     valid = (strcmp (username, "admin") == 0) &&
         gss_config_value_is_equal (ewserver->config, "admin_token", hash);
     g_free (hash);
@@ -587,12 +587,13 @@ session_login_post_resource (GssTransaction *t)
 
         soup_server_pause_message (t->soupserver, t->msg);
 
-        v = g_malloc0 (sizeof(BrowserIDVerify));
+        v = g_malloc0 (sizeof (BrowserIDVerify));
         v->ewserver = ewserver;
         v->server = t->soupserver;
         v->msg = t->msg;
 
-        s = g_strdup_printf ("https://browserid.org/verify?assertion=%s&audience=localhost",
+        s = g_strdup_printf
+            ("https://browserid.org/verify?assertion=%s&audience=localhost",
             assertion);
         client_msg = soup_message_new ("POST", s);
         g_free (s);
@@ -636,7 +637,8 @@ session_login_post_resource (GssTransaction *t)
     location = g_strdup_printf ("%s?session_id=%s", redirect_url,
         session->session_id);
 
-    soup_message_headers_append (t->msg->response_headers, "Location", location);
+    soup_message_headers_append (t->msg->response_headers, "Location",
+        location);
     soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_STATIC, "", 0);
     soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
 
@@ -651,19 +653,14 @@ session_login_post_resource (GssTransaction *t)
 }
 
 static void
-session_login_get_resource (GssTransaction *t)
+session_login_get_resource (GssTransaction * t)
 {
   GssServer *ewserver = (GssServer *) t->server;
-  const char *content = "login\n";
   GString *s;
   char *redirect_url;
   char *location;
 
-  if (t->soupserver == t->server->server) {
-
-  }
-
-  s = g_string_new ("");
+  t->s = s = g_string_new ("");
 
   gss_html_header (ewserver, s, "Login");
 
@@ -692,19 +689,15 @@ session_login_get_resource (GssTransaction *t)
 
   g_string_append (s, "</div><!-- end content div -->\n");
   gss_html_footer (ewserver, s, NULL);
-
-  content = g_string_free (s, FALSE);
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
-      content, strlen (content));
 }
 
 static void
-session_logout_resource (GssTransaction *t)
+session_logout_resource (GssTransaction * t)
 {
 
   if (t->session == NULL) {
-    soup_message_headers_append (t->msg->response_headers, "Location", "/login");
+    soup_message_headers_append (t->msg->response_headers, "Location",
+        "/login");
     soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
     return;
   }
@@ -714,4 +707,3 @@ session_logout_resource (GssTransaction *t)
   soup_message_headers_append (t->msg->response_headers, "Location", "/login");
   soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
 }
-

@@ -52,22 +52,22 @@ static void resource_callback (SoupServer * soupserver, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
     gpointer user_data);
 
-static void main_page_resource (GssTransaction *transaction);
-static void list_resource (GssTransaction *transaction);
-static void log_resource (GssTransaction *transaction);
+static void main_page_resource (GssTransaction * transaction);
+static void list_resource (GssTransaction * transaction);
+static void log_resource (GssTransaction * transaction);
 #if 0
-static void push_resource (GssTransaction *transaction);
+static void push_resource (GssTransaction * transaction);
 #endif
-static void bs_resource (GssTransaction *transaction);
+static void bs_resource (GssTransaction * transaction);
 
 static void push_wrote_headers (SoupMessage * msg, void *user_data);
-static void file_resource (GssTransaction *transaction);
-static void program_get_resource (GssTransaction *transaction);
-static void program_put_resource (GssTransaction *transaction);
-static void program_frag_resource (GssTransaction *transaction);
-static void program_list_resource (GssTransaction *transaction);
-static void program_png_resource (GssTransaction *transaction);
-static void program_jpeg_resource (GssTransaction *transaction);
+static void file_resource (GssTransaction * transaction);
+static void program_get_resource (GssTransaction * transaction);
+static void program_put_resource (GssTransaction * transaction);
+static void program_frag_resource (GssTransaction * transaction);
+static void program_list_resource (GssTransaction * transaction);
+static void program_png_resource (GssTransaction * transaction);
+static void program_jpeg_resource (GssTransaction * transaction);
 
 static void gss_server_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
@@ -81,7 +81,7 @@ static void
 client_removed (GstElement * e, int arg0, int arg1, gpointer user_data);
 static void client_fd_removed (GstElement * e, int fd, gpointer user_data);
 static void msg_wrote_headers (SoupMessage * msg, void *user_data);
-static void stream_resource (GssTransaction *transaction);
+static void stream_resource (GssTransaction * transaction);
 static void
 gss_stream_handle_m3u8 (SoupServer * server, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
@@ -99,8 +99,8 @@ void gss_stream_set_sink (GssServerStream * stream, GstElement * sink);
 void gss_stream_create_follow_pipeline (GssServerStream * stream);
 void gss_stream_create_push_pipeline (GssServerStream * stream);
 
-static void onetime_redirect (GssTransaction *t);
-static void onetime_resource (GssTransaction *t);
+static void onetime_redirect (GssTransaction * t);
+static void onetime_resource (GssTransaction * t);
 static gboolean onetime_expire (gpointer priv);
 
 
@@ -349,8 +349,9 @@ gss_server_new (void)
 }
 
 void
-gss_server_add_resource (GssServer *server, const char *location,
-    GssResourceFlags flags, GssTransactionCallback get_callback,
+gss_server_add_resource (GssServer * server, const char *location,
+    GssResourceFlags flags, const char *content_type,
+    GssTransactionCallback get_callback,
     GssTransactionCallback put_callback, GssTransactionCallback post_callback,
     gpointer priv)
 {
@@ -359,6 +360,7 @@ gss_server_add_resource (GssServer *server, const char *location,
   resource = g_new0 (GssResource, 1);
   resource->location = g_strdup (location);
   resource->flags = flags;
+  resource->content_type = content_type;
   resource->get_callback = get_callback;
   resource->put_callback = put_callback;
   resource->post_callback = post_callback;
@@ -368,7 +370,7 @@ gss_server_add_resource (GssServer *server, const char *location,
 }
 
 void
-gss_server_remove_resource (GssServer *server, const char *location)
+gss_server_remove_resource (GssServer * server, const char *location)
 {
   g_hash_table_remove (server->resources, location);
 }
@@ -378,19 +380,19 @@ setup_paths (GssServer * server)
 {
   gss_session_add_session_callbacks (server);
 
-  gss_server_add_resource (server, "/", GSS_RESOURCE_UI, main_page_resource,
-      NULL, NULL, NULL);
-  gss_server_add_resource (server, "/list", GSS_RESOURCE_UI, list_resource,
-      NULL, NULL, NULL);
-  gss_server_add_resource (server, "/log", GSS_RESOURCE_UI, log_resource,
-      NULL, NULL, NULL);
+  gss_server_add_resource (server, "/", GSS_RESOURCE_UI, "text/html",
+      main_page_resource, NULL, NULL, NULL);
+  gss_server_add_resource (server, "/list", GSS_RESOURCE_UI, "text/plain",
+      list_resource, NULL, NULL, NULL);
+  gss_server_add_resource (server, "/log", GSS_RESOURCE_UI, "text/plain",
+      log_resource, NULL, NULL, NULL);
 #if 0
   gss_server_add_resource (server, "/push", GSS_RESOURCE_UI, NULL,
       push_resource, NULL, NULL);
 #endif
 
-  gss_server_add_resource (server, "/bs", GSS_RESOURCE_UI, bs_resource,
-      NULL, NULL, server);
+  gss_server_add_resource (server, "/bs", GSS_RESOURCE_UI, "text/html",
+      bs_resource, NULL, NULL, server);
 
   if (enable_cortado) {
     gss_server_add_file_resource (server, "/cortado.jar", 0,
@@ -431,8 +433,7 @@ setup_paths (GssServer * server)
   gss_server_add_string_resource (server, "/robots.txt", 0,
       "text/plain", "User-agent: *\nDisallow: /\n");
 
-  gss_server_add_file_resource (server,
-      "/include.js", 0, "text/javascript");
+  gss_server_add_file_resource (server, "/include.js", 0, "text/javascript");
 
   gss_server_add_file_resource (server,
       "/bootstrap/css/bootstrap-responsive.css", 0, "text/css");
@@ -465,7 +466,7 @@ struct _GssStaticResource
 };
 
 static void
-generate_etag (GssStaticResource *sr)
+generate_etag (GssStaticResource * sr)
 {
   GChecksum *checksum;
   gsize n;
@@ -475,7 +476,7 @@ generate_etag (GssStaticResource *sr)
   g_assert (n <= 32);
   checksum = g_checksum_new (G_CHECKSUM_MD5);
 
-  g_checksum_update (checksum, (guchar *)sr->contents, sr->size);
+  g_checksum_update (checksum, (guchar *) sr->contents, sr->size);
   g_checksum_get_digest (checksum, digest, &n);
   sr->resource.etag = g_base64_encode (digest, n);
   /* remove the trailing = (for MD5) */
@@ -484,9 +485,9 @@ generate_etag (GssStaticResource *sr)
 }
 
 static void
-file_resource (GssTransaction *t)
+file_resource (GssTransaction * t)
 {
-  GssStaticResource *sr = (GssStaticResource *)t->resource;
+  GssStaticResource *sr = (GssStaticResource *) t->resource;
 
   soup_message_headers_replace (t->msg->response_headers, "Keep-Alive",
       "timeout=5, max=100");
@@ -500,7 +501,7 @@ file_resource (GssTransaction *t)
 }
 
 void
-gss_server_add_file_resource (GssServer *server,
+gss_server_add_file_resource (GssServer * server,
     const char *filename, GssResourceFlags flags, const char *mime_type)
 {
   GssStaticResource *sr;
@@ -509,11 +510,11 @@ gss_server_add_file_resource (GssServer *server,
   gboolean ret;
   GError *error = NULL;
 
-  ret = g_file_get_contents (filename + 1, &contents, &size,
-      &error);
+  ret = g_file_get_contents (filename + 1, &contents, &size, &error);
   if (!ret) {
     g_error_free (error);
-    if (verbose) g_print ("missing file %s\n", filename);
+    if (verbose)
+      g_print ("missing file %s\n", filename);
     return;
   }
 
@@ -530,7 +531,7 @@ gss_server_add_file_resource (GssServer *server,
   generate_etag (sr);
 
   g_hash_table_replace (server->resources, sr->resource.location,
-      (GssResource *)sr);
+      (GssResource *) sr);
 }
 
 void
@@ -552,7 +553,7 @@ gss_server_add_string_resource (GssServer * server, const char *filename,
   sr->resource.get_callback = file_resource;
 
   g_hash_table_replace (server->resources, sr->resource.location,
-      (GssResource *)sr);
+      (GssResource *) sr);
 }
 
 void
@@ -650,27 +651,28 @@ gss_server_add_program (GssServer * server, const char *program_name)
   program->running = FALSE;
 
   s = g_strdup_printf ("/%s", program_name);
-  gss_server_add_resource (server, s, GSS_RESOURCE_UI, program_get_resource,
-      program_put_resource, NULL, program);
+  gss_server_add_resource (server, s, GSS_RESOURCE_UI, "text/html",
+      program_get_resource, program_put_resource, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", program_name);
-  gss_server_add_resource (server, s, GSS_RESOURCE_UI, program_frag_resource,
-      NULL, NULL, program);
+  gss_server_add_resource (server, s, GSS_RESOURCE_UI, "text/plain",
+      program_frag_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.list", program_name);
-  gss_server_add_resource (server, s, GSS_RESOURCE_UI, program_list_resource,
-      NULL, NULL, program);
+  gss_server_add_resource (server, s, GSS_RESOURCE_UI, "text/plain",
+      program_list_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.png", program_name);
-  gss_server_add_resource (server, s, GSS_RESOURCE_UI, program_png_resource,
-      NULL, NULL, program);
+  gss_server_add_resource (server, s, GSS_RESOURCE_UI, "image/png",
+      program_png_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.jpeg", program_name);
   gss_server_add_resource (server, s, GSS_RESOURCE_HTTP_ONLY,
+      "multipart/x-mixed-replace;boundary=myboundary",
       program_jpeg_resource, NULL, NULL, program);
   g_free (s);
 
@@ -874,13 +876,13 @@ client_fd_removed (GstElement * e, int fd, gpointer user_data)
     soup_socket_disconnect (socket);
     fd_table[fd] = NULL;
   } else {
-    stream->custom_client_fd_removed (stream, fd,
-        stream->custom_user_data);
+    stream->custom_client_fd_removed (stream, fd, stream->custom_user_data);
   }
 }
 
 
-static void stream_resource (GssTransaction *t)
+static void
+stream_resource (GssTransaction * t)
 {
   GssServerStream *stream = (GssServerStream *) t->resource->priv;
   GssConnection *connection;
@@ -910,7 +912,8 @@ static void stream_resource (GssTransaction *t)
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_headers_set_encoding (t->msg->response_headers, SOUP_ENCODING_EOF);
+  soup_message_headers_set_encoding (t->msg->response_headers,
+      SOUP_ENCODING_EOF);
   soup_message_headers_replace (t->msg->response_headers, "Content-Type",
       stream->mime_type);
 
@@ -1056,7 +1059,7 @@ gss_program_add_stream_full (GssProgram * program,
       stream->ext);
   s = g_strdup_printf ("/%s", stream->name);
   gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
-      stream_resource, NULL, NULL, stream);
+      stream->mime_type, stream_resource, NULL, NULL, stream);
   g_free (s);
 
   stream->playlist_name = g_strdup_printf ("%s-%dx%d-%dkbps%s-%s.m3u8",
@@ -1094,22 +1097,10 @@ gss_stream_set_sink (GssServerStream * stream, GstElement * sink)
 }
 
 static void
-bs_resource (GssTransaction *t)
+bs_resource (GssTransaction * t)
 {
-  GString *s;
-  char *content;
-  GssSession *login_session = NULL;
-
-  s = g_string_new ("");
-
-  gss_html_bootstrap_doc (s, login_session);
-
-  content = g_string_free (s, FALSE);
-
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-
-  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
-      content, strlen (content));
+  t->s = g_string_new ("");
+  gss_html_bootstrap_doc (t);
 }
 
 static void
@@ -1117,7 +1108,7 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
     gpointer user_data)
 {
-  GssServer *server = (GssServer *)user_data;
+  GssServer *server = (GssServer *) user_data;
   GssResource *resource;
   GssTransaction *transaction;
   GssSession *session;
@@ -1152,11 +1143,15 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
     }
   }
 
+  if (resource->content_type) {
+    soup_message_headers_replace (msg->response_headers, "Content-Type",
+        resource->content_type);
+  }
+
   if (resource->etag) {
     const char *inm;
 
-    inm = soup_message_headers_get_one (msg->request_headers,
-        "If-None-Match");
+    inm = soup_message_headers_get_one (msg->request_headers, "If-None-Match");
     if (inm && !strcmp (inm, resource->etag)) {
       soup_message_set_status (msg, SOUP_STATUS_NOT_MODIFIED);
       return;
@@ -1194,6 +1189,17 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
     gss_html_error_404 (msg);
   }
 
+  if (transaction->s) {
+    int len;
+    gchar *content;
+
+    len = transaction->s->len;
+    content = g_string_free (transaction->s, FALSE);
+    soup_message_body_append (msg->response_body, SOUP_MEMORY_TAKE,
+        content, len);
+    soup_message_set_status (msg, SOUP_STATUS_OK);
+  }
+
   g_free (transaction);
 }
 
@@ -1208,7 +1214,7 @@ struct _GssOnetimeResource
 };
 
 static void
-onetime_redirect (GssTransaction *t)
+onetime_redirect (GssTransaction * t)
 {
   GssOnetimeResource *or;
   char *s;
@@ -1219,7 +1225,7 @@ onetime_redirect (GssTransaction *t)
   or = g_new0 (GssOnetimeResource, 1);
 
   id = gss_session_create_id ();
-  s = g_strdup_printf("/%s", id);
+  s = g_strdup_printf ("/%s", id);
   g_free (id);
   or->resource.location = s;
   or->resource.flags = 0;
@@ -1231,10 +1237,10 @@ onetime_redirect (GssTransaction *t)
       onetime_expire, or, NULL);
 
   g_hash_table_replace (t->server->resources, or->resource.location,
-      (GssResource *)or);
+      (GssResource *) or);
 
   base_url = gss_soup_get_base_url_http (t->server, t->msg);
-  url = g_strdup_printf("%s%s", base_url, s);
+  url = g_strdup_printf ("%s%s", base_url, s);
   g_free (base_url);
   soup_message_headers_append (t->msg->response_headers, "Location", url);
   soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
@@ -1244,7 +1250,7 @@ onetime_redirect (GssTransaction *t)
 static gboolean
 onetime_expire (gpointer priv)
 {
-  GssOnetimeResource *or = (GssOnetimeResource *)priv;
+  GssOnetimeResource *or = (GssOnetimeResource *) priv;
 
   gss_server_remove_resource (or->server, or->resource.location);
   g_free (or);
@@ -1253,9 +1259,9 @@ onetime_expire (gpointer priv)
 }
 
 static void
-onetime_resource (GssTransaction *t)
+onetime_resource (GssTransaction * t)
 {
-  GssOnetimeResource *or = (GssOnetimeResource *)t->resource;
+  GssOnetimeResource *or = (GssOnetimeResource *) t->resource;
   GssResource *r = or->underlying_resource;
 
   t->resource = or->underlying_resource;
@@ -1267,10 +1273,8 @@ onetime_resource (GssTransaction *t)
 }
 
 static void
-main_page_resource (GssTransaction *t)
+main_page_resource (GssTransaction * t)
 {
-  const char *mime_type = "text/html";
-  char *content;
   GString *s;
   char *base_url;
   int i;
@@ -1281,7 +1285,7 @@ main_page_resource (GssTransaction *t)
     base_url = g_strdup ("");
   }
 
-  s = g_string_new ("");
+  s = t->s = g_string_new ("");
 
   gss_html_header (t->server, s, "Entropy Wave Live Streaming");
 
@@ -1315,42 +1319,30 @@ main_page_resource (GssTransaction *t)
   g_string_append (s, "</div><!-- end content div -->\n");
 
   gss_html_footer (t->server, s, NULL);
-
-  content = g_string_free (s, FALSE);
-
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-
-  soup_message_set_response (t->msg, mime_type, SOUP_MEMORY_TAKE,
-      content, strlen (content));
 }
 
 static void
-list_resource (GssTransaction *t)
+list_resource (GssTransaction * t)
 {
-  char *content;
-  GString *s = g_string_new ("");
+  GString *s;
   int i;
+
+  s = t->s = g_string_new ("");
 
   for (i = 0; i < t->server->n_programs; i++) {
     GssProgram *program = t->server->programs[i];
     g_string_append_printf (s, "%s\n", program->location);
   }
-
-  content = g_string_free (s, FALSE);
-
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-
-  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
-      content, strlen (content));
 }
 
 static void
-log_resource (GssTransaction *t)
+log_resource (GssTransaction * t)
 {
-  char *content;
   GString *s = g_string_new ("");
   GList *g;
   char *time_string;
+
+  t->s = s;
 
   time_string = get_time_string ();
   g_string_append_printf (s, "Server time: %s\n", time_string);
@@ -1360,13 +1352,6 @@ log_resource (GssTransaction *t)
   for (g = g_list_first (t->server->messages); g; g = g_list_next (g)) {
     g_string_append_printf (s, "%s\n", (char *) g->data);
   }
-
-  content = g_string_free (s, FALSE);
-
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-
-  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
-      content, strlen (content));
 }
 
 #if 0
@@ -1377,7 +1362,7 @@ dump_header (const char *name, const char *value, gpointer user_data)
 }
 
 static void
-gss_transaction_dump (GssTransaction *t)
+gss_transaction_dump (GssTransaction * t)
 {
   soup_message_headers_foreach (t->msg->request_headers, dump_header, NULL);
 }
@@ -1421,7 +1406,8 @@ push_callback (SoupServer * server, SoupMessage * msg,
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_headers_set_encoding (t->msg->response_headers, SOUP_ENCODING_EOF);
+  soup_message_headers_set_encoding (t->msg->response_headers,
+      SOUP_ENCODING_EOF);
 
   g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
       program);
@@ -1618,35 +1604,29 @@ add_video_block (GssProgram * program, GString * s, int max_width,
 }
 
 static void
-program_frag_resource (GssTransaction *t)
+program_frag_resource (GssTransaction * t)
 {
-  char *content;
   GssProgram *program = (GssProgram *) t->resource->priv;
-  GString *s = g_string_new ("");
+  GString *s;
 
   if (!program->enable_streaming) {
     soup_message_set_status (t->msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
 
+  t->s = s = g_string_new ("");
   add_video_block (program, s, 0, program->server->base_url);
-
-  content = g_string_free (s, FALSE);
-
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-
-  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
-      content, strlen (content));
 }
 
 static void
-program_get_resource (GssTransaction *t)
+program_get_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
-  char *content;
   GString *s = g_string_new ("");
   const char *base_url = "";
   int i;
+
+  t->s = s;
 
   gss_html_header (program->server, s, program->location);
   g_string_append_printf (s, "<div id=\"header\">\n");
@@ -1697,18 +1677,11 @@ program_get_resource (GssTransaction *t)
   g_string_append (s, "</div><!-- end content div -->\n");
 
   gss_html_footer (program->server, s, NULL);
-
-  content = g_string_free (s, FALSE);
-
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-
-  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
-      content, strlen (content));
 }
 
 
 static void
-program_put_resource (GssTransaction *t)
+program_put_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   const char *content_type;
@@ -1798,13 +1771,14 @@ program_put_resource (GssTransaction *t)
 }
 
 static void
-program_list_resource (GssTransaction *t)
+program_list_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
-  char *content;
   GString *s = g_string_new ("");
   int i;
   const char *base_url = "";
+
+  t->s = s;
 
   for (i = 0; i < program->n_streams; i++) {
     GssServerStream *stream = program->streams[i];
@@ -1830,17 +1804,10 @@ program_list_resource (GssTransaction *t)
         "%d %s %d %d %d %s/%s\n", i, typename,
         stream->width, stream->height, stream->bitrate, base_url, stream->name);
   }
-
-  content = g_string_free (s, FALSE);
-
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-
-  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
-      content, strlen (content));
 }
 
 static void
-program_png_resource (GssTransaction *t)
+program_png_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   GstBuffer *buffer = NULL;
@@ -1868,7 +1835,7 @@ program_png_resource (GssTransaction *t)
 }
 
 static void
-program_jpeg_resource (GssTransaction *t)
+program_jpeg_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   GssConnection *connection;
@@ -1885,7 +1852,8 @@ program_jpeg_resource (GssTransaction *t)
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_headers_set_encoding (t->msg->response_headers, SOUP_ENCODING_EOF);
+  soup_message_headers_set_encoding (t->msg->response_headers,
+      SOUP_ENCODING_EOF);
   soup_message_headers_replace (t->msg->response_headers, "Content-Type",
       "multipart/x-mixed-replace;boundary=myboundary");
 

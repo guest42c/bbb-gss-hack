@@ -181,6 +181,7 @@ typedef void (GssTransactionCallback)(GssTransaction *transaction);
 struct _GssResource {
   char *location;
   char *etag;
+  const char *content_type;
 
   GssResourceFlags flags;
 
@@ -201,6 +202,7 @@ struct _GssTransaction {
   GssResource *resource;
   GssSession *session;
   gboolean done;
+  GString *s;
 };
 
 
@@ -311,7 +313,8 @@ void gss_server_add_static_string (SoupServer * soupserver,
     const char *filename, const char *mime_type, const char *string);
 
 void gss_server_add_resource (GssServer *server, const char *location,
-    GssResourceFlags flags, GssTransactionCallback get_callback,
+    GssResourceFlags flags, const char *content_type,
+    GssTransactionCallback get_callback,
     GssTransactionCallback put_callback, GssTransactionCallback post_callback,
     gpointer priv);
 void gss_server_remove_resource (GssServer *server, const char *location);

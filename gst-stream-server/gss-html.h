@@ -40,7 +40,7 @@ void gss_html_append_image (GString *s, const char *url, int width, int height,
     const char *alt_text);
 void gss_html_append_image_printf (GString *s, const char *url,
     int width, int height, const char *alt_text, ...);
-void gss_html_bootstrap_doc (GString *s, GssSession *session);
+void gss_html_bootstrap_doc (GssTransaction *t);
 
 G_END_DECLS
 
