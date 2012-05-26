@@ -1218,6 +1218,10 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
         content, len);
     soup_message_set_status (msg, SOUP_STATUS_OK);
   }
+#if 0
+  soup_message_headers_replace (t->msg->response_headers, "Keep-Alive",
+      "timeout=5, max=100");
+#endif
 
   g_free (transaction);
 }
