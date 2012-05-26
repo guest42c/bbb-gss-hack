@@ -645,13 +645,6 @@ session_login_get_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  g_string_append (s, "<div id=\"header\">");
-  gss_html_append_image (s, "/images/template_header_nologo.png",
-      812, 36, NULL);
-
-  g_string_append_printf (s, "</div><!-- end header div -->\n");
-  g_string_append_printf (s, "<div id=\"content\">\n");
-
   redirect_url = NULL;
   if (t->query) {
     redirect_url = g_hash_table_lookup (t->query, "redirect_url");
@@ -668,7 +661,6 @@ session_login_get_resource (GssTransaction * t)
   gss_config_form_add_form (ewserver, s, location, "Login", login_fields, NULL);
   g_free (location);
 
-  g_string_append (s, "</div><!-- end content div -->\n");
   gss_html_footer (t);
 }
 

@@ -58,7 +58,6 @@ static void log_resource (GssTransaction * transaction);
 #if 0
 static void push_resource (GssTransaction * transaction);
 #endif
-static void bs_resource (GssTransaction * transaction);
 
 static void push_wrote_headers (SoupMessage * msg, void *user_data);
 static void file_resource (GssTransaction * transaction);
@@ -409,9 +408,6 @@ setup_paths (GssServer * server)
       push_resource, NULL, NULL);
 #endif
 
-  gss_server_add_resource (server, "/bs", GSS_RESOURCE_UI, "text/html",
-      bs_resource, NULL, NULL, server);
-
   if (enable_cortado) {
     gss_server_add_file_resource (server, "/cortado.jar", 0,
         "application/java-archive");
@@ -426,27 +422,6 @@ setup_paths (GssServer * server)
 #define IMAGE(image) \
   gss_server_add_file_resource (server, "/images/" image , 0, "image/png")
 
-  IMAGE ("button_access.png");
-  IMAGE ("button_admin.png");
-  IMAGE ("button_edit.png");
-  IMAGE ("button_events.png");
-  IMAGE ("button_log.png");
-  IMAGE ("button_main.png");
-  IMAGE ("button_network.png");
-  IMAGE ("button_server.png");
-  IMAGE ("button_video.png");
-  IMAGE ("button_input.png");
-  IMAGE ("button_output.png");
-  IMAGE ("template_bodybg.png");
-  IMAGE ("template_c1000.png");
-  IMAGE ("template_e1000.png");
-  IMAGE ("template_footer.png");
-  IMAGE ("template_header_nologo.png");
-  IMAGE ("template_navadmin.png");
-  IMAGE ("template_navlog.png");
-  IMAGE ("template_navmain.png");
-  IMAGE ("template_navnet.png");
-  IMAGE ("template_s1000.png");
   IMAGE ("footer-entropywave.png");
 
   gss_server_add_string_resource (server, "/robots.txt", 0,
@@ -1116,15 +1091,6 @@ gss_stream_set_sink (GssServerStream * stream, GstElement * sink)
 }
 
 static void
-bs_resource (GssTransaction * t)
-{
-  t->s = g_string_new ("");
-  gss_html_header (t);
-  gss_html_bootstrap_doc (t);
-  gss_html_footer (t);
-}
-
-static void
 resource_callback (SoupServer * soupserver, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
     gpointer user_data)
@@ -1314,12 +1280,7 @@ main_page_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  g_string_append_printf (s, "<div id=\"header\">\n");
-  gss_html_append_image (s,
-      BASE "images/template_header_nologo.png", 812, 36, NULL);
-  g_string_append_printf (s,
-      "</div><!-- end header div -->\n"
-      "<div id=\"content\">\n" "<h1>Available Streams</h1>\n");
+  g_string_append_printf (s, "<h1>Available Streams</h1>\n");
 
   for (i = 0; i < t->server->n_programs; i++) {
     GssProgram *program = t->server->programs[i];
@@ -1340,8 +1301,6 @@ main_page_resource (GssTransaction * t)
   }
 
   g_free (base_url);
-
-  g_string_append (s, "</div><!-- end content div -->\n");
 
   gss_html_footer (t);
 }
@@ -1654,11 +1613,6 @@ program_get_resource (GssTransaction * t)
   t->s = s;
 
   gss_html_header (t);
-  g_string_append_printf (s, "<div id=\"header\">\n");
-  gss_html_append_image (s, BASE "images/template_header_nologo.png",
-      812, 36, NULL);
-  g_string_append_printf (s,
-      "</div><!-- end header div -->\n" "<div id=\"content\">\n");
 
   g_string_append_printf (s, "<h1>Live Stream: %s</h1>\n", program->location);
 
@@ -1698,8 +1652,6 @@ program_get_resource (GssTransaction * t)
     g_string_append_printf (s,
         "<a href=\"%s/%s.m3u8\">HLS</a>\n", base_url, program->location);
   }
-
-  g_string_append (s, "</div><!-- end content div -->\n");
 
   gss_html_footer (t);
 }
