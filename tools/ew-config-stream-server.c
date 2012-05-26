@@ -115,6 +115,9 @@ GssField control_fields[] = {
 
 GssField server_fields[] = {
   {GSS_FIELD_SECTION, NULL, "HTTP Server Configuration"},
+  {GSS_FIELD_CHECKBOX, "enable_public_ui", "Enable public user interface", "on",
+      0},
+
   {GSS_FIELD_TEXT_INPUT, "server_name", "Server Hostname", "127.0.0.1", 0},
   {GSS_FIELD_TEXT_INPUT, "server_port", "Server Port", "80", 0},
   {GSS_FIELD_TEXT_INPUT, "max_connections", "Max Connections", "10000", 0},
