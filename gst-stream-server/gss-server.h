@@ -228,6 +228,7 @@ struct _GssServer
   char * server_name;
   int port;
   int https_port;
+  char *title;
 
   int n_programs;
   GssProgram **programs;
@@ -277,6 +278,7 @@ void gss_server_remove_program (GssServer *server, GssProgram *program);
 void gss_server_follow_all (GssProgram *program, const char *host);
 void gss_server_set_footer_html (GssServer *server, GssFooterHtml footer_html,
     gpointer priv);
+void gss_server_set_title (GssServer *server, const char *title);
 
 void gss_program_follow (GssProgram *program, const char *host,
     const char *stream);

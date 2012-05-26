@@ -171,12 +171,14 @@ gss_html_bootstrap_doc (GssTransaction * t)
   int i;
   GString *s = t->s;
 
-  g_string_append (s,
+  g_string_append_printf (s,
       "<!DOCTYPE html>\n"
       "<html lang='en'>\n"
       "  <head>\n"
       "    <meta charset='utf-8'>\n"
-      "    <title>Entropy Wave Streaming Server</title>\n"
+      "    <title>%s</title>\n", t->server->title);
+
+  g_string_append (s,
       "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n"
 #if 0
       "    <meta name='description' content=''>\n"

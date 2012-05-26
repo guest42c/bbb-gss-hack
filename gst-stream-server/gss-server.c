@@ -136,6 +136,8 @@ gss_server_init (GssServer * server)
   server->n_programs = 0;
   server->programs = NULL;
 
+  server->title = g_strdup ("GStreamer Streaming Server");
+
   if (enable_rtsp)
     gss_server_rtsp_init (server);
 }
@@ -213,6 +215,13 @@ gss_server_set_footer_html (GssServer * server, GssFooterHtml footer_html,
 {
   server->footer_html = footer_html;
   server->footer_html_priv = priv;
+}
+
+void
+gss_server_set_title (GssServer * server, const char *title)
+{
+  g_free (server->title);
+  server->title = g_strdup (title);
 }
 
 char *

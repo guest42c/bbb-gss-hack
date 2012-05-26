@@ -158,6 +158,7 @@ main (int argc, char *argv[])
   server->append_style_html = append_style_html;
   server->append_style_html_priv = NULL;
 
+  gss_server_set_title (server, "Entropy Wave Streaming Server");
   gss_server_set_footer_html (server, footer_html, NULL);
 
   ew_stream_server_add_admin_callbacks (server, server->server);
