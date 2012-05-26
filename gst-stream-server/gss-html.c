@@ -23,6 +23,7 @@
 
 #include "gss-html.h"
 #include "gss-server.h"
+#include "gss-soup.h"
 
 #include <string.h>
 
@@ -167,20 +168,20 @@ gss_html_append_image_printf (GString * s, const char *url_format, int width,
 void
 gss_html_bootstrap_doc (GssTransaction * t)
 {
+  int i;
   GString *s = t->s;
 
   g_string_append (s,
-      "\n"
       "<!DOCTYPE html>\n"
       "<html lang='en'>\n"
       "  <head>\n"
       "    <meta charset='utf-8'>\n"
       "    <title>Entropy Wave Streaming Server</title>\n"
       "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n"
+#if 0
       "    <meta name='description' content=''>\n"
       "    <meta name='author' content=''>\n"
-      "\n"
-      "    <!-- Le styles -->\n"
+#endif
       "    <link href='/bootstrap/css/bootstrap.css' rel='stylesheet'>\n"
       "    <style type='text/css'>\n"
       "      body {\n"
@@ -192,23 +193,21 @@ gss_html_bootstrap_doc (GssTransaction * t)
       "      }\n"
       "    </style>\n"
       "    <link href='/bootstrap/css/bootstrap-responsive.css' rel='stylesheet'>\n"
-      "\n"
-      //"    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->\n"
-      //"    <!--[if lt IE 9]>\n"
-      //"      <script src='http://html5shim.googlecode.com/svn/trunk/html5.js'></script>\n"
-      //"    <![endif]-->\n"
+#if 0
+      "    <!--[if lt IE 9]>\n"
+      "      <script src='http://html5shim.googlecode.com/svn/trunk/html5.js'></script>\n"
+      "    <![endif]-->\n"
+#endif
       "    <script src=\"include.js\" type=\"text/javascript\"></script>\n"
-      "\n"
-      "    <!-- Le fav and touch icons -->\n"
+#if 0
       "    <link rel='shortcut icon' href='/favicon.ico'>\n"
       "    <link rel='apple-touch-icon-precomposed' sizes='144x144' href='../assets/ico/apple-touch-icon-144-precomposed.png'>\n"
       "    <link rel='apple-touch-icon-precomposed' sizes='114x114' href='../assets/ico/apple-touch-icon-114-precomposed.png'>\n"
       "    <link rel='apple-touch-icon-precomposed' sizes='72x72' href='../assets/ico/apple-touch-icon-72-precomposed.png'>\n"
       "    <link rel='apple-touch-icon-precomposed' href='../assets/ico/apple-touch-icon-57-precomposed.png'>\n"
+#endif
       "  </head>\n"
-      "\n"
       "  <body>\n"
-      "\n"
       "    <div class='navbar navbar-fixed-top'>\n"
       "      <div class='navbar-inner'>\n"
       "        <div class='container-fluid'>\n"
@@ -226,10 +225,11 @@ gss_html_bootstrap_doc (GssTransaction * t)
         "              <i class='icon-user'></i> %s\n"
         "              <span class='caret'></span>\n", t->session->username);
   } else {
-    g_string_append (s,
+    g_string_append_printf (s,
+        "<a href='%s/login' title='Administrative Interface'>Admin</a>\n"
         "<a href='#' id='browserid' title='Sign-in with BrowserID'>\n"
         "<img src='/images/sign_in_blue.png' alt='Sign in' onclick='navigator.id.get(gotAssertion);'>\n"
-        "</a>\n");
+        "</a>\n", gss_soup_get_base_url_https (t->server, t->msg));
   }
 
   g_string_append (s,
@@ -250,35 +250,43 @@ gss_html_bootstrap_doc (GssTransaction * t)
       "        </div>\n"
       "      </div>\n"
       "    </div>\n"
-      "\n"
       "    <div class='container-fluid'>\n"
       "      <div class='row-fluid'>\n"
       "        <div class='span3'>\n"
       "          <div class='well sidebar-nav'>\n"
       "            <ul class='nav nav-list'>\n"
-      "              <li class='nav-header'>Programs</li>\n"
-      "              <li class='active'><a href='#'>Meep</a></li>\n"
-      "              <li><a href='/stream'>Meep</a></li>\n"
-      "              <li><a href='/stream'>Meep</a></li>\n"
-      "              <li><a href='/stream'>Meep</a></li>\n"
-      "              <li class='nav-header'>User</li>\n"
-      "              <li><a href='#'>Add Program</a></li>\n"
-      "              <li><a href='#'>Main</a></li>\n"
-      "              <li><a href='#'>Log</a></li>\n"
-      "              <li class='nav-header'>Administration</li>\n"
-      "              <li><a href='#'>Access Control</a></li>\n"
-      "              <li><a href='#'>Password</a></li>\n"
-      "              <li><a href='#'>Certificate</a></li>\n"
-      "              <li class='nav-header'>Other</li>\n"
-      "              <li><a href='#'>Monitor</a></li>\n"
-      "              <li><a href='#'>Meep</a></li>\n"
+      "              <li class='nav-header'>Programs</li>\n");
+  for (i = 0; i < t->server->n_programs; i++) {
+    GssProgram *program = t->server->programs[i];
+    g_string_append_printf (s,
+        "              <li><a href='/%s'>%s</a></li>\n",
+        program->location, program->location);
+  };
+
+  if (t->session) {
+    g_string_append (s,
+        "              <li class='nav-header'>User</li>\n"
+        "              <li><a href='#'>Add Program</a></li>\n"
+        "              <li><a href='#'>Main</a></li>\n"
+        "              <li><a href='#'>Log</a></li>\n");
+  }
+  if (t->session && t->session->is_admin) {
+    g_string_append (s,
+        "              <li class='nav-header'>Administration</li>\n"
+        "              <li><a href='#'>Access Control</a></li>\n"
+        "              <li><a href='#'>Password</a></li>\n"
+        "              <li><a href='#'>Certificate</a></li>\n"
+        "              <li class='nav-header'>Other</li>\n"
+        "              <li><a href='#'>Monitor</a></li>\n"
+        "              <li><a href='#'>Meep</a></li>\n");
+  }
+  g_string_append (s,
       "            </ul>\n"
       "          </div><!--/.well -->\n"
       "        </div><!--/span-->\n"
       "        <div class='span9'>\n"
       "          <div class='hero-unit'>\n"
       "              <div style='background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;'>currently unavailable</div>\n"
-      //"            <h1>Hello, world!</h1>\n"
       "            <p>Content #1.</p>\n"
       "            <p><a class='btn btn-primary btn-large'>Learn more &raquo;</a></p>\n"
       "          </div>\n"
@@ -318,32 +326,20 @@ gss_html_bootstrap_doc (GssTransaction * t)
       "          </div><!--/row-->\n"
       "        </div><!--/span-->\n"
       "      </div><!--/row-->\n"
-      "\n"
       "      <hr>\n"
-      "\n"
       "      <footer>\n"
       "        <p>&copy; Company 2012</p>\n"
       "      </footer>\n"
-      "\n"
       "    </div><!--/.fluid-container-->\n"
-      "\n"
       "    <script src='/bootstrap/js/jquery.js'></script>\n"
-      "    <script src='/bootstrap/js/bootstrap.js'></script>\n"
-#if 0
+      "    <script src='/bootstrap/js/bootstrap.js'></script>\n");
+  g_string_append_printf (s,
       "<script type=\"text/javascript\">\n"
-      "$(function() {  $('#browserid').click(function() {  navigator.id.get(gotAssertion);  return false;  });  });\n"
-      "</script>\n"
-#endif
-      "<script type=\"text/javascript\">\n"
-      "function gotAssertion(assertion) {\n" "if(assertion!==null){\n"
-      //"document.body.innerHTML += '<form id=\"dynForm\" action=\"/meep\"method=\"post\"><input type=\"hidden\" name=\"q\" value=\"a\"></form>'; \n"
-      //"document.getElementById('dynForm').submit();\n"
-      //"var form = createElement(\"form\",{action:'/meep',method:'POST',style:'display: none'});\n"
+      "function gotAssertion(assertion) {\n"
+      "if(assertion!==null){\n"
       "var form = document.createElement(\"form\");\n"
       "form.setAttribute('method', 'POST');\n"
-      "form.setAttribute('action', 'http://localhost:8080/login');\n"
-      //"var form = document.createElement('img',{src:'/images/button_main.png'});\n"
-      //"form.appendChild(document.createElement(\"input\", {type: \"hidden\", name: 'assertion', value: assertion}));\n"
+      "form.setAttribute('action', '%s/login');\n"
       "var ip = document.createElement(\"input\");\n"
       "ip.setAttribute('type', 'hidden');\n"
       "ip.setAttribute('name', 'assertion');\n"
@@ -351,6 +347,8 @@ gss_html_bootstrap_doc (GssTransaction * t)
       "form.appendChild(ip);\n"
       "document.body.appendChild(form);\n" "form.submit();\n"
       //"document.body.removeChild(form);\n"
-      "}\n" "}\n" "</script>\n" "\n" "  </body>\n" "</html>\n");
+      "}\n"
+      "}\n" "</script>\n", gss_soup_get_base_url_https (t->server, t->msg));
+  g_string_append (s, "\n" "  </body>\n" "</html>\n");
 
 }
