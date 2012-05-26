@@ -643,7 +643,7 @@ session_login_get_resource (GssTransaction * t)
 
   t->s = s = g_string_new ("");
 
-  gss_html_header (ewserver, s, "Login");
+  gss_html_header (t);
 
   g_string_append (s, "<div id=\"header\">");
   gss_html_append_image (s, "/images/template_header_nologo.png",
@@ -669,7 +669,7 @@ session_login_get_resource (GssTransaction * t)
   g_free (location);
 
   g_string_append (s, "</div><!-- end content div -->\n");
-  gss_html_footer (ewserver, s, NULL);
+  gss_html_footer (t);
 }
 
 static void

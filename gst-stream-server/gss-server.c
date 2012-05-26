@@ -1119,7 +1119,9 @@ static void
 bs_resource (GssTransaction * t)
 {
   t->s = g_string_new ("");
+  gss_html_header (t);
   gss_html_bootstrap_doc (t);
+  gss_html_footer (t);
 }
 
 static void
@@ -1310,7 +1312,7 @@ main_page_resource (GssTransaction * t)
 
   s = t->s = g_string_new ("");
 
-  gss_html_header (t->server, s, "Entropy Wave Live Streaming");
+  gss_html_header (t);
 
   g_string_append_printf (s, "<div id=\"header\">\n");
   gss_html_append_image (s,
@@ -1341,7 +1343,7 @@ main_page_resource (GssTransaction * t)
 
   g_string_append (s, "</div><!-- end content div -->\n");
 
-  gss_html_footer (t->server, s, NULL);
+  gss_html_footer (t);
 }
 
 static void
@@ -1651,7 +1653,7 @@ program_get_resource (GssTransaction * t)
 
   t->s = s;
 
-  gss_html_header (program->server, s, program->location);
+  gss_html_header (t);
   g_string_append_printf (s, "<div id=\"header\">\n");
   gss_html_append_image (s, BASE "images/template_header_nologo.png",
       812, 36, NULL);
@@ -1699,7 +1701,7 @@ program_get_resource (GssTransaction * t)
 
   g_string_append (s, "</div><!-- end content div -->\n");
 
-  gss_html_footer (program->server, s, NULL);
+  gss_html_footer (t);
 }
 
 

@@ -32,8 +32,8 @@ G_BEGIN_DECLS
 //#define USE_XHTML
 #define USE_HTML5
 
-void gss_html_header (GssServer *server, GString *s, const char *title);
-void gss_html_footer (GssServer *server, GString *s, const char *token);
+void gss_html_header (GssTransaction *t);
+void gss_html_footer (GssTransaction *t);
 void gss_html_error_404 (SoupMessage *msg);
 void gss_html_append_break (GString *s);
 void gss_html_append_image (GString *s, const char *url, int width, int height,

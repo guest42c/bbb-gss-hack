@@ -166,49 +166,6 @@ GssField certificate_file_fields[] = {
 };
 
 
-static void
-append_tab (GString * s, const char *location, const char *image,
-    const char *alt_text, GssSession * session)
-{
-  g_string_append_printf (s,
-      "<div><a href=\"%s?session_id=%s\">", location, session->session_id);
-  gss_html_append_image (s, image, 142, 32, alt_text);
-  g_string_append (s, "</a></div>\n");
-
-}
-
-
-static void
-admin_header (GssTransaction * t)
-{
-  GString *s = t->s;
-
-  gss_html_header (t->server, s, "S1000 Configuration");
-
-  g_string_append_printf (s, "<div id=\"header\">");
-  gss_html_append_image (s,
-      "/images/template_header_nologo.png", 812, 36, NULL);
-
-  gss_html_append_image (s, "/images/template_s1000.png", 812, 58, NULL);
-
-  g_string_append_printf (s,
-      "</div><!-- end header div -->\n" "<div id=\"nav\">\n");
-
-  append_tab (s, "/admin", "/images/button_main.png", "MAIN", t->session);
-  append_tab (s, "/admin/access", "/images/button_access.png",
-      "ACCESS", t->session);
-  append_tab (s, "/admin/server", "/images/button_server.png",
-      "SERVER", t->session);
-  append_tab (s, "/admin/admin", "/images/button_admin.png",
-      "ADMIN", t->session);
-  append_tab (s, "/admin/log", "/images/button_log.png", "LOG", t->session);
-
-  g_string_append (s, "</div><!-- end nav div -->\n");
-
-  g_string_append_printf (s, "<div id=\"content\">\n");
-}
-
-
 enum
 {
   ADMIN_NONE = 0,
@@ -345,7 +302,7 @@ admin_resource_get (GssTransaction * t)
     //mime_type = "text/plain";
     gss_config_hash_to_string (s, t->server->config->hash);
   } else {
-    admin_header (t);
+    gss_html_header (t);
 
     if (t->msg->method == SOUP_METHOD_POST) {
       g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
@@ -439,8 +396,8 @@ admin_resource_get (GssTransaction * t)
         break;
     }
 
-    g_string_append (s, "</div><!-- end content div -->\n");
-    gss_html_footer (t->server, s, t->session->session_id);
+    //g_string_append (s, "</div><!-- end content div -->\n");
+    gss_html_footer (t);
   }
 }
 

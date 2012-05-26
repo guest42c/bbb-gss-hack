@@ -29,62 +29,6 @@
 
 
 void
-gss_html_header (GssServer * server, GString * s, const char *title)
-{
-  g_string_append_printf (s,
-#ifdef USE_XHTML
-      "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
-      "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-#else
-#ifdef USE_HTML5
-      "<!DOCTYPE html>\n"
-#else
-      "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">\n"
-#endif
-      "<html>\n"
-#endif
-      "<head>\n"
-#ifdef USE_XHTML
-      "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n"
-#else
-      "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-#endif
-      "<title>%s</title>\n", title);
-
-  if (server->append_style_html) {
-    server->append_style_html (server, s, server->append_style_html_priv);
-  }
-
-  g_string_append (s, "</head>\n" "<body>\n" "<div id=\"container\">\n");
-}
-
-void
-gss_html_footer (GssServer * server, GString * s, const char *session_id)
-{
-  gss_html_append_break (s);
-  g_string_append (s,
-      "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/\">Available Streams</a>\n");
-  if (session_id) {
-    g_string_append_printf (s,
-        "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/admin/admin?session_id=%s\">Admin Interface</a>\n",
-        session_id);
-    g_string_append_printf (s,
-        "&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"/logout?session_id=%s\">Log Out</a>\n",
-        session_id);
-  }
-  gss_html_append_break (s);
-
-  g_string_append (s, "<div id=\"footer\">\n");
-  g_string_append (s, "<a href=\"http://entropywave.com/\">\n");
-  gss_html_append_image (s, "/images/template_footer.png", 812, 97, NULL);
-  g_string_append (s, "</a>");
-  g_string_append (s, "</div><!-- end footer div -->\n");
-  g_string_append (s,
-      "</div><!-- end container div -->\n" "</body>\n" "</html>\n");
-
-}
-
-void
 gss_html_error_404 (SoupMessage * msg)
 {
   char *content;
@@ -166,7 +110,7 @@ gss_html_append_image_printf (GString * s, const char *url_format, int width,
 
 
 void
-gss_html_bootstrap_doc (GssTransaction * t)
+gss_html_header (GssTransaction * t)
 {
   int i;
   GString *s = t->s;
@@ -287,6 +231,13 @@ gss_html_bootstrap_doc (GssTransaction * t)
       "          </div><!--/.well -->\n"
       "        </div><!--/span-->\n" "        <div class='span9'>\n");
 
+}
+
+void
+gss_html_bootstrap_doc (GssTransaction * t)
+{
+  GString *s = t->s;
+
   g_string_append (s,
       "          <div class='hero-unit'>\n"
       "              <div style='background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;'>currently unavailable</div>\n"
@@ -315,8 +266,15 @@ gss_html_bootstrap_doc (GssTransaction * t)
 #endif
 
   g_string_append (s,
-      "        </div><!--/span-->\n"
-      "      </div><!--/row-->\n" "      <hr>\n" "      <footer>\n");
+      "        </div><!--/span-->\n" "      </div><!--/row-->\n");
+}
+
+void
+gss_html_footer (GssTransaction * t)
+{
+  GString *s = t->s;
+
+  g_string_append (s, "      <hr>\n" "      <footer>\n");
 
   if (t->server->footer_html) {
     t->server->footer_html (t->server, s, t->server->footer_html_priv);
