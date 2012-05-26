@@ -161,10 +161,7 @@ main (int argc, char *argv[])
   gss_server_set_title (server, "Entropy Wave Streaming Server");
   gss_server_set_footer_html (server, footer_html, NULL);
 
-  ew_stream_server_add_admin_callbacks (server, server->server);
-  if (server->ssl_server) {
-    ew_stream_server_add_admin_callbacks (server, server->ssl_server);
-  }
+  ew_stream_server_add_admin_callbacks (server);
 
   gss_server_read_config (server, CONFIG_FILENAME);
 

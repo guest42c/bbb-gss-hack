@@ -31,9 +31,7 @@
 #include <glib-object.h>
 
 
-static void admin_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
+static void admin_resource_get (GssTransaction * t);
 
 GssField control_fields[] = {
   {GSS_FIELD_SECTION, NULL, "Control"},
@@ -170,10 +168,10 @@ GssField certificate_file_fields[] = {
 
 static void
 append_tab (GString * s, const char *location, const char *image,
-    const char *alt_text, const char *session_id)
+    const char *alt_text, GssSession * session)
 {
   g_string_append_printf (s,
-      "<div><a href=\"%s?session_id=%s\">", location, session_id);
+      "<div><a href=\"%s?session_id=%s\">", location, session->session_id);
   gss_html_append_image (s, image, 142, 32, alt_text);
   g_string_append (s, "</a></div>\n");
 
@@ -181,10 +179,11 @@ append_tab (GString * s, const char *location, const char *image,
 
 
 static void
-admin_header (GssServer * server, GString * s, const char *session_id)
+admin_header (GssTransaction * t)
 {
+  GString *s = t->s;
 
-  gss_html_header (server, s, "S1000 Configuration");
+  gss_html_header (t->server, s, "S1000 Configuration");
 
   g_string_append_printf (s, "<div id=\"header\">");
   gss_html_append_image (s,
@@ -195,14 +194,14 @@ admin_header (GssServer * server, GString * s, const char *session_id)
   g_string_append_printf (s,
       "</div><!-- end header div -->\n" "<div id=\"nav\">\n");
 
-  append_tab (s, "/admin", "/images/button_main.png", "MAIN", session_id);
+  append_tab (s, "/admin", "/images/button_main.png", "MAIN", t->session);
   append_tab (s, "/admin/access", "/images/button_access.png",
-      "ACCESS", session_id);
+      "ACCESS", t->session);
   append_tab (s, "/admin/server", "/images/button_server.png",
-      "SERVER", session_id);
+      "SERVER", t->session);
   append_tab (s, "/admin/admin", "/images/button_admin.png",
-      "ADMIN", session_id);
-  append_tab (s, "/admin/log", "/images/button_log.png", "LOG", session_id);
+      "ADMIN", t->session);
+  append_tab (s, "/admin/log", "/images/button_log.png", "LOG", t->session);
 
   g_string_append (s, "</div><!-- end nav div -->\n");
 
@@ -245,45 +244,21 @@ AdminPage admin_pages[] = {
 
 
 static void
-admin_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+admin_resource_get (GssTransaction * t)
 {
-  const char *mime_type = "text/html";
-  char *content;
   GString *s;
-  GssServer *ewserver = (GssServer *) user_data;
   int type;
   int i;
   GssSession *session;
 
-#if 0
-  if (msg->method == SOUP_METHOD_GET) {
-    g_print ("GET %s\n", path);
-  } else if (msg->method == SOUP_METHOD_POST) {
-    g_print ("POST %s\n", path);
-  }
-#endif
-
-#if 0
-  if (query) {
-    GHashTableIter iter;
-    char *key, *value;
-    g_hash_table_iter_init (&iter, query);
-    while (g_hash_table_iter_next (&iter, (gpointer) & key, (gpointer) & value)) {
-      g_print ("%s=%s\n", key, value);
-    }
-  }
-#endif
-
-  if (!gss_addr_address_check (client)) {
-    gss_html_error_404 (msg);
+  if (!gss_addr_address_check (t->client)) {
+    gss_html_error_404 (t->msg);
     return;
   }
 
-  if (server == ewserver->server) {
-    if (gss_addr_is_localhost (client)) {
-      session = gss_session_message_get_session (msg, query);
+  if (t->soupserver == t->server->server) {
+    if (gss_addr_is_localhost (t->client)) {
+      session = gss_session_message_get_session (t->msg, t->query);
       if (session == NULL) {
         GssSession *session;
         char *location;
@@ -293,11 +268,11 @@ admin_callback (SoupServer * server, SoupMessage * msg,
         location =
             g_strdup_printf ("/admin?session_id=%s", session->session_id);
 
-        soup_message_headers_append (msg->response_headers,
+        soup_message_headers_append (t->msg->response_headers,
             "Location", location);
-        soup_message_set_response (msg, "text/plain", SOUP_MEMORY_STATIC, "",
+        soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_STATIC, "",
             0);
-        soup_message_set_status (msg, SOUP_STATUS_SEE_OTHER);
+        soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
 
         g_free (location);
 
@@ -307,28 +282,29 @@ admin_callback (SoupServer * server, SoupMessage * msg,
       session = NULL;
     }
   } else {
-    session = gss_session_message_get_session (msg, query);
+    session = gss_session_message_get_session (t->msg, t->query);
   }
 
   if (session == NULL) {
     char *s;
     char *location;
 
-    s = g_uri_escape_string (path, NULL, FALSE);
-    if (server == ewserver->server) {
+    s = g_uri_escape_string (t->path, NULL, FALSE);
+    if (t->soupserver == t->server->server) {
       char *host;
 
-      host = gss_soup_get_request_host (msg);
+      host = gss_soup_get_request_host (t->msg);
       location = g_strdup_printf ("https://%s:%d/login?redirect_url=%s",
-          host, soup_server_get_port (ewserver->ssl_server), s);
+          host, soup_server_get_port (t->server->ssl_server), s);
 
       g_free (host);
     } else {
       location = g_strdup_printf ("/login?redirect_url=%s", s);
     }
 
-    soup_message_headers_append (msg->response_headers, "Location", location);
-    soup_message_set_status (msg, SOUP_STATUS_TEMPORARY_REDIRECT);
+    soup_message_headers_append (t->msg->response_headers, "Location",
+        location);
+    soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
 
     g_free (s);
     g_free (location);
@@ -338,40 +314,40 @@ admin_callback (SoupServer * server, SoupMessage * msg,
 
   type = ADMIN_NONE;
   for (i = 0; i < G_N_ELEMENTS (admin_pages); i++) {
-    if (g_str_equal (admin_pages[i].location, path)) {
+    if (g_str_equal (admin_pages[i].location, t->path)) {
       type = admin_pages[i].type;
       break;
     }
   }
   if (type == ADMIN_NONE) {
-    gss_html_error_404 (msg);
+    gss_html_error_404 (t->msg);
     return;
   }
 
-  if (msg->method != SOUP_METHOD_GET && msg->method != SOUP_METHOD_POST) {
-    soup_message_set_status (msg, SOUP_STATUS_NOT_IMPLEMENTED);
+  if (t->msg->method != SOUP_METHOD_GET && t->msg->method != SOUP_METHOD_POST) {
+    soup_message_set_status (t->msg, SOUP_STATUS_NOT_IMPLEMENTED);
     return;
   }
 
   gss_session_touch (session);
 
-  if (msg->method == SOUP_METHOD_POST) {
+  if (t->msg->method == SOUP_METHOD_POST) {
     //g_print("POST to %s\n", path);
-    gss_config_handle_post (ewserver->config, msg);
+    gss_config_handle_post (t->server->config, t->msg);
   }
 
-  s = g_string_new ("");
+  t->s = s = g_string_new ("");
 
   if (type == ADMIN_STATUS) {
-    mime_type = "text/plain";
+    //mime_type = "text/plain";
     g_string_append (s, "OK\n");
   } else if (type == ADMIN_CONFIG) {
-    mime_type = "text/plain";
-    gss_config_hash_to_string (s, ewserver->config->hash);
+    //mime_type = "text/plain";
+    gss_config_hash_to_string (s, t->server->config->hash);
   } else {
-    admin_header (ewserver, s, session->session_id);
+    admin_header (t);
 
-    if (msg->method == SOUP_METHOD_POST) {
+    if (t->msg->method == SOUP_METHOD_POST) {
       g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
     }
 
@@ -380,19 +356,19 @@ admin_callback (SoupServer * server, SoupMessage * msg,
 #if 0
       {
         int i;
-        for (i = 0; i < ewserver->n_programs; i++) {
-          GssProgram *program = ewserver->programs[i];
+        for (i = 0; i < t->server->n_programs; i++) {
+          GssProgram *program = t->server->programs[i];
           g_string_append_printf (s, "%s type=%d %s %s<br />\n",
               program->location,
               program->program_type, program->follow_uri, program->follow_host);
         }
       }
 #endif
-        gss_config_form_add_form (ewserver, s, "/admin", "Control",
+        gss_config_form_add_form (t->server, s, "/admin", "Control",
             control_fields, session);
         break;
       case ADMIN_SERVER:
-        gss_config_form_add_form (ewserver, s, "/admin/server",
+        gss_config_form_add_form (t->server, s, "/admin/server",
             "HTTP Server Configuration", server_fields, session);
         break;
       case ADMIN_LOG:
@@ -400,8 +376,8 @@ admin_callback (SoupServer * server, SoupMessage * msg,
         int i;
         g_string_append_printf (s, "<pre>\n");
         g_string_append_printf (s, "Streams:\n");
-        for (i = 0; i < ewserver->n_programs; i++) {
-          GssProgram *program = ewserver->programs[i];
+        for (i = 0; i < t->server->n_programs; i++) {
+          GssProgram *program = t->server->programs[i];
           GssServerStream *stream;
           guint64 n_bytes_in = 0;
           guint64 n_bytes_out = 0;
@@ -434,7 +410,7 @@ admin_callback (SoupServer * server, SoupMessage * msg,
           GList *g;
           g_string_append_printf (s, "<pre>\n");
           g_string_append_printf (s, "Log:\n");
-          for (g = ewserver->messages; g; g = g_list_next (g)) {
+          for (g = t->server->messages; g; g = g_list_next (g)) {
             g_string_append_printf (s, "%s\n", (char *) g->data);
           }
           g_string_append_printf (s, "</pre>\n");
@@ -442,21 +418,21 @@ admin_callback (SoupServer * server, SoupMessage * msg,
         break;
       case ADMIN_ADMIN:
         g_string_append_printf (s, "Firmware Version: %s<br />\n",
-            gss_config_get (ewserver->config, "version"));
+            gss_config_get (t->server->config, "version"));
         g_string_append_printf (s,
             "Configuration File: <a href=\"/admin/config?session_id=%s\">LINK</a><br />\n",
             session->session_id);
-        gss_config_form_add_form (ewserver, s, "/admin/admin_password",
+        gss_config_form_add_form (t->server, s, "/admin/admin_password",
             "Admin Password", admin_password_fields, session);
-        gss_config_form_add_form (ewserver, s, "/admin/editor_password",
+        gss_config_form_add_form (t->server, s, "/admin/editor_password",
             "Editor Password", editor_password_fields, session);
-        gss_config_form_add_form (ewserver, s, "/admin/upload_config",
+        gss_config_form_add_form (t->server, s, "/admin/upload_config",
             "Configuration File", configuration_file_fields, session);
-        gss_config_form_add_form (ewserver, s, "/admin/status",
+        gss_config_form_add_form (t->server, s, "/admin/status",
             "Upload Certificate", certificate_file_fields, session);
         break;
       case ADMIN_ACCESS:
-        gss_config_form_add_form (ewserver, s, "/admin/access",
+        gss_config_form_add_form (t->server, s, "/admin/access",
             "Access Restrictions", access_fields, session);
         break;
       default:
@@ -464,36 +440,16 @@ admin_callback (SoupServer * server, SoupMessage * msg,
     }
 
     g_string_append (s, "</div><!-- end content div -->\n");
-    gss_html_footer (ewserver, s, session->session_id);
+    gss_html_footer (t->server, s, t->session->session_id);
   }
-
-  content = g_string_free (s, FALSE);
-
-  soup_message_headers_replace (msg->response_headers, "Keep-Alive",
-      "timeout=5, max=100");
-
-  if (msg->method == SOUP_METHOD_POST) {
-#if 0
-    soup_message_headers_append (msg->response_headers,
-        "Location", "/admin/access?login_token=0xdeadbeef");
-
-    //soup_message_set_status (msg, SOUP_STATUS_SEE_OTHER);
-#endif
-    soup_message_set_status (msg, SOUP_STATUS_OK);
-  } else {
-    soup_message_set_status (msg, SOUP_STATUS_OK);
-  }
-
-  soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE,
-      content, strlen (content));
 }
 
 
 void
-ew_stream_server_add_admin_callbacks (GssServer * server,
-    SoupServer * soupserver)
+ew_stream_server_add_admin_callbacks (GssServer * server)
 {
-  soup_server_add_handler (soupserver, "/admin", admin_callback, server, NULL);
+  gss_server_add_resource (server, "/admin", 0,
+      "text/html", admin_resource_get, NULL, NULL, NULL);
 }
 
 

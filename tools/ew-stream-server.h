@@ -30,8 +30,7 @@ G_BEGIN_DECLS
 #define LATENCY ((int)(10*GST_MSECOND))
 
 
-void ew_stream_server_add_admin_callbacks (GssServer *server,
-    SoupServer *soupserver);
+void ew_stream_server_add_admin_callbacks (GssServer *server);
 
 G_END_DECLS
 
