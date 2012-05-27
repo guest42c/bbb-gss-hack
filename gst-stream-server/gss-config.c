@@ -47,6 +47,7 @@ gss_config_field_free (gpointer data)
 {
   GssConfigField *field = (GssConfigField *) data;
   g_free (field->value);
+  g_free (field);
 }
 
 GssConfig *
@@ -66,6 +67,7 @@ void
 gss_config_free (GssConfig * config)
 {
   g_hash_table_unref (config->hash);
+  g_free (config->config_filename);
   g_free (config);
 }
 

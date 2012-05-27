@@ -41,6 +41,8 @@ struct _GssSession {
   gboolean is_admin;
 };
 
+void __gss_session_deinit (void);
+
 GssSession * gss_session_new (const char *username);
 GssSession * gss_session_ref (GssSession *session);
 void gss_session_invalidate (GssSession *session);

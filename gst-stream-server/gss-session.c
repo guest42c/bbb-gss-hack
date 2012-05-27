@@ -323,10 +323,19 @@ password_hash (const char *username, const char *password)
 
 #define RANDOM_BYTES 6
 
+static int random_fd = -1;
+
+void
+__gss_session_deinit (void)
+{
+  if (random_fd != -1) {
+    close (random_fd);
+  }
+}
+
 char *
 gss_session_create_id (void)
 {
-  static int random_fd = -1;
   uint8_t entropy[RANDOM_BYTES];
   int n;
   int i;
@@ -551,6 +560,7 @@ browserid_verify_done (SoupSession * session, SoupMessage * msg,
       login_session->session_id);
 
   soup_message_headers_append (v->msg->response_headers, "Location", location);
+  g_free (location);
   soup_message_set_response (v->msg, "text/plain", SOUP_MEMORY_STATIC, "", 0);
   soup_message_set_status (v->msg, SOUP_STATUS_SEE_OTHER);
 
@@ -602,6 +612,7 @@ session_login_post_resource (GssTransaction * t)
       SoupMessage *client_msg;
       BrowserIDVerify *v;
       char *s;
+      char *base_url;
 
       soup_server_pause_message (t->soupserver, t->msg);
 
@@ -620,11 +631,13 @@ session_login_post_resource (GssTransaction * t)
         g_free (base_url);
       }
 
+      base_url = gss_transaction_get_base_url (t);
       s = g_strdup_printf
           ("https://browserid.org/verify?assertion=%s&audience=%s",
-          assertion, gss_transaction_get_base_url (t));
+          assertion, base_url);
       client_msg = soup_message_new ("POST", s);
       g_free (s);
+      g_free (base_url);
       soup_message_headers_replace (client_msg->request_headers,
           "Content-Type", "application/x-www-form-urlencoded");
 

@@ -189,7 +189,12 @@ main (int argc, char *argv[])
 
   g_main_loop_run (main_loop);
 
-  gss_server_free (server);
+  g_main_loop_unref (main_loop);
+  main_loop = NULL;
+
+  g_object_unref (server);
+  server = NULL;
+
   gss_server_deinit ();
   gst_deinit ();
 

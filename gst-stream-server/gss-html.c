@@ -171,11 +171,13 @@ gss_html_header (GssTransaction * t)
         "              <i class='icon-user'></i> %s\n"
         "              <span class='caret'></span>\n", t->session->username);
   } else {
+    char *base_url = gss_soup_get_base_url_https (t->server, t->msg);
     g_string_append_printf (s,
         "<a href='%s/login' title='Administrative Interface'>Admin</a>\n"
         "<a href='#' id='browserid' title='Sign-in with BrowserID'>\n"
         "<img src='/images/sign_in_blue.png' alt='Sign in' onclick='navigator.id.get(gotAssertion);'>\n"
-        "</a>\n", gss_soup_get_base_url_https (t->server, t->msg));
+        "</a>\n", base_url);
+    g_free (base_url);
   }
 
   g_string_append (s,

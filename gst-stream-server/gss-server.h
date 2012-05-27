@@ -189,6 +189,8 @@ struct _GssResource {
   GssTransactionCallback *put_callback;
   GssTransactionCallback *post_callback;
 
+  GDestroyNotify destroy;
+
   gpointer priv;
 };
 
@@ -270,7 +272,6 @@ struct _GssServerClass
 GType gss_server_get_type (void);
 
 GssServer * gss_server_new (void);
-void gss_server_free (GssServer *server);
 void gss_server_set_hostname (GssServer *server, const char *hostname);
 void gss_server_read_config (GssServer *server, const char *config_filename);
 

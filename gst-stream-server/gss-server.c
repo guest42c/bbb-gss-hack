@@ -116,11 +116,15 @@ static gboolean enable_rtsp = FALSE;
 static const gchar *soup_method_source;
 #define SOUP_METHOD_SOURCE (soup_method_source)
 
+static void gss_resource_free (GssResource * resource);
+
+static GObjectClass *parent_class;
 
 static void
 gss_server_init (GssServer * server)
 {
-  server->resources = g_hash_table_new (g_str_hash, g_str_equal);
+  server->resources = g_hash_table_new_full (g_str_hash, g_str_equal,
+      g_free, (GDestroyNotify) gss_resource_free);
 
   server->client_session = soup_session_async_new ();
 
@@ -144,6 +148,7 @@ gss_server_init (GssServer * server)
 void
 gss_server_deinit (void)
 {
+  __gss_session_deinit ();
 
 }
 
@@ -163,18 +168,53 @@ gss_server_log (GssServer * server, char *message)
 }
 
 static void
+gss_server_finalize (GObject * object)
+{
+  GssServer *server = GSS_SERVER (object);
+  int i;
+
+  for (i = 0; i < server->n_programs; i++) {
+    GssProgram *program = server->programs[i];
+
+    gss_program_free (program);
+  }
+
+  if (server->server)
+    g_object_unref (server->server);
+  if (server->ssl_server)
+    g_object_unref (server->ssl_server);
+
+  g_list_foreach (server->messages, (GFunc) g_free, NULL);
+  g_list_free (server->messages);
+
+  g_hash_table_unref (server->resources);
+  gss_metrics_free (server->metrics);
+  gss_config_free (server->config);
+  g_free (server->base_url);
+  g_free (server->base_url_https);
+  g_free (server->server_name);
+  g_free (server->programs);
+  g_free (server->title);
+  g_object_unref (server->client_session);
+
+  parent_class->finalize (object);
+}
+
+static void
 gss_server_class_init (GssServerClass * server_class)
 {
   soup_method_source = g_intern_static_string ("SOURCE");
 
   G_OBJECT_CLASS (server_class)->set_property = gss_server_set_property;
   G_OBJECT_CLASS (server_class)->get_property = gss_server_get_property;
+  G_OBJECT_CLASS (server_class)->finalize = gss_server_finalize;
 
   g_object_class_install_property (G_OBJECT_CLASS (server_class), PROP_PORT,
       g_param_spec_int ("port", "Port",
           "Port", 0, 65535, DEFAULT_HTTP_PORT,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
+  parent_class = g_type_class_peek_parent (server_class);
 }
 
 
@@ -373,6 +413,16 @@ gss_server_new (void)
   return server;
 }
 
+static void
+gss_resource_free (GssResource * resource)
+{
+  g_free (resource->etag);
+  if (resource->destroy) {
+    resource->destroy (resource);
+  }
+  g_free (resource);
+}
+
 void
 gss_server_add_resource (GssServer * server, const char *location,
     GssResourceFlags flags, const char *content_type,
@@ -427,10 +477,9 @@ setup_paths (GssServer * server)
     gss_server_add_file_resource (server, "/AC_RunActiveContent.js", 0,
         "application/javascript");
   }
-#define IMAGE(image) \
-  gss_server_add_file_resource (server, "/images/" image , 0, "image/png")
 
-  IMAGE ("footer-entropywave.png");
+  gss_server_add_file_resource (server, "/images/footer-entropywave.png",
+      0, "image/png");
 
   gss_server_add_string_resource (server, "/robots.txt", 0,
       "text/plain", "User-agent: *\nDisallow: /\n");
@@ -451,9 +500,6 @@ setup_paths (GssServer * server)
       "/bootstrap/img/glyphicons-halflings.png", 0, "image/png");
   gss_server_add_file_resource (server,
       "/bootstrap/img/glyphicons-halflings-white.png", 0, "image/png");
-
-  gss_server_add_file_resource (server,
-      "/bootstrap/fluid.html", 0, "text/html");
 }
 
 typedef struct _GssStaticResource GssStaticResource;
@@ -462,10 +508,15 @@ struct _GssStaticResource
   GssResource resource;
 
   const char *filename;
-  const char *mime_type;
   char *contents;
   gsize size;
 };
+
+static void
+gss_static_resource_destroy (GssStaticResource * sr)
+{
+  g_free (sr->contents);
+}
 
 static void
 generate_etag (GssStaticResource * sr)
@@ -498,13 +549,13 @@ file_resource (GssTransaction * t)
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (t->msg, sr->mime_type,
+  soup_message_set_response (t->msg, sr->resource.content_type,
       SOUP_MEMORY_STATIC, sr->contents, sr->size);
 }
 
 void
 gss_server_add_file_resource (GssServer * server,
-    const char *filename, GssResourceFlags flags, const char *mime_type)
+    const char *filename, GssResourceFlags flags, const char *content_type)
 {
   GssStaticResource *sr;
   gsize size = 0;
@@ -523,10 +574,11 @@ gss_server_add_file_resource (GssServer * server,
   sr = g_new0 (GssStaticResource, 1);
 
   sr->filename = filename;
-  sr->mime_type = mime_type;
+  sr->resource.content_type = content_type;
   sr->contents = contents;
   sr->size = size;
 
+  sr->resource.destroy = (GDestroyNotify) gss_static_resource_destroy;
   sr->resource.location = g_strdup (filename);
   sr->resource.flags = flags;
   sr->resource.get_callback = file_resource;
@@ -538,49 +590,25 @@ gss_server_add_file_resource (GssServer * server,
 
 void
 gss_server_add_string_resource (GssServer * server, const char *filename,
-    GssResourceFlags flags, const char *mime_type, const char *string)
+    GssResourceFlags flags, const char *content_type, const char *string)
 {
   GssStaticResource *sr;
 
   sr = g_new0 (GssStaticResource, 1);
 
   sr->filename = filename;
-  sr->mime_type = mime_type;
+  sr->resource.content_type = content_type;
   sr->contents = g_strdup (string);
   sr->size = strlen (string);
   generate_etag (sr);
 
+  sr->resource.destroy = (GDestroyNotify) gss_static_resource_destroy;
   sr->resource.location = g_strdup (filename);
   sr->resource.flags = flags;
   sr->resource.get_callback = file_resource;
 
   g_hash_table_replace (server->resources, sr->resource.location,
       (GssResource *) sr);
-}
-
-void
-gss_server_free (GssServer * server)
-{
-  int i;
-
-  for (i = 0; i < server->n_programs; i++) {
-    GssProgram *program = server->programs[i];
-
-    gss_program_free (program);
-  }
-
-  if (server->server)
-    g_object_unref (server->server);
-
-  g_list_foreach (server->messages, (GFunc) g_free, NULL);
-  g_list_free (server->messages);
-
-  gss_metrics_free (server->metrics);
-  g_free (server->base_url);
-  g_free (server->server_name);
-  g_free (server->programs);
-  /* FIXME why? */
-  //g_free (server);
 }
 
 static void
@@ -1221,7 +1249,6 @@ static void
 onetime_redirect (GssTransaction * t)
 {
   GssOnetimeResource *or;
-  char *s;
   char *id;
   char *url;
   char *base_url;
@@ -1229,9 +1256,8 @@ onetime_redirect (GssTransaction * t)
   or = g_new0 (GssOnetimeResource, 1);
 
   id = gss_session_create_id ();
-  s = g_strdup_printf ("/%s", id);
+  or->resource.location = g_strdup_printf ("/%s", id);
   g_free (id);
-  or->resource.location = s;
   or->resource.flags = 0;
   or->resource.get_callback = onetime_resource;
 
@@ -1244,7 +1270,7 @@ onetime_redirect (GssTransaction * t)
       (GssResource *) or);
 
   base_url = gss_soup_get_base_url_http (t->server, t->msg);
-  url = g_strdup_printf ("%s%s", base_url, s);
+  url = g_strdup_printf ("%s%s", base_url, or->resource.location);
   g_free (base_url);
   soup_message_headers_append (t->msg->response_headers, "Location", url);
   soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
