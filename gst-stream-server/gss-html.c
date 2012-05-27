@@ -265,8 +265,6 @@ gss_html_bootstrap_doc (GssTransaction * t)
       "            </div><!--/span-->\n" "          </div><!--/row-->\n");
 #endif
 
-  g_string_append (s,
-      "        </div><!--/span-->\n" "      </div><!--/row-->\n");
 }
 
 void
@@ -275,7 +273,8 @@ gss_html_footer (GssTransaction * t)
   GString *s = t->s;
   char *base_url;
 
-  g_string_append (s, "      <hr>\n" "      <footer>\n");
+  g_string_append (s,
+      "        </div><!--/span-->\n" "      </div><!--/row-->\n");
 
   if (t->server->footer_html) {
     t->server->footer_html (t->server, s, t->server->footer_html_priv);
@@ -286,7 +285,6 @@ gss_html_footer (GssTransaction * t)
   }
 
   g_string_append (s,
-      "      </footer>\n"
       "    </div><!--/.fluid-container-->\n"
       "    <script src='/bootstrap/js/jquery.js'></script>\n"
       "    <script src='/bootstrap/js/bootstrap.js'></script>\n");
