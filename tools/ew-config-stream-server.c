@@ -199,75 +199,12 @@ AdminPage admin_pages[] = {
   {"/admin/access", ADMIN_ACCESS, TRUE}
 };
 
-
 static void
-admin_resource_get (GssTransaction * t)
+admin_resource_post (GssTransaction * t)
 {
-  GString *s;
   int type;
+  GString *s;
   int i;
-  GssSession *session;
-
-  if (!gss_addr_address_check (t->client)) {
-    gss_html_error_404 (t->msg);
-    return;
-  }
-
-  if (t->soupserver == t->server->server) {
-    if (gss_addr_is_localhost (t->client)) {
-      session = gss_session_get_session (t->query);
-      if (session == NULL) {
-        GssSession *session;
-        char *location;
-
-        session = gss_session_new ("admin");
-
-        location =
-            g_strdup_printf ("/admin?session_id=%s", session->session_id);
-
-        soup_message_headers_append (t->msg->response_headers,
-            "Location", location);
-        soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_STATIC, "",
-            0);
-        soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
-
-        g_free (location);
-
-        return;
-      }
-    } else {
-      session = NULL;
-    }
-  } else {
-    session = gss_session_get_session (t->query);
-  }
-
-  if (session == NULL) {
-    char *s;
-    char *location;
-
-    s = g_uri_escape_string (t->path, NULL, FALSE);
-    if (t->soupserver == t->server->server) {
-      char *host;
-
-      host = gss_soup_get_request_host (t->msg);
-      location = g_strdup_printf ("https://%s:%d/login?redirect_url=%s",
-          host, soup_server_get_port (t->server->ssl_server), s);
-
-      g_free (host);
-    } else {
-      location = g_strdup_printf ("/login?redirect_url=%s", s);
-    }
-
-    soup_message_headers_append (t->msg->response_headers, "Location",
-        location);
-    soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
-
-    g_free (s);
-    g_free (location);
-
-    return;
-  }
 
   type = ADMIN_NONE;
   for (i = 0; i < G_N_ELEMENTS (admin_pages); i++) {
@@ -281,16 +218,35 @@ admin_resource_get (GssTransaction * t)
     return;
   }
 
-  if (t->msg->method != SOUP_METHOD_GET && t->msg->method != SOUP_METHOD_POST) {
-    soup_message_set_status (t->msg, SOUP_STATUS_NOT_IMPLEMENTED);
-    return;
+  if (t->msg->method == SOUP_METHOD_POST) {
+    gss_config_handle_post (t->server->config, t->msg);
   }
 
-  gss_session_touch (session);
+  t->s = s = g_string_new ("");
 
-  if (t->msg->method == SOUP_METHOD_POST) {
-    //g_print("POST to %s\n", path);
-    gss_config_handle_post (t->server->config, t->msg);
+  gss_html_header (t);
+  g_string_append (s, "OK");
+  gss_html_footer (t);
+}
+
+static void
+admin_resource_get (GssTransaction * t)
+{
+  GString *s;
+  int type;
+  int i;
+
+
+  type = ADMIN_NONE;
+  for (i = 0; i < G_N_ELEMENTS (admin_pages); i++) {
+    if (g_str_equal (admin_pages[i].location, t->path)) {
+      type = admin_pages[i].type;
+      break;
+    }
+  }
+  if (type == ADMIN_NONE) {
+    gss_html_error_404 (t->msg);
+    return;
   }
 
   t->s = s = g_string_new ("");
@@ -322,11 +278,11 @@ admin_resource_get (GssTransaction * t)
       }
 #endif
         gss_config_form_add_form (t->server, s, "/admin", "Control",
-            control_fields, session);
+            control_fields, t->session);
         break;
       case ADMIN_SERVER:
         gss_config_form_add_form (t->server, s, "/admin/server",
-            "HTTP Server Configuration", server_fields, session);
+            "HTTP Server Configuration", server_fields, t->session);
         break;
       case ADMIN_LOG:
       {
@@ -378,19 +334,19 @@ admin_resource_get (GssTransaction * t)
             gss_config_get (t->server->config, "version"));
         g_string_append_printf (s,
             "Configuration File: <a href=\"/admin/config?session_id=%s\">LINK</a><br />\n",
-            session->session_id);
+            t->session->session_id);
         gss_config_form_add_form (t->server, s, "/admin/admin_password",
-            "Admin Password", admin_password_fields, session);
+            "Admin Password", admin_password_fields, t->session);
         gss_config_form_add_form (t->server, s, "/admin/editor_password",
-            "Editor Password", editor_password_fields, session);
+            "Editor Password", editor_password_fields, t->session);
         gss_config_form_add_form (t->server, s, "/admin/upload_config",
-            "Configuration File", configuration_file_fields, session);
+            "Configuration File", configuration_file_fields, t->session);
         gss_config_form_add_form (t->server, s, "/admin/status",
-            "Upload Certificate", certificate_file_fields, session);
+            "Upload Certificate", certificate_file_fields, t->session);
         break;
       case ADMIN_ACCESS:
         gss_config_form_add_form (t->server, s, "/admin/access",
-            "Access Restrictions", access_fields, session);
+            "Access Restrictions", access_fields, t->session);
         break;
       default:
         break;
@@ -406,7 +362,7 @@ void
 ew_stream_server_add_admin_callbacks (GssServer * server)
 {
   gss_server_add_resource (server, "/admin", 0,
-      "text/html", admin_resource_get, NULL, NULL, NULL);
+      "text/html", admin_resource_get, NULL, admin_resource_post, NULL);
 }
 
 
