@@ -665,7 +665,11 @@ session_login_post_resource (GssTransaction * t)
       login_session = gss_session_new (username);
       login_session->is_admin = TRUE;
 
-      s = g_hash_table_lookup (t->query, "redirect_url");
+      if (t->query) {
+        s = g_hash_table_lookup (t->query, "redirect_url");
+      } else {
+        s = NULL;
+      }
       if (s) {
         redirect_url = g_uri_unescape_string (s, NULL);
       } else {
