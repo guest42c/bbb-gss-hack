@@ -1129,10 +1129,15 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
     }
   }
 
-  session = gss_session_message_get_session (msg, query);
+  session = gss_session_get_session (query);
+
+  if (session && soupserver != server->ssl_server) {
+    gss_session_invalidate (session);
+    session = NULL;
+  }
 
   if (resource->flags & GSS_RESOURCE_ADMIN) {
-    if (session == NULL) {
+    if (session == NULL || session->is_admin) {
       gss_html_error_404 (msg);
       return;
     }

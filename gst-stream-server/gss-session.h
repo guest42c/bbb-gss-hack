@@ -47,8 +47,7 @@ gboolean gss_addr_is_localhost (SoupClientContext *context);
 char * gss_session_create_id (void);
 GssSession * gss_session_lookup (const char *session_id);
 void gss_session_touch (GssSession *session);
-GssSession * gss_session_message_get_session (SoupMessage *msg,
-    GHashTable *query);
+GssSession * gss_session_get_session (GHashTable *query);
 void gss_session_login_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);

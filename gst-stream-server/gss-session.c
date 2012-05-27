@@ -405,22 +405,18 @@ gss_session_touch (GssSession * session)
 }
 
 GssSession *
-gss_session_message_get_session (SoupMessage * msg, GHashTable * query)
+gss_session_get_session (GHashTable * query)
 {
-  if (msg->method == SOUP_METHOD_GET || msg->method == SOUP_METHOD_POST) {
-    char *id;
+  char *id;
 
-    if (query == NULL)
-      return NULL;
+  if (query == NULL)
+    return NULL;
 
-    id = g_hash_table_lookup (query, "session_id");
-    if (id == NULL)
-      return NULL;
+  id = g_hash_table_lookup (query, "session_id");
+  if (id == NULL)
+    return NULL;
 
-    return gss_session_lookup (id);
-  }
-
-  return NULL;
+  return gss_session_lookup (id);
 }
 
 GssSession *

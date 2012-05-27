@@ -215,7 +215,7 @@ admin_resource_get (GssTransaction * t)
 
   if (t->soupserver == t->server->server) {
     if (gss_addr_is_localhost (t->client)) {
-      session = gss_session_message_get_session (t->msg, t->query);
+      session = gss_session_get_session (t->query);
       if (session == NULL) {
         GssSession *session;
         char *location;
@@ -239,7 +239,7 @@ admin_resource_get (GssTransaction * t)
       session = NULL;
     }
   } else {
-    session = gss_session_message_get_session (t->msg, t->query);
+    session = gss_session_get_session (t->query);
   }
 
   if (session == NULL) {
