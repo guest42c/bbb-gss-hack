@@ -257,9 +257,6 @@ struct _GssServer
 
   GssFooterHtml *footer_html;
   void *footer_html_priv;
-
-  void (*append_style_html) (GssServer *server, GString *s, void *priv);
-  void *append_style_html_priv;
 };
 
 struct _GssServerClass
