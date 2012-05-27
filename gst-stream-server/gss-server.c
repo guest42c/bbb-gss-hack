@@ -312,6 +312,14 @@ gss_server_new (void)
         server->port);
   }
 
+  if (server->https_port == 443) {
+    server->base_url_https = g_strdup_printf ("https://%s",
+        server->server_name);
+  } else {
+    server->base_url_https = g_strdup_printf ("https://%s:%d",
+        server->server_name, server->port);
+  }
+
   if6 = soup_address_new_any (SOUP_ADDRESS_FAMILY_IPV6, server->port);
   server->server = soup_server_new (SOUP_SERVER_INTERFACE, if6,
       SOUP_SERVER_PORT, server->port, NULL);

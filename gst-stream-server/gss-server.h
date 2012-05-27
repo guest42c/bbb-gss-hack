@@ -238,6 +238,7 @@ struct _GssServer
   SoupServer *ssl_server;
   SoupSession *client_session;
   char *base_url;
+  char *base_url_https;
   GHashTable *resources;
 
   gboolean enable_public_ui;
