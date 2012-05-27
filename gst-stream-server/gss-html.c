@@ -114,6 +114,13 @@ gss_html_header (GssTransaction * t)
 {
   int i;
   GString *s = t->s;
+  gchar *session_id;
+
+  if (t->session) {
+    session_id = g_strdup_printf ("?session_id=%s", t->session->session_id);
+  } else {
+    session_id = g_strdup ("");
+  }
 
   g_string_append_printf (s,
       "<!DOCTYPE html>\n"
@@ -122,7 +129,7 @@ gss_html_header (GssTransaction * t)
       "    <meta charset='utf-8'>\n"
       "    <title>%s</title>\n", t->server->title);
 
-  g_string_append (s,
+  g_string_append_printf (s,
       "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n"
 #if 0
       "    <meta name='description' content=''>\n"
@@ -162,8 +169,9 @@ gss_html_header (GssTransaction * t)
       "            <span class='icon-bar'></span>\n"
       "            <span class='icon-bar'></span>\n"
       "          </a>\n"
-      "          <a class='brand' href='#'>Entropy Wave Streaming Server</a>\n"
-      "          <div class='btn-group pull-right'>\n");
+      "          <a class='brand' href='/%s'>%s</a>\n"
+      "          <div class='btn-group pull-right'>\n",
+      session_id, t->server->title);
 
   if (t->session) {
     g_string_append_printf (s,
@@ -180,19 +188,19 @@ gss_html_header (GssTransaction * t)
     g_free (base_url);
   }
 
-  g_string_append (s,
+  g_string_append_printf (s,
       "            </a>\n"
       "            <ul class='dropdown-menu'>\n"
-      "              <li><a href='#'>Profile</a></li>\n"
+      "              <li><a href='/profile%s'>Profile</a></li>\n"
       "              <li class='divider'></li>\n"
-      "              <li><a href='#'>Sign Out</a></li>\n"
+      "              <li><a href='/logout%s'>Sign Out</a></li>\n"
       "            </ul>\n"
       "          </div>\n"
       "          <div class='nav-collapse'>\n"
       "            <ul class='nav'>\n"
-      "              <li class='active'><a href='#'>Home</a></li>\n"
-      "              <li><a href='#about'>About</a></li>\n"
-      "              <li><a href='#contact'>Contact</a></li>\n"
+      "              <li class='active'><a href='/%s'>Home</a></li>\n"
+      "              <li><a href='/about%s'>About</a></li>\n"
+      "              <li><a href='/contact%s'>Contact</a></li>\n"
       "            </ul>\n"
       "          </div><!--/.nav-collapse -->\n"
       "        </div>\n"
@@ -203,36 +211,40 @@ gss_html_header (GssTransaction * t)
       "        <div class='span3'>\n"
       "          <div class='well sidebar-nav'>\n"
       "            <ul class='nav nav-list'>\n"
-      "              <li class='nav-header'>Programs</li>\n");
+      "              <li class='nav-header'>Programs</li>\n",
+      session_id, session_id, session_id, session_id, session_id);
   for (i = 0; i < t->server->n_programs; i++) {
     GssProgram *program = t->server->programs[i];
     g_string_append_printf (s,
-        "              <li><a href='/%s'>%s</a></li>\n",
-        program->location, program->location);
+        "              <li><a href='/%s%s'>%s</a></li>\n",
+        program->location, session_id, program->location);
   };
 
   if (t->session) {
-    g_string_append (s,
+    g_string_append_printf (s,
         "              <li class='nav-header'>User</li>\n"
-        "              <li><a href='#'>Add Program</a></li>\n"
-        "              <li><a href='#'>Main</a></li>\n"
-        "              <li><a href='#'>Log</a></li>\n");
+        "              <li><a href='/add_program%s'>Add Program</a></li>\n"
+        "              <li><a href='/dashboard%s'>Dashboard</a></li>\n"
+        "              <li><a href='/log%s'>Log</a></li>\n",
+        session_id, session_id, session_id);
   }
   if (t->session && t->session->is_admin) {
-    g_string_append (s,
+    g_string_append_printf (s,
         "              <li class='nav-header'>Administration</li>\n"
-        "              <li><a href='#'>Access Control</a></li>\n"
-        "              <li><a href='#'>Password</a></li>\n"
-        "              <li><a href='#'>Certificate</a></li>\n"
+        "              <li><a href='/admin/access%s'>Access Control</a></li>\n"
+        "              <li><a href='/admin/admin_password%s'>Password</a></li>\n"
+        "              <li><a href='/admin/admin%s'>Certificate</a></li>\n"
         "              <li class='nav-header'>Other</li>\n"
-        "              <li><a href='#'>Monitor</a></li>\n"
-        "              <li><a href='#'>Meep</a></li>\n");
+        "              <li><a href='/monitor%s'>Monitor</a></li>\n"
+        "              <li><a href='/meep%s'>Meep</a></li>\n",
+        session_id, session_id, session_id, session_id, session_id);
   }
   g_string_append (s,
       "            </ul>\n"
       "          </div><!--/.well -->\n"
       "        </div><!--/span-->\n" "        <div class='span9'>\n");
 
+  g_free (session_id);
 }
 
 void

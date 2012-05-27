@@ -55,9 +55,7 @@ static void resource_callback (SoupServer * soupserver, SoupMessage * msg,
 static void main_page_resource (GssTransaction * transaction);
 static void list_resource (GssTransaction * transaction);
 static void log_resource (GssTransaction * transaction);
-#if 0
-static void push_resource (GssTransaction * transaction);
-#endif
+static void unimplemented_resource (GssTransaction * t);
 
 static void push_wrote_headers (SoupMessage * msg, void *user_data);
 static void file_resource (GssTransaction * transaction);
@@ -461,10 +459,21 @@ setup_paths (GssServer * server)
       list_resource, NULL, NULL, NULL);
   gss_server_add_resource (server, "/log", GSS_RESOURCE_UI, "text/plain",
       log_resource, NULL, NULL, NULL);
-#if 0
-  gss_server_add_resource (server, "/push", GSS_RESOURCE_UI, NULL,
-      push_resource, NULL, NULL);
-#endif
+
+  gss_server_add_resource (server, "/about", GSS_RESOURCE_UI, "text/html",
+      unimplemented_resource, NULL, NULL, NULL);
+  gss_server_add_resource (server, "/contact", GSS_RESOURCE_UI, "text/html",
+      unimplemented_resource, NULL, NULL, NULL);
+  gss_server_add_resource (server, "/add_program", GSS_RESOURCE_UI, "text/html",
+      unimplemented_resource, NULL, NULL, NULL);
+  gss_server_add_resource (server, "/dashboard", GSS_RESOURCE_UI, "text/html",
+      unimplemented_resource, NULL, NULL, NULL);
+  gss_server_add_resource (server, "/profile", GSS_RESOURCE_UI, "text/html",
+      unimplemented_resource, NULL, NULL, NULL);
+  gss_server_add_resource (server, "/monitor", GSS_RESOURCE_UI, "text/html",
+      unimplemented_resource, NULL, NULL, NULL);
+  gss_server_add_resource (server, "/meep", GSS_RESOURCE_UI, "text/html",
+      unimplemented_resource, NULL, NULL, NULL);
 
   if (enable_cortado) {
     gss_server_add_file_resource (server, "/cortado.jar", 0,
@@ -1303,6 +1312,19 @@ onetime_resource (GssTransaction * t)
 }
 
 static void
+unimplemented_resource (GssTransaction * t)
+{
+  t->s = g_string_new ("");
+
+  gss_html_header (t);
+
+  g_string_append_printf (t->s, "<h1>Unimplemented Feature</h1>\n"
+      "<p>The feature \"%s\" is not yet implemented.</p>\n", t->path);
+
+  gss_html_footer (t);
+}
+
+static void
 main_page_resource (GssTransaction * t)
 {
   GString *s;
@@ -1328,15 +1350,15 @@ main_page_resource (GssTransaction * t)
       gss_html_append_image_printf (s,
           "%s/%s-snapshot.jpeg", 0, 0, "snapshot image", base_url,
           program->location);
-      g_string_append_printf (s,
-          "<a href=\"%s/%s\">%s</a>\n",
-          base_url, program->location, program->location);
     } else {
       g_string_append_printf (s,
-          "<div style=\"background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;\">currently unavailable</div>\n"
-          "<a href=\"%s/%s\">%s</a>\n",
-          base_url, program->location, program->location);
+          "<div style=\"background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;\">currently unavailable</div>\n");
     }
+    g_string_append_printf (s,
+        "<a href=\"%s/%s%s%s\">%s</a>\n",
+        base_url, program->location,
+        t->session ? "?session_id=" : "",
+        t->session ? t->session->session_id : "", program->location);
   }
 
   g_free (base_url);
