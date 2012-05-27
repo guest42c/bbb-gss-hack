@@ -118,7 +118,7 @@ struct _GssServerStream {
   int index;
   char *name;
   char *codecs;
-  char *mime_type;
+  char *content_type;
   char *playlist_name;
   const char *ext; /* filaname extension */
   const char *mod; /* stream modifier ('-main') */
@@ -319,9 +319,9 @@ void add_video_block (GssProgram *program, GString *s, int max_width,
 void gss_server_log (GssServer *server, char *message);
 
 void gss_server_add_static_file (SoupServer *soupserver, const char *filename,
-    const char *mime_type);
+    const char *content_type);
 void gss_server_add_static_string (SoupServer * soupserver,
-    const char *filename, const char *mime_type, const char *string);
+    const char *filename, const char *content_type, const char *string);
 
 void gss_server_add_resource (GssServer *server, const char *location,
     GssResourceFlags flags, const char *content_type,
@@ -330,9 +330,9 @@ void gss_server_add_resource (GssServer *server, const char *location,
     gpointer priv);
 void gss_server_remove_resource (GssServer *server, const char *location);
 void gss_server_add_file_resource (GssServer *server,
-    const char *filename, GssResourceFlags flags, const char *mime_type);
+    const char *filename, GssResourceFlags flags, const char *content_type);
 void gss_server_add_string_resource (GssServer * server, const char *filename,
-    GssResourceFlags flags, const char *mime_type, const char *string);
+    GssResourceFlags flags, const char *content_type, const char *string);
 
 
 GssMetrics * gss_metrics_new (void);

@@ -821,7 +821,7 @@ gss_stream_free (GssServerStream * stream)
   g_free (stream->name);
   g_free (stream->playlist_name);
   g_free (stream->codecs);
-  g_free (stream->mime_type);
+  g_free (stream->content_type);
   g_free (stream->follow_url);
 
   for (i = 0; i < N_CHUNKS; i++) {
@@ -945,7 +945,7 @@ stream_resource (GssTransaction * t)
   soup_message_headers_set_encoding (t->msg->response_headers,
       SOUP_ENCODING_EOF);
   soup_message_headers_replace (t->msg->response_headers, "Content-Type",
-      stream->mime_type);
+      stream->content_type);
 
   g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (msg_wrote_headers),
       connection);
@@ -1014,27 +1014,27 @@ gss_stream_new (int type, int width, int height, int bitrate)
 
   switch (type) {
     case GSS_SERVER_STREAM_OGG:
-      stream->mime_type = g_strdup ("video/ogg");
+      stream->content_type = g_strdup ("video/ogg");
       stream->mod = "";
       stream->ext = "ogv";
       break;
     case GSS_SERVER_STREAM_WEBM:
-      stream->mime_type = g_strdup ("video/webm");
+      stream->content_type = g_strdup ("video/webm");
       stream->mod = "";
       stream->ext = "webm";
       break;
     case GSS_SERVER_STREAM_TS:
-      stream->mime_type = g_strdup ("video/mp2t");
+      stream->content_type = g_strdup ("video/mp2t");
       stream->mod = "";
       stream->ext = "ts";
       break;
     case GSS_SERVER_STREAM_TS_MAIN:
-      stream->mime_type = g_strdup ("video/mp2t");
+      stream->content_type = g_strdup ("video/mp2t");
       stream->mod = "-main";
       stream->ext = "ts";
       break;
     case GSS_SERVER_STREAM_FLV:
-      stream->mime_type = g_strdup ("video/x-flv");
+      stream->content_type = g_strdup ("video/x-flv");
       stream->mod = "";
       stream->ext = "flv";
       break;
@@ -1089,7 +1089,7 @@ gss_program_add_stream_full (GssProgram * program,
       stream->ext);
   s = g_strdup_printf ("/%s", stream->name);
   gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
-      stream->mime_type, stream_resource, NULL, NULL, stream);
+      stream->content_type, stream_resource, NULL, NULL, stream);
   g_free (s);
 
   stream->playlist_name = g_strdup_printf ("%s-%dx%d-%dkbps%s-%s.m3u8",
@@ -1463,7 +1463,7 @@ file_callback (SoupServer * server, SoupMessage * msg,
   gboolean ret;
   gsize size;
   GError *error = NULL;
-  const char *mime_type = user_data;
+  const char *content_type = user_data;
 
   ret = g_file_get_contents (path + 1, &contents, &size, &error);
   if (!ret) {
@@ -1475,7 +1475,8 @@ file_callback (SoupServer * server, SoupMessage * msg,
 
   soup_message_set_status (msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (msg, mime_type, SOUP_MEMORY_TAKE, contents, size);
+  soup_message_set_response (msg, content_type, SOUP_MEMORY_TAKE, contents,
+      size);
 }
 #endif
 
