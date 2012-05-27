@@ -33,13 +33,18 @@ struct _GssServer;
 
 typedef struct _GssSession GssSession;
 struct _GssSession {
+  gint refcount;
   char *session_id;
   char *username;
   time_t last_time;
+  gboolean valid;
   gboolean is_admin;
 };
 
 GssSession * gss_session_new (const char *username);
+GssSession * gss_session_ref (GssSession *session);
+void gss_session_invalidate (GssSession *session);
+void gss_session_unref (GssSession *session);
 void gss_session_add_session_callbacks (struct _GssServer * server);
 void gss_session_notify_hosts_allow (const char *key, void *priv);
 gboolean gss_addr_address_check (SoupClientContext *context);

@@ -380,20 +380,39 @@ gss_session_create_id (void)
 
 #define SESSION_TIMEOUT 3600
 
+static gboolean
+__gss_session_is_valid (GssSession * session, time_t now)
+{
+  if (session->last_time + SESSION_TIMEOUT < now) {
+    return FALSE;
+  }
+  return session->valid;
+}
+
+gboolean
+gss_session_is_valid (GssSession * session)
+{
+  return __gss_session_is_valid (session, time (NULL));
+}
+
 GssSession *
 gss_session_lookup (const char *session_id)
 {
   GList *g;
   time_t now = time (NULL);
 
-  for (g = sessions; g; g = g_list_next (g)) {
+  g = sessions;
+  while (g) {
     GssSession *session = g->data;
-    if (strcmp (session->session_id, session_id) == 0) {
-      if (session->last_time + SESSION_TIMEOUT < now) {
-        continue;
-      }
-      return session;
+    if (!__gss_session_is_valid (session, now)) {
+      g = g_list_next (g);
+      gss_session_invalidate (session);
+      continue;
     }
+    if (strcmp (session->session_id, session_id) == 0) {
+      return gss_session_ref (session);
+    }
+    g = g_list_next (g);
   }
   return NULL;
 }
@@ -428,10 +447,30 @@ gss_session_new (const char *username)
   session->username = g_strdup (username);
   session->session_id = gss_session_create_id ();
   session->last_time = time (NULL);
+  session->valid = TRUE;
 
+  session->refcount = 1;
   sessions = g_list_prepend (sessions, session);
 
   return session;
+}
+
+GssSession *
+gss_session_ref (GssSession * session)
+{
+  session->refcount++;
+  return session;
+}
+
+void
+gss_session_unref (GssSession * session)
+{
+  session->refcount--;
+  if (session->refcount == 0) {
+    g_free (session->username);
+    g_free (session->session_id);
+    g_free (session);
+  }
 }
 
 #if 0
@@ -691,19 +730,21 @@ session_login_get_resource (GssTransaction * t)
   gss_html_footer (t);
 }
 
+void
+gss_session_invalidate (GssSession * session)
+{
+  session->valid = FALSE;
+  sessions = g_list_remove (sessions, session);
+  gss_session_unref (session);
+}
+
 static void
 session_logout_resource (GssTransaction * t)
 {
-
-  if (t->session == NULL) {
-    soup_message_headers_append (t->msg->response_headers, "Location",
-        "/login");
-    soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
-    return;
+  if (t->session) {
+    gss_session_invalidate (t->session);
   }
 
-  sessions = g_list_remove (sessions, t->session);
-
-  soup_message_headers_append (t->msg->response_headers, "Location", "/login");
+  soup_message_headers_append (t->msg->response_headers, "Location", "/");
   soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
 }
