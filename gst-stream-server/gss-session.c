@@ -64,7 +64,7 @@ static void session_logout_resource (GssTransaction * t);
 void
 gss_session_add_session_callbacks (GssServer * server)
 {
-  gss_server_add_resource (server, "/login", GSS_RESOURCE_HTTPS_ONLY,
+  gss_server_add_resource (server, "/login", 0,
       "text/html",
       session_login_get_resource, NULL, session_login_post_resource, NULL);
   gss_server_add_resource (server, "/logout", GSS_RESOURCE_HTTPS_ONLY,
@@ -493,12 +493,18 @@ browserid_verify_done (SoupSession * session, SoupMessage * msg,
   }
 
   node2 = json_object_get_member (object, "status");
+  if (node2 == NULL) {
+    goto err;
+  }
   s = json_node_get_string (node2);
   if (!s && strcmp (s, "okay") != 0) {
     goto err;
   }
 
   node2 = json_object_get_member (object, "email");
+  if (node2 == NULL) {
+    goto err;
+  }
   s = json_node_get_string (node2);
   if (!s) {
     goto err;
@@ -580,8 +586,8 @@ session_login_post_resource (GssTransaction * t)
       }
 
       s = g_strdup_printf
-          ("https://browserid.org/verify?assertion=%s&audience=localhost",
-          assertion);
+          ("https://browserid.org/verify?assertion=%s&audience=%s",
+          assertion, gss_transaction_get_base_url (t));
       client_msg = soup_message_new ("POST", s);
       g_free (s);
       soup_message_headers_replace (client_msg->request_headers,

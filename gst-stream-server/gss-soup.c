@@ -85,3 +85,12 @@ gss_soup_get_base_url_https (GssServer * server, SoupMessage * msg)
   return base_url;
 }
 
+char *
+gss_transaction_get_base_url (GssTransaction * t)
+{
+  if (t->soupserver == t->server->server) {
+    return gss_soup_get_base_url_http (t->server, t->msg);
+  } else {
+    return gss_soup_get_base_url_https (t->server, t->msg);
+  }
+}

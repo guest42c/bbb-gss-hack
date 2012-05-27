@@ -30,6 +30,7 @@ G_BEGIN_DECLS
 char *gss_soup_get_request_host (SoupMessage *message);
 char * gss_soup_get_base_url_http (GssServer *server, SoupMessage *msg);
 char * gss_soup_get_base_url_https (GssServer * server, SoupMessage * msg);
+char * gss_transaction_get_base_url (GssTransaction *t);
 
 
 G_END_DECLS

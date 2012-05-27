@@ -273,6 +273,7 @@ void
 gss_html_footer (GssTransaction * t)
 {
   GString *s = t->s;
+  char *base_url;
 
   g_string_append (s, "      <hr>\n" "      <footer>\n");
 
@@ -290,13 +291,14 @@ gss_html_footer (GssTransaction * t)
       "    <script src='/bootstrap/js/jquery.js'></script>\n"
       "    <script src='/bootstrap/js/bootstrap.js'></script>\n");
 
+  base_url = gss_soup_get_base_url_https (t->server, t->msg);
   g_string_append_printf (s,
       "<script type=\"text/javascript\">\n"
       "function gotAssertion(assertion) {\n"
       "if(assertion!==null){\n"
       "var form = document.createElement(\"form\");\n"
       "form.setAttribute('method', 'POST');\n"
-      "form.setAttribute('action', '%s/login?redirect_url=%s');\n"
+      "form.setAttribute('action', '/login?redirect_url=%s%s');\n"
       "var ip = document.createElement(\"input\");\n"
       "ip.setAttribute('type', 'hidden');\n"
       "ip.setAttribute('name', 'assertion');\n"
@@ -304,9 +306,8 @@ gss_html_footer (GssTransaction * t)
       "form.appendChild(ip);\n"
       "document.body.appendChild(form);\n" "form.submit();\n"
       //"document.body.removeChild(form);\n"
-      "}\n"
-      "}\n" "</script>\n", gss_soup_get_base_url_https (t->server, t->msg),
-      t->path);
+      "}\n" "}\n" "</script>\n", base_url, t->path);
+  g_free (base_url);
   g_string_append (s, "\n" "  </body>\n" "</html>\n");
 
 }
