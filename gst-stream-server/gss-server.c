@@ -1137,7 +1137,7 @@ resource_callback (SoupServer * soupserver, SoupMessage * msg,
   }
 
   if (resource->flags & GSS_RESOURCE_ADMIN) {
-    if (session == NULL || session->is_admin) {
+    if (session == NULL || !session->is_admin) {
       gss_html_error_404 (msg);
       return;
     }
