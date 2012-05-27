@@ -203,7 +203,6 @@ static void
 admin_resource_post (GssTransaction * t)
 {
   int type;
-  GString *s;
   int i;
 
   type = ADMIN_NONE;
@@ -222,147 +221,206 @@ admin_resource_post (GssTransaction * t)
     gss_config_handle_post (t->server->config, t->msg);
   }
 
+  if (t->resource->get_callback) {
+    t->resource->get_callback (t);
+  } else {
+    t->s = g_string_new ("");
+
+    gss_html_header (t);
+    g_string_append (t->s, "OK");
+    gss_html_footer (t);
+  }
+}
+
+static void
+admin_status_resource_get (GssTransaction * t)
+{
+  GString *s;
+
   t->s = s = g_string_new ("");
 
-  gss_html_header (t);
-  g_string_append (s, "OK");
-  gss_html_footer (t);
+  g_string_append (s, "OK\n");
+}
+
+static void
+admin_config_resource_get (GssTransaction * t)
+{
+  GString *s;
+
+  t->s = s = g_string_new ("");
+
+  gss_config_hash_to_string (s, t->server->config->hash);
 }
 
 static void
 admin_resource_get (GssTransaction * t)
 {
   GString *s;
-  int type;
-  int i;
-
-
-  type = ADMIN_NONE;
-  for (i = 0; i < G_N_ELEMENTS (admin_pages); i++) {
-    if (g_str_equal (admin_pages[i].location, t->path)) {
-      type = admin_pages[i].type;
-      break;
-    }
-  }
-  if (type == ADMIN_NONE) {
-    gss_html_error_404 (t->msg);
-    return;
-  }
 
   t->s = s = g_string_new ("");
 
-  if (type == ADMIN_STATUS) {
-    //mime_type = "text/plain";
-    g_string_append (s, "OK\n");
-  } else if (type == ADMIN_CONFIG) {
-    //mime_type = "text/plain";
-    gss_config_hash_to_string (s, t->server->config->hash);
-  } else {
-    gss_html_header (t);
-
-    if (t->msg->method == SOUP_METHOD_POST) {
-      g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
-    }
-
-    switch (type) {
-      case ADMIN_CONTROL:
+  gss_html_header (t);
 #if 0
-      {
-        int i;
-        for (i = 0; i < t->server->n_programs; i++) {
-          GssProgram *program = t->server->programs[i];
-          g_string_append_printf (s, "%s type=%d %s %s<br />\n",
-              program->location,
-              program->program_type, program->follow_uri, program->follow_host);
-        }
-      }
-#endif
-        gss_config_form_add_form (t->server, s, "/admin", "Control",
-            control_fields, t->session);
-        break;
-      case ADMIN_SERVER:
-        gss_config_form_add_form (t->server, s, "/admin/server",
-            "HTTP Server Configuration", server_fields, t->session);
-        break;
-      case ADMIN_LOG:
-      {
-        int i;
-        g_string_append_printf (s, "<pre>\n");
-        g_string_append_printf (s, "Streams:\n");
-        for (i = 0; i < t->server->n_programs; i++) {
-          GssProgram *program = t->server->programs[i];
-          GssServerStream *stream;
-          guint64 n_bytes_in = 0;
-          guint64 n_bytes_out = 0;
-          int j;
-
-          g_string_append_printf (s, "Program: %s\n", program->location);
-
-          for (j = 0; j < program->n_streams; j++) {
-            if (program->streams == NULL)
-              continue;
-            stream = program->streams[j];
-
-            gss_stream_get_stats (stream, &n_bytes_in, &n_bytes_out);
-
-            g_string_append_printf (s, "  %s clients=%d max_clients%d "
-                "bitrate=%" G_GUINT64_FORMAT " max_bitrate=%"
-                G_GUINT64_FORMAT " in=%" G_GUINT64_FORMAT " out=%"
-                G_GUINT64_FORMAT,
-                program->location,
-                program->metrics->n_clients,
-                program->metrics->max_clients,
-                program->metrics->bitrate,
-                program->metrics->max_bitrate, n_bytes_in, n_bytes_out);
-            gss_html_append_break (s);
-          }
-        }
-        g_string_append_printf (s, "</pre>\n");
-      }
-        {
-          GList *g;
-          g_string_append_printf (s, "<pre>\n");
-          g_string_append_printf (s, "Log:\n");
-          for (g = t->server->messages; g; g = g_list_next (g)) {
-            g_string_append_printf (s, "%s\n", (char *) g->data);
-          }
-          g_string_append_printf (s, "</pre>\n");
-        }
-        break;
-      case ADMIN_ADMIN:
-        g_string_append_printf (s, "Firmware Version: %s<br />\n",
-            gss_config_get (t->server->config, "version"));
-        g_string_append_printf (s,
-            "Configuration File: <a href=\"/admin/config?session_id=%s\">LINK</a><br />\n",
-            t->session->session_id);
-        gss_config_form_add_form (t->server, s, "/admin/admin_password",
-            "Admin Password", admin_password_fields, t->session);
-        gss_config_form_add_form (t->server, s, "/admin/editor_password",
-            "Editor Password", editor_password_fields, t->session);
-        gss_config_form_add_form (t->server, s, "/admin/upload_config",
-            "Configuration File", configuration_file_fields, t->session);
-        gss_config_form_add_form (t->server, s, "/admin/status",
-            "Upload Certificate", certificate_file_fields, t->session);
-        break;
-      case ADMIN_ACCESS:
-        gss_config_form_add_form (t->server, s, "/admin/access",
-            "Access Restrictions", access_fields, t->session);
-        break;
-      default:
-        break;
-    }
-
-    //g_string_append (s, "</div><!-- end content div -->\n");
-    gss_html_footer (t);
+  if (t->msg->method == SOUP_METHOD_POST) {
+    g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
   }
+#endif
+  gss_config_form_add_form (t->server, s, "/admin", "Control",
+      control_fields, t->session);
+
+  gss_html_footer (t);
+}
+
+static void
+admin_server_resource_get (GssTransaction * t)
+{
+  GString *s;
+
+  t->s = s = g_string_new ("");
+
+  gss_html_header (t);
+#if 0
+  if (t->msg->method == SOUP_METHOD_POST) {
+    g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
+  }
+#endif
+  gss_config_form_add_form (t->server, s, "/admin/server",
+      "HTTP Server Configuration", server_fields, t->session);
+
+  gss_html_footer (t);
+}
+
+static void
+admin_log_resource_get (GssTransaction * t)
+{
+  GString *s;
+
+  t->s = s = g_string_new ("");
+
+  gss_html_header (t);
+#if 0
+  if (t->msg->method == SOUP_METHOD_POST) {
+    g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
+  }
+#endif
+
+
+  {
+    int i;
+    g_string_append_printf (s, "<pre>\n");
+    g_string_append_printf (s, "Streams:\n");
+    for (i = 0; i < t->server->n_programs; i++) {
+      GssProgram *program = t->server->programs[i];
+      GssServerStream *stream;
+      guint64 n_bytes_in = 0;
+      guint64 n_bytes_out = 0;
+      int j;
+
+      g_string_append_printf (s, "Program: %s\n", program->location);
+
+      for (j = 0; j < program->n_streams; j++) {
+        if (program->streams == NULL)
+          continue;
+        stream = program->streams[j];
+
+        gss_stream_get_stats (stream, &n_bytes_in, &n_bytes_out);
+
+        g_string_append_printf (s, "  %s clients=%d max_clients%d "
+            "bitrate=%" G_GUINT64_FORMAT " max_bitrate=%"
+            G_GUINT64_FORMAT " in=%" G_GUINT64_FORMAT " out=%"
+            G_GUINT64_FORMAT,
+            program->location,
+            program->metrics->n_clients,
+            program->metrics->max_clients,
+            program->metrics->bitrate,
+            program->metrics->max_bitrate, n_bytes_in, n_bytes_out);
+        gss_html_append_break (s);
+      }
+    }
+    g_string_append_printf (s, "</pre>\n");
+  }
+  {
+    GList *g;
+    g_string_append_printf (s, "<pre>\n");
+    g_string_append_printf (s, "Log:\n");
+    for (g = t->server->messages; g; g = g_list_next (g)) {
+      g_string_append_printf (s, "%s\n", (char *) g->data);
+    }
+    g_string_append_printf (s, "</pre>\n");
+  }
+
+  gss_html_footer (t);
+}
+
+static void
+admin_admin_resource_get (GssTransaction * t)
+{
+  GString *s;
+
+  g_return_if_fail (t);
+  g_return_if_fail (t->session);
+
+  t->s = s = g_string_new ("");
+
+  gss_html_header (t);
+#if 0
+  if (t->msg->method == SOUP_METHOD_POST) {
+    g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
+  }
+#endif
+  g_string_append_printf (s, "Firmware Version: %s<br />\n",
+      gss_config_get (t->server->config, "version"));
+  g_string_append_printf (s,
+      "Configuration File: <a href=\"/admin/config?session_id=%s\">LINK</a><br />\n",
+      t->session->session_id);
+  gss_config_form_add_form (t->server, s, "/admin/admin_password",
+      "Admin Password", admin_password_fields, t->session);
+  gss_config_form_add_form (t->server, s, "/admin/editor_password",
+      "Editor Password", editor_password_fields, t->session);
+  gss_config_form_add_form (t->server, s, "/admin/upload_config",
+      "Configuration File", configuration_file_fields, t->session);
+  gss_config_form_add_form (t->server, s, "/admin/status",
+      "Upload Certificate", certificate_file_fields, t->session);
+
+  gss_html_footer (t);
+}
+
+static void
+admin_access_resource_get (GssTransaction * t)
+{
+  GString *s;
+
+  t->s = s = g_string_new ("");
+
+  gss_html_header (t);
+#if 0
+  if (t->msg->method == SOUP_METHOD_POST) {
+    g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
+  }
+#endif
+  gss_config_form_add_form (t->server, s, "/admin/access",
+      "Access Restrictions", access_fields, t->session);
+  gss_html_footer (t);
 }
 
 
 void
 ew_stream_server_add_admin_callbacks (GssServer * server)
 {
-  gss_server_add_resource (server, "/admin", 0,
+  gss_server_add_resource (server, "/admin", GSS_RESOURCE_ADMIN,
       "text/html", admin_resource_get, NULL, admin_resource_post, NULL);
+  gss_server_add_resource (server, "/admin/server", GSS_RESOURCE_ADMIN,
+      "text/html", admin_server_resource_get, NULL, admin_resource_post, NULL);
+  gss_server_add_resource (server, "/admin/admin", GSS_RESOURCE_ADMIN,
+      "text/html", admin_admin_resource_get, NULL, admin_resource_post, NULL);
+  gss_server_add_resource (server, "/admin/log", GSS_RESOURCE_ADMIN,
+      "text/html", admin_log_resource_get, NULL, admin_resource_post, NULL);
+  gss_server_add_resource (server, "/admin/status", GSS_RESOURCE_ADMIN,
+      "text/plain", admin_status_resource_get, NULL, admin_resource_post, NULL);
+  gss_server_add_resource (server, "/admin/config", GSS_RESOURCE_ADMIN,
+      "text/plain", admin_config_resource_get, NULL, admin_resource_post, NULL);
+  gss_server_add_resource (server, "/admin/access", GSS_RESOURCE_ADMIN,
+      "text/html", admin_access_resource_get, NULL, admin_resource_post, NULL);
 }
 
 
