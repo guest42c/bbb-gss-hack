@@ -845,14 +845,23 @@ gss_stream_free (GssServerStream * stream)
   if (stream->hls.index_buffer) {
     soup_buffer_free (stream->hls.index_buffer);
   }
+#define CLEANUP(x) do { \
+  if (x) { \
+    if (verbose && GST_OBJECT_REFCOUNT (x) != 1) \
+      g_print( #x "refcount %d\n", GST_OBJECT_REFCOUNT (x)); \
+    g_object_unref (x); \
+  } \
+} while (0)
 
   gss_stream_set_sink (stream, NULL);
+  CLEANUP (stream->src);
+  CLEANUP (stream->sink);
+  CLEANUP (stream->adapter);
+  CLEANUP (stream->rtsp_stream);
   if (stream->pipeline) {
     gst_element_set_state (GST_ELEMENT (stream->pipeline), GST_STATE_NULL);
-    g_object_unref (stream->pipeline);
+    CLEANUP (stream->pipeline);
   }
-  if (stream->sink)
-    g_object_unref (stream->sink);
   if (stream->adapter)
     g_object_unref (stream->adapter);
   gss_metrics_free (stream->metrics);
@@ -1255,6 +1264,14 @@ struct _GssOnetimeResource
 };
 
 static void
+onetime_destroy (gpointer priv)
+{
+  GssOnetimeResource *or = (GssOnetimeResource *) priv;
+
+  g_source_remove (or->timeout_id);
+}
+
+static void
 onetime_redirect (GssTransaction * t)
 {
   GssOnetimeResource *or;
@@ -1269,6 +1286,7 @@ onetime_redirect (GssTransaction * t)
   g_free (id);
   or->resource.flags = 0;
   or->resource.get_callback = onetime_resource;
+  or->resource.destroy = onetime_destroy;
 
   or->underlying_resource = t->resource;
   or->server = t->server;
@@ -1292,7 +1310,6 @@ onetime_expire (gpointer priv)
   GssOnetimeResource *or = (GssOnetimeResource *) priv;
 
   gss_server_remove_resource (or->server, or->resource.location);
-  g_free (or);
 
   return FALSE;
 }
@@ -1307,8 +1324,6 @@ onetime_resource (GssTransaction * t)
   r->get_callback (t);
 
   gss_server_remove_resource (t->server, or->resource.location);
-  g_source_remove (or->timeout_id);
-  g_free (or);
 }
 
 static void
@@ -1735,11 +1750,10 @@ program_put_resource (GssTransaction * t)
   }
 #endif
 
-  soup_message_headers_foreach (t->msg->request_headers, dump_header, NULL);
+  //soup_message_headers_foreach (t->msg->request_headers, dump_header, NULL);
 
   is_icecast = FALSE;
   if (soup_message_headers_get_one (t->msg->request_headers, "ice-name")) {
-    g_print ("is icecast\n");
     is_icecast = TRUE;
   }
 
@@ -1803,6 +1817,7 @@ program_put_resource (GssTransaction * t)
           t->msg->request_body->length);
 
       g_signal_emit_by_name (stream->src, "push-buffer", buffer, &flow_ret);
+      gst_buffer_unref (buffer);
     }
   }
 
