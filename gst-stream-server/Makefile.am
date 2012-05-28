@@ -8,7 +8,8 @@ libgss_@GST_MAJORMINOR@_la_LIBS = $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIB
 libgss_@GST_MAJORMINOR@_la_LDFLAGS = \
 	-version-info $(GSS_LIBVERSION) \
 	-no-undefined -export-symbols-regex 'gss_'
-libgss_@GST_MAJORMINOR@_la_SOURCES = \
+libgss_@GST_MAJORMINOR@_la_SOURCES = $(libgss_la_SOURCES)
+libgss_la_SOURCES = \
 	gss-hls-server.c \
 	gss-server.c \
 	gss-session.c \
@@ -21,6 +22,11 @@ libgss_@GST_MAJORMINOR@_la_SOURCES = \
 	gss-content.c \
 	gss-content.h
 	
+
+noinst_LTLIBRARIES = libgss.la
+
+libgss_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS) $(JSON_GLIB_CFLAGS)
+libgss_la_LIBS = $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS) $(JSON_GLIB_LIBS)
 
 gss_include_HEADERS = \
 	gss-hls-server.h \
