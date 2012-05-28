@@ -1319,7 +1319,8 @@ onetime_redirect (GssTransaction * t)
   g_free (base_url);
   soup_message_headers_append (t->msg->response_headers, "Location", url);
   soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
-  g_free (url);
+  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
+      url, strlen (url));
 }
 
 static gboolean
@@ -1361,14 +1362,7 @@ static void
 main_page_resource (GssTransaction * t)
 {
   GString *s;
-  char *base_url;
   int i;
-
-  if (t->soupserver == t->server->ssl_server) {
-    base_url = gss_soup_get_base_url_http (t->server, t->msg);
-  } else {
-    base_url = g_strdup ("");
-  }
 
   s = t->s = g_string_new ("");
 
@@ -1381,20 +1375,17 @@ main_page_resource (GssTransaction * t)
     gss_html_append_break (s);
     if (program->running) {
       gss_html_append_image_printf (s,
-          "%s/%s-snapshot.jpeg", 0, 0, "snapshot image", base_url,
-          program->location);
+          "/%s-snapshot.jpeg", 0, 0, "snapshot image", program->location);
     } else {
       g_string_append_printf (s,
           "<div style=\"background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;\">currently unavailable</div>\n");
     }
     g_string_append_printf (s,
-        "<a href=\"%s/%s%s%s\">%s</a>\n",
-        base_url, program->location,
+        "<a href=\"/%s%s%s\">%s</a>\n",
+        program->location,
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "", program->location);
   }
-
-  g_free (base_url);
 
   gss_html_footer (t);
 }
