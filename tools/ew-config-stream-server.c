@@ -166,56 +166,9 @@ GssField certificate_file_fields[] = {
 };
 
 
-enum
-{
-  ADMIN_NONE = 0,
-  ADMIN_CONTROL,
-  ADMIN_SERVER,
-  ADMIN_ADMIN,
-  ADMIN_LOG,
-  ADMIN_STATUS,
-  ADMIN_CONFIG,
-  ADMIN_ACCESS
-};
-
-typedef struct _AdminPage AdminPage;
-struct _AdminPage
-{
-  const char *location;
-  int type;
-  gboolean admin_only;
-};
-
-AdminPage admin_pages[] = {
-  {"/admin", ADMIN_CONTROL, FALSE},
-  {"/admin/", ADMIN_CONTROL, FALSE},
-  {"/admin/server", ADMIN_SERVER, TRUE},
-  {"/admin/admin", ADMIN_ADMIN, TRUE},
-  {"/admin/admin_password", ADMIN_ADMIN, TRUE},
-  {"/admin/editor_password", ADMIN_ADMIN, FALSE},
-  {"/admin/log", ADMIN_LOG, TRUE},
-  {"/admin/status", ADMIN_STATUS, FALSE},
-  {"/admin/config", ADMIN_CONFIG, TRUE},
-  {"/admin/access", ADMIN_ACCESS, TRUE}
-};
-
 static void
 admin_resource_post (GssTransaction * t)
 {
-  int type;
-  int i;
-
-  type = ADMIN_NONE;
-  for (i = 0; i < G_N_ELEMENTS (admin_pages); i++) {
-    if (g_str_equal (admin_pages[i].location, t->path)) {
-      type = admin_pages[i].type;
-      break;
-    }
-  }
-  if (type == ADMIN_NONE) {
-    gss_html_error_404 (t->msg);
-    return;
-  }
 
   if (t->msg->method == SOUP_METHOD_POST) {
     gss_config_handle_post (t->server->config, t->msg);
