@@ -425,8 +425,6 @@ ew_stream_server_add_admin_callbacks (GssServer * server)
 
 
 GssConfigDefault config_defaults[] = {
-  {"mode", "streamer"},
-
   /* master enable */
   {"enable_streaming", "on"},
 
@@ -434,18 +432,6 @@ GssConfigDefault config_defaults[] = {
   {"server_name", ""},
   {"max_connections", "10000"},
   {"max_bandwidth", "100000"},
-
-  /* Ethernet config */
-  {"eth0_name", "entropywave"},
-  {"eth0_config", "manual"},
-  {"eth0_ipaddr", "192.168.0.10"},
-  {"eth0_netmask", "255.255.255.0"},
-  {"eth0_gateway", "192.168.0.1"},
-  {"eth1_name", "entropywave"},
-  {"eth1_config", "manual"},
-  {"eth1_ipaddr", "192.168.1.10"},
-  {"eth1_netmask", "255.255.255.0"},
-  {"eth1_gateway", "192.168.1.1"},
 
   {NULL, NULL}
 };
