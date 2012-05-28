@@ -328,6 +328,9 @@ void gss_server_add_resource (GssServer *server, const char *location,
 void gss_server_remove_resource (GssServer *server, const char *location);
 void gss_server_add_file_resource (GssServer *server,
     const char *filename, GssResourceFlags flags, const char *content_type);
+void gss_server_add_static_resource (GssServer * server, const char *filename,
+    GssResourceFlags flags, const char *content_type, const char *string,
+    int len);
 void gss_server_add_string_resource (GssServer * server, const char *filename,
     GssResourceFlags flags, const char *content_type, const char *string);
 

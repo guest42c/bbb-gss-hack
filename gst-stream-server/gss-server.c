@@ -26,6 +26,7 @@
 #include "gss-session.h"
 #include "gss-soup.h"
 #include "gss-rtsp.h"
+#include "gss-content.h"
 
 #include <glib/gstdio.h>
 
@@ -487,28 +488,34 @@ setup_paths (GssServer * server)
         "application/javascript");
   }
 
-  gss_server_add_file_resource (server, "/images/footer-entropywave.png",
-      0, "image/png");
+  gss_server_add_static_resource (server, "/images/footer-entropywave.png",
+      0, "image/png",
+      gss_data_footer_entropywave_png, gss_data_footer_entropywave_png_len);
 
   gss_server_add_string_resource (server, "/robots.txt", 0,
       "text/plain", "User-agent: *\nDisallow: /\n");
 
-  gss_server_add_file_resource (server, "/include.js", 0, "text/javascript");
-
-  gss_server_add_file_resource (server,
-      "/bootstrap/css/bootstrap-responsive.css", 0, "text/css");
-  gss_server_add_file_resource (server,
-      "/bootstrap/css/bootstrap.css", 0, "text/css");
-
-  gss_server_add_file_resource (server,
-      "/bootstrap/js/bootstrap.js", 0, "text/javascript");
-  gss_server_add_file_resource (server,
-      "/bootstrap/js/jquery.js", 0, "text/javascript");
-
-  gss_server_add_file_resource (server,
-      "/bootstrap/img/glyphicons-halflings.png", 0, "image/png");
-  gss_server_add_file_resource (server,
-      "/bootstrap/img/glyphicons-halflings-white.png", 0, "image/png");
+  gss_server_add_static_resource (server, "/include.js", 0,
+      "text/javascript", gss_data_include_js, gss_data_include_js_len);
+  gss_server_add_static_resource (server,
+      "/bootstrap/css/bootstrap-responsive.css", 0, "text/css",
+      gss_data_bootstrap_responsive_css, gss_data_bootstrap_responsive_css_len);
+  gss_server_add_static_resource (server,
+      "/bootstrap/css/bootstrap.css", 0, "text/css",
+      gss_data_bootstrap_css, gss_data_bootstrap_css_len);
+  gss_server_add_static_resource (server,
+      "/bootstrap/js/bootstrap.js", 0, "text/javascript",
+      gss_data_bootstrap_js, gss_data_bootstrap_js_len);
+  gss_server_add_static_resource (server,
+      "/bootstrap/js/jquery.js", 0, "text/javascript",
+      gss_data_jquery_js, gss_data_jquery_js_len);
+  gss_server_add_static_resource (server,
+      "/bootstrap/img/glyphicons-halflings.png", 0, "image/png",
+      gss_data_glyphicons_halflings_png, gss_data_glyphicons_halflings_png_len);
+  gss_server_add_static_resource (server,
+      "/bootstrap/img/glyphicons-halflings-white.png", 0, "image/png",
+      gss_data_glyphicons_halflings_white_png,
+      gss_data_glyphicons_halflings_white_png_len);
 }
 
 typedef struct _GssStaticResource GssStaticResource;
@@ -517,14 +524,15 @@ struct _GssStaticResource
   GssResource resource;
 
   const char *filename;
-  char *contents;
+  const char *contents;
+  char *malloc_contents;
   gsize size;
 };
 
 static void
 gss_static_resource_destroy (GssStaticResource * sr)
 {
-  g_free (sr->contents);
+  g_free (sr->malloc_contents);
 }
 
 static void
@@ -585,6 +593,7 @@ gss_server_add_file_resource (GssServer * server,
   sr->filename = filename;
   sr->resource.content_type = content_type;
   sr->contents = contents;
+  sr->malloc_contents = contents;
   sr->size = size;
 
   sr->resource.destroy = (GDestroyNotify) gss_static_resource_destroy;
@@ -598,8 +607,9 @@ gss_server_add_file_resource (GssServer * server,
 }
 
 void
-gss_server_add_string_resource (GssServer * server, const char *filename,
-    GssResourceFlags flags, const char *content_type, const char *string)
+gss_server_add_static_resource (GssServer * server, const char *filename,
+    GssResourceFlags flags, const char *content_type, const char *string,
+    int len)
 {
   GssStaticResource *sr;
 
@@ -607,8 +617,8 @@ gss_server_add_string_resource (GssServer * server, const char *filename,
 
   sr->filename = filename;
   sr->resource.content_type = content_type;
-  sr->contents = g_strdup (string);
-  sr->size = strlen (string);
+  sr->contents = string;
+  sr->size = len;
   generate_etag (sr);
 
   sr->resource.destroy = (GDestroyNotify) gss_static_resource_destroy;
@@ -618,6 +628,14 @@ gss_server_add_string_resource (GssServer * server, const char *filename,
 
   g_hash_table_replace (server->resources, sr->resource.location,
       (GssResource *) sr);
+}
+
+void
+gss_server_add_string_resource (GssServer * server, const char *filename,
+    GssResourceFlags flags, const char *content_type, const char *string)
+{
+  gss_server_add_static_resource (server, filename, flags,
+      content_type, string, strlen (string));
 }
 
 static void
