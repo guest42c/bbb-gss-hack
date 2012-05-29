@@ -516,6 +516,12 @@ setup_paths (GssServer * server)
       "/bootstrap/img/glyphicons-halflings-white.png", 0, "image/png",
       gss_data_glyphicons_halflings_white_png,
       gss_data_glyphicons_halflings_white_png_len);
+  gss_server_add_static_resource (server,
+      "/no-snapshot.png", 0, "image/png",
+      gss_data_no_snapshot_png, gss_data_no_snapshot_png_len);
+  gss_server_add_static_resource (server,
+      "/offline.png", 0, "image/png",
+      gss_data_offline_png, gss_data_offline_png_len);
 }
 
 typedef struct _GssStaticResource GssStaticResource;
@@ -1368,24 +1374,35 @@ main_page_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  g_string_append_printf (s, "<h1>Available Streams</h1>\n");
+  g_string_append_printf (s, "<h2>Available Programs</h2>\n");
 
+  g_string_append_printf (s, "<ul class='thumbnails'>\n");
   for (i = 0; i < t->server->n_programs; i++) {
     GssProgram *program = t->server->programs[i];
-    gss_html_append_break (s);
-    if (program->running) {
-      gss_html_append_image_printf (s,
-          "/%s-snapshot.jpeg", 0, 0, "snapshot image", program->location);
-    } else {
-      g_string_append_printf (s,
-          "<div style=\"background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;\">currently unavailable</div>\n");
-    }
+
+    g_string_append_printf (s, "<li class='span4'>\n");
+    g_string_append_printf (s, "<div class='thumbnail'>\n");
     g_string_append_printf (s,
-        "<a href=\"/%s%s%s\">%s</a>\n",
+        "<a href=\"/%s%s%s\">",
         program->location,
         t->session ? "?session_id=" : "",
-        t->session ? t->session->session_id : "", program->location);
+        t->session ? t->session->session_id : "");
+    if (program->running) {
+      if (program->jpegsink) {
+        gss_html_append_image_printf (s,
+            "/%s-snapshot.jpeg", 0, 0, "snapshot image", program->location);
+      } else {
+        g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
+      }
+    } else {
+      g_string_append_printf (s, "<img src='/offline.png'>\n");
+    }
+    g_string_append_printf (s, "</a>\n");
+    g_string_append_printf (s, "<h5>%s</h5>\n", program->location);
+    g_string_append_printf (s, "</div>\n");
+    g_string_append_printf (s, "</li>\n");
   }
+  g_string_append_printf (s, "</ul>\n");
 
   gss_html_footer (t);
 }
@@ -1538,8 +1555,7 @@ add_video_block (GssProgram * program, GString * s, int max_width,
   int flash_only = TRUE;
 
   if (!program->running) {
-    g_string_append_printf (s,
-        "<div style=\"background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;vertical-align:middle;\">currently unavailable</div>\n");
+    g_string_append_printf (s, "<img src='/offline.png'>\n");
   }
 
   for (i = 0; i < program->n_streams; i++) {

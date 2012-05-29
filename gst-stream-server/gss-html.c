@@ -254,7 +254,7 @@ gss_html_bootstrap_doc (GssTransaction * t)
 
   g_string_append (s,
       "          <div class='hero-unit'>\n"
-      "              <div style='background-color:#000000;color:#ffffff;width:320px;height:180px;text-align:center;'>currently unavailable</div>\n"
+      "              <img src='/offline.png'>\n"
       "            <p>Content #1.</p>\n"
       "            <p><a class='btn btn-primary btn-large'>Learn more &raquo;</a></p>\n"
       "          </div>\n");
