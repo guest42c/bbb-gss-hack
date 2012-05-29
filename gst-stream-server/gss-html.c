@@ -229,15 +229,17 @@ gss_html_header (GssTransaction * t)
         session_id, session_id, session_id);
   }
   if (t->session && t->session->is_admin) {
-    g_string_append_printf (s,
-        "              <li class='nav-header'>Administration</li>\n"
-        "              <li><a href='/admin/access%s'>Access Control</a></li>\n"
-        "              <li><a href='/admin/admin_password%s'>Password</a></li>\n"
-        "              <li><a href='/admin/admin%s'>Certificate</a></li>\n"
-        "              <li class='nav-header'>Other</li>\n"
-        "              <li><a href='/monitor%s'>Monitor</a></li>\n"
-        "              <li><a href='/meep%s'>Meep</a></li>\n",
-        session_id, session_id, session_id, session_id, session_id);
+    GList *g;
+
+    g_string_append (s,
+        "              <li class='nav-header'>Administration</li>\n");
+
+    for (g = t->server->admin_resources; g; g = g_list_next (g)) {
+      GssResource *r = (GssResource *) g->data;
+      g_string_append_printf (s,
+          "              <li><a href='%s%s'>%s</a></li>\n",
+          r->location, session_id, r->name);
+    }
   }
   g_string_append (s,
       "            </ul>\n"

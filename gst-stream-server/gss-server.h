@@ -181,6 +181,7 @@ typedef void (GssTransactionCallback)(GssTransaction *transaction);
 struct _GssResource {
   char *location;
   char *etag;
+  char *name;
   const char *content_type;
 
   GssResourceFlags flags;
@@ -257,6 +258,8 @@ struct _GssServer
 
   GssFooterHtml *footer_html;
   void *footer_html_priv;
+
+  GList *admin_resources;
 };
 
 struct _GssServerClass
@@ -320,7 +323,7 @@ void gss_server_add_static_file (SoupServer *soupserver, const char *filename,
 void gss_server_add_static_string (SoupServer * soupserver,
     const char *filename, const char *content_type, const char *string);
 
-void gss_server_add_resource (GssServer *server, const char *location,
+GssResource *gss_server_add_resource (GssServer *server, const char *location,
     GssResourceFlags flags, const char *content_type,
     GssTransactionCallback get_callback,
     GssTransactionCallback put_callback, GssTransactionCallback post_callback,
@@ -333,6 +336,9 @@ void gss_server_add_static_resource (GssServer * server, const char *filename,
     int len);
 void gss_server_add_string_resource (GssServer * server, const char *filename,
     GssResourceFlags flags, const char *content_type, const char *string);
+
+void gss_server_add_admin_resource (GssServer * server, GssResource *resource,
+    const char *name);
 
 
 GssMetrics * gss_metrics_new (void);

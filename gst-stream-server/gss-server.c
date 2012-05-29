@@ -415,6 +415,7 @@ gss_server_new (void)
 static void
 gss_resource_free (GssResource * resource)
 {
+  g_free (resource->name);
   g_free (resource->etag);
   if (resource->destroy) {
     resource->destroy (resource);
@@ -422,7 +423,7 @@ gss_resource_free (GssResource * resource)
   g_free (resource);
 }
 
-void
+GssResource *
 gss_server_add_resource (GssServer * server, const char *location,
     GssResourceFlags flags, const char *content_type,
     GssTransactionCallback get_callback,
@@ -441,6 +442,8 @@ gss_server_add_resource (GssServer * server, const char *location,
   resource->priv = priv;
 
   g_hash_table_replace (server->resources, resource->location, resource);
+
+  return resource;
 }
 
 void
@@ -1381,6 +1384,7 @@ main_page_resource (GssTransaction * t)
     GssProgram *program = t->server->programs[i];
 
     g_string_append_printf (s, "<li class='span4'>\n");
+    //g_string_append_printf (s, "<div class='well' style='width:1000;'>\n");
     g_string_append_printf (s, "<div class='thumbnail'>\n");
     g_string_append_printf (s,
         "<a href=\"/%s%s%s\">",
@@ -2456,4 +2460,12 @@ gss_program_icecast (GssProgram * program)
 
   program->restart_delay = 0;
 
+}
+
+void
+gss_server_add_admin_resource (GssServer * server, GssResource * resource,
+    const char *name)
+{
+  resource->name = g_strdup (name);
+  server->admin_resources = g_list_append (server->admin_resources, resource);
 }

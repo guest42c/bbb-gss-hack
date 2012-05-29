@@ -31,11 +31,13 @@
 #include <glib-object.h>
 
 
+static int enable_machine = TRUE;
+
+
 static void admin_resource_get (GssTransaction * t);
 
 GssField control_fields[] = {
   {GSS_FIELD_SECTION, NULL, "Control"},
-  {GSS_FIELD_CHECKBOX, "enable_streaming", "Enable Public Streaming", "on", 1},
   {GSS_FIELD_SECTION, NULL, "Program #0"},
   {GSS_FIELD_ENABLE, "stream0", "enable"},
   {GSS_FIELD_TEXT_INPUT, "stream0_name", "Stream Name", "stream0", 0},
@@ -113,6 +115,7 @@ GssField control_fields[] = {
 
 GssField server_fields[] = {
   {GSS_FIELD_SECTION, NULL, "HTTP Server Configuration"},
+  {GSS_FIELD_CHECKBOX, "enable_streaming", "Enable Public Streaming", "on", 1},
   {GSS_FIELD_CHECKBOX, "enable_public_ui", "Enable public user interface", "on",
       0},
 
@@ -142,28 +145,42 @@ GssField admin_password_fields[] = {
   {GSS_FIELD_NONE}
 };
 
-GssField editor_password_fields[] = {
-  {GSS_FIELD_SECTION, NULL, "Editor Password"},
-  {GSS_FIELD_PASSWORD, "editor_token0", "Password", "", 0},
-  {GSS_FIELD_PASSWORD, "editor_token1", "Retype", "", 0},
-  {GSS_FIELD_SUBMIT, "submit", "Change Password", NULL, 1},
+GssField configuration_file_fields[] = {
+  {GSS_FIELD_SECTION, NULL, "Configuration File"},
+  {GSS_FIELD_FILE, "config_file", "Configuration", "config", 0},
+  {GSS_FIELD_SUBMIT, "submit", "Upload File", NULL, 1},
   {GSS_FIELD_NONE}
 };
 
-GssField configuration_file_fields[] = {
-  {GSS_FIELD_SECTION, NULL, "Configuration File"},
-  {GSS_FIELD_FILE, "config_file", "Upload Config", "config", 0},
-  {GSS_FIELD_SUBMIT, "submit", "Upload Configuration", NULL, 1},
+GssField firmware_file_fields[] = {
+  {GSS_FIELD_SECTION, NULL, "Firmware Update"},
+  {GSS_FIELD_FILE, "firmware_file", "Upload File", "config", 0},
+  {GSS_FIELD_SUBMIT, "submit", "Update Firmware", NULL, 1},
   {GSS_FIELD_NONE}
 };
 
 GssField certificate_file_fields[] = {
   {GSS_FIELD_SECTION, NULL, "Certificate Upload"},
-  {GSS_FIELD_FILE, "cert_file", "Upload Certificate", "server.crt", 0},
-  {GSS_FIELD_FILE, "key_file", "Upload Key", "server.key", 0},
-  {GSS_FIELD_SUBMIT, "submit", "Update Files", NULL, 1},
+  {GSS_FIELD_FILE, "cert_file", "Certificate", "server.crt", 0},
+  {GSS_FIELD_FILE, "key_file", "Key", "server.key", 0},
+  {GSS_FIELD_SUBMIT, "submit", "Upload Files", NULL, 1},
   {GSS_FIELD_NONE}
 };
+
+GssField reboot_fields[] = {
+  {GSS_FIELD_SECTION, NULL, "Reboot Machine"},
+  {GSS_FIELD_HIDDEN, "reboot", NULL, "yes", 0},
+  {GSS_FIELD_SUBMIT, "submit", "Reboot", NULL, 1},
+  {GSS_FIELD_NONE}
+};
+
+GssField poweroff_fields[] = {
+  {GSS_FIELD_SECTION, NULL, "Power Off Machine"},
+  {GSS_FIELD_HIDDEN, "poweroff", NULL, "yes", 0},
+  {GSS_FIELD_SUBMIT, "submit", "Power Off", NULL, 1},
+  {GSS_FIELD_NONE}
+};
+
 
 
 static void
@@ -239,6 +256,10 @@ admin_server_resource_get (GssTransaction * t)
 #endif
   gss_config_form_add_form (t->server, s, "/admin/server",
       "HTTP Server Configuration", server_fields, t->session);
+  gss_config_form_add_form (t->server, s, "/admin/access",
+      "Access Restrictions", access_fields, t->session);
+  gss_config_form_add_form (t->server, s, "/admin/status",
+      "Upload Certificate", certificate_file_fields, t->session);
 
   gss_html_footer (t);
 }
@@ -260,8 +281,8 @@ admin_log_resource_get (GssTransaction * t)
 
   {
     int i;
+    g_string_append_printf (s, "<h2>Programs</h2>\n");
     g_string_append_printf (s, "<pre>\n");
-    g_string_append_printf (s, "Streams:\n");
     for (i = 0; i < t->server->n_programs; i++) {
       GssProgram *program = t->server->programs[i];
       GssServerStream *stream;
@@ -294,8 +315,8 @@ admin_log_resource_get (GssTransaction * t)
   }
   {
     GList *g;
+    g_string_append_printf (s, "<h2>Log</h2>\n");
     g_string_append_printf (s, "<pre>\n");
-    g_string_append_printf (s, "Log:\n");
     for (g = t->server->messages; g; g = g_list_next (g)) {
       g_string_append_printf (s, "%s\n", (char *) g->data);
     }
@@ -321,27 +342,24 @@ admin_admin_resource_get (GssTransaction * t)
     g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
   }
 #endif
-  g_string_append_printf (s, "Firmware Version: %s<br />\n",
-      gss_config_get (t->server->config, "version"));
   g_string_append_printf (s,
       "Configuration File: <a href=\"/admin/config?session_id=%s\">LINK</a><br />\n",
       t->session->session_id);
   gss_config_form_add_form (t->server, s, "/admin/admin_password",
       "Admin Password", admin_password_fields, t->session);
-  gss_config_form_add_form (t->server, s, "/admin/editor_password",
-      "Editor Password", editor_password_fields, t->session);
   gss_config_form_add_form (t->server, s, "/admin/upload_config",
       "Configuration File", configuration_file_fields, t->session);
-  gss_config_form_add_form (t->server, s, "/admin/status",
-      "Upload Certificate", certificate_file_fields, t->session);
 
   gss_html_footer (t);
 }
 
 static void
-admin_access_resource_get (GssTransaction * t)
+admin_machine_resource_get (GssTransaction * t)
 {
   GString *s;
+
+  g_return_if_fail (t);
+  g_return_if_fail (t->session);
 
   t->s = s = g_string_new ("");
 
@@ -351,8 +369,16 @@ admin_access_resource_get (GssTransaction * t)
     g_string_append_printf (s, "<br />Configuration Updated!<br /><br />\n");
   }
 #endif
-  gss_config_form_add_form (t->server, s, "/admin/access",
-      "Access Restrictions", access_fields, t->session);
+  g_string_append_printf (s, "Firmware Version: %s<br />\n",
+      gss_config_get (t->server->config, "version"));
+  gss_config_form_add_form (t->server, s, "/admin/machine",
+      "Firmware file", firmware_file_fields, t->session);
+  gss_config_form_add_form (t->server, s, "/admin/machine", "Reboot",
+      reboot_fields, t->session);
+  gss_config_form_add_form (t->server, s, "/admin/machine", "Power Off",
+      poweroff_fields, t->session);
+
+
   gss_html_footer (t);
 }
 
@@ -360,31 +386,47 @@ admin_access_resource_get (GssTransaction * t)
 void
 ew_stream_server_add_admin_callbacks (GssServer * server)
 {
-  gss_server_add_resource (server, "/admin", GSS_RESOURCE_ADMIN,
+  GssResource *r;
+
+  r = gss_server_add_resource (server, "/admin", GSS_RESOURCE_ADMIN,
       "text/html", admin_resource_get, NULL, admin_resource_post, NULL);
-  gss_server_add_resource (server, "/admin/server", GSS_RESOURCE_ADMIN,
+  gss_server_add_admin_resource (server, r, "Programs");
+  r = gss_server_add_resource (server, "/admin/server", GSS_RESOURCE_ADMIN,
       "text/html", admin_server_resource_get, NULL, admin_resource_post, NULL);
-  gss_server_add_resource (server, "/admin/admin", GSS_RESOURCE_ADMIN,
+  gss_server_add_admin_resource (server, r, "Server");
+  r = gss_server_add_resource (server, "/admin/admin", GSS_RESOURCE_ADMIN,
       "text/html", admin_admin_resource_get, NULL, admin_resource_post, NULL);
-  gss_server_add_resource (server, "/admin/log", GSS_RESOURCE_ADMIN,
+  gss_server_add_admin_resource (server, r, "Administration");
+  r = gss_server_add_resource (server, "/admin/log", GSS_RESOURCE_ADMIN,
       "text/html", admin_log_resource_get, NULL, admin_resource_post, NULL);
-  gss_server_add_resource (server, "/admin/status", GSS_RESOURCE_ADMIN,
+  gss_server_add_admin_resource (server, r, "Log");
+  r = gss_server_add_resource (server, "/admin/status", GSS_RESOURCE_ADMIN,
       "text/plain", admin_status_resource_get, NULL, admin_resource_post, NULL);
-  gss_server_add_resource (server, "/admin/config", GSS_RESOURCE_ADMIN,
+  r = gss_server_add_resource (server, "/admin/config", GSS_RESOURCE_ADMIN,
       "text/plain", admin_config_resource_get, NULL, admin_resource_post, NULL);
-  gss_server_add_resource (server, "/admin/access", GSS_RESOURCE_ADMIN,
-      "text/html", admin_access_resource_get, NULL, admin_resource_post, NULL);
+
+  /* This is for machine control, i.e., in the S1000 */
+  if (enable_machine) {
+    r = gss_server_add_resource (server, "/admin/machine", GSS_RESOURCE_ADMIN,
+        "text/html", admin_machine_resource_get, NULL, admin_resource_post,
+        NULL);
+    gss_server_add_admin_resource (server, r, "Machine");
+  }
 }
 
 
 GssConfigDefault config_defaults[] = {
   /* master enable */
-  {"enable_streaming", "on"},
+  {"enable_streaming", "on"}
+  ,
 
   /* web server config */
-  {"server_name", ""},
-  {"max_connections", "10000"},
-  {"max_bandwidth", "100000"},
+  {"server_name", ""}
+  ,
+  {"max_connections", "10000"}
+  ,
+  {"max_bandwidth", "100000"}
+  ,
 
   {NULL, NULL}
 };
