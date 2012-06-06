@@ -32,6 +32,7 @@
 
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <fcntl.h>
 
 
 #define BASE "/"
@@ -66,12 +67,14 @@ static void program_frag_resource (GssTransaction * transaction);
 static void program_list_resource (GssTransaction * transaction);
 static void program_png_resource (GssTransaction * transaction);
 static void program_jpeg_resource (GssTransaction * transaction);
+static void vod_resource_chunked (GssTransaction * transaction);
 
 static void gss_server_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gss_server_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 static void setup_paths (GssServer * server);
+void vod_setup (GssServer * server);
 
 static void gss_server_notify (const char *key, void *priv);
 
@@ -523,6 +526,8 @@ setup_paths (GssServer * server)
   gss_server_add_static_resource (server,
       "/offline.png", 0, "image/png",
       gss_data_offline_png, gss_data_offline_png_len);
+
+  vod_setup (server);
 }
 
 typedef struct _GssStaticResource GssStaticResource;
@@ -2451,4 +2456,125 @@ gss_server_add_admin_resource (GssServer * server, GssResource * resource,
 {
   resource->name = g_strdup (name);
   server->admin_resources = g_list_append (server->admin_resources, resource);
+}
+
+
+typedef struct _GssVOD GssVOD;
+
+struct _GssVOD
+{
+  GssServer *server;
+  SoupMessage *msg;
+  SoupClientContext *client;
+
+  int fd;
+};
+
+#define SIZE 65536
+
+static void
+vod_wrote_chunk (SoupMessage * msg, GssVOD * vod)
+{
+  char *chunk;
+  int len;
+
+  chunk = g_malloc (SIZE);
+  len = read (vod->fd, chunk, 65536);
+  if (len < 0) {
+    g_print ("read error\n");
+  }
+  if (len == 0) {
+    soup_message_body_complete (msg->response_body);
+    return;
+  }
+
+  soup_message_body_append (msg->response_body, SOUP_MEMORY_TAKE, chunk, len);
+}
+
+static void
+vod_finished (SoupMessage * msg, GssVOD * vod)
+{
+  close (vod->fd);
+  g_free (vod);
+}
+
+static void
+vod_resource_chunked (GssTransaction * t)
+{
+  GssVOD *vod;
+  char *chunk;
+  int len;
+  char *s;
+
+  vod = g_malloc0 (sizeof (GssVOD));
+  vod->msg = t->msg;
+  vod->client = t->client;
+  vod->server = t->server;
+
+  s = g_strdup_printf ("/mnt/sdb1%s", t->path);
+  vod->fd = open (s, O_RDONLY);
+  g_free (s);
+  if (vod->fd < 0) {
+    g_free (vod);
+    soup_message_set_status (t->msg, SOUP_STATUS_NOT_FOUND);
+    return;
+  }
+
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
+
+  soup_message_headers_set_encoding (t->msg->response_headers,
+      SOUP_ENCODING_CHUNKED);
+
+  chunk = g_malloc (SIZE);
+  len = read (vod->fd, chunk, 65536);
+  if (len < 0) {
+    g_print ("read error\n");
+  }
+
+  soup_message_body_append (t->msg->response_body, SOUP_MEMORY_TAKE, chunk,
+      len);
+
+  g_signal_connect (t->msg, "wrote-chunk", G_CALLBACK (vod_wrote_chunk), vod);
+  g_signal_connect (t->msg, "finished", G_CALLBACK (vod_finished), vod);
+
+}
+
+void
+vod_setup (GssServer * server)
+{
+  GDir *dir;
+
+  dir = g_dir_open ("/mnt/sdb1/", 0, NULL);
+  if (dir == NULL)
+    dir = g_dir_open (".", 0, NULL);
+  if (dir) {
+    const gchar *name = g_dir_read_name (dir);
+
+    while (name) {
+      if (g_str_has_suffix (name, ".webm")) {
+        GssProgram *program;
+        GssServerStream *stream;
+        char *s;
+
+        program = gss_server_add_program (server, name);
+
+        stream = gss_stream_new (GSS_SERVER_STREAM_WEBM, 640, 360, 600);
+        gss_program_add_stream (program, stream);
+
+        stream->name =
+            g_strdup_printf ("%s-%dx%d-%dkbps%s.%s", program->location,
+            stream->width, stream->height, stream->bitrate / 1000, stream->mod,
+            stream->ext);
+        s = g_strdup_printf ("/%s", stream->name);
+        gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
+            stream->content_type, vod_resource_chunked,
+            NULL, NULL, stream);
+        g_free (s);
+
+        program->running = TRUE;
+      }
+      name = g_dir_read_name (dir);
+    }
+    g_dir_close (dir);
+  }
 }
