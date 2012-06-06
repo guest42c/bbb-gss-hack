@@ -67,6 +67,7 @@ static void program_frag_resource (GssTransaction * transaction);
 static void program_list_resource (GssTransaction * transaction);
 static void program_png_resource (GssTransaction * transaction);
 static void program_jpeg_resource (GssTransaction * transaction);
+static void vod_resource_gst (GssTransaction * transaction);
 static void vod_resource_chunked (GssTransaction * transaction);
 
 static void gss_server_set_property (GObject * object, guint prop_id,
@@ -2467,8 +2468,186 @@ struct _GssVOD
   SoupMessage *msg;
   SoupClientContext *client;
 
+  GstElement *pipeline;
+  GstElement *sink;
+
   int fd;
 };
+
+static void
+vod_handle_pipeline_message (GstBus * bus, GstMessage * message,
+    gpointer user_data)
+{
+  GssVOD *vod = user_data;
+
+  switch (GST_MESSAGE_TYPE (message)) {
+    case GST_MESSAGE_STATE_CHANGED:
+    {
+      GstState newstate;
+      GstState oldstate;
+      GstState pending;
+
+      gst_message_parse_state_changed (message, &oldstate, &newstate, &pending);
+
+      if (0 && verbose)
+        g_print ("message: %s (%s,%s,%s) from %s\n",
+            GST_MESSAGE_TYPE_NAME (message),
+            gst_element_state_get_name (newstate),
+            gst_element_state_get_name (oldstate),
+            gst_element_state_get_name (pending),
+            GST_MESSAGE_SRC_NAME (message));
+
+      if (newstate == GST_STATE_PLAYING
+          && message->src == GST_OBJECT (vod->pipeline)) {
+        char *s;
+        s = g_strdup_printf ("vod started");
+        gss_server_log (vod->server, s);
+        g_free (s);
+      }
+      if (newstate == GST_STATE_PAUSED
+          && message->src == GST_OBJECT (vod->pipeline)) {
+        gst_element_set_state (vod->pipeline, GST_STATE_PLAYING);
+      }
+    }
+      break;
+    case GST_MESSAGE_STREAM_STATUS:
+    {
+      GstStreamStatusType type;
+      GstElement *owner;
+
+      gst_message_parse_stream_status (message, &type, &owner);
+
+      if (0 && verbose)
+        g_print ("message: %s (%d) from %s\n", GST_MESSAGE_TYPE_NAME (message),
+            type, GST_MESSAGE_SRC_NAME (message));
+    }
+      break;
+    case GST_MESSAGE_ERROR:
+    {
+      GError *error;
+      gchar *debug;
+      char *s;
+
+      gst_message_parse_error (message, &error, &debug);
+
+      s = g_strdup_printf ("Internal Error: %s (%s) from %s\n",
+          error->message, debug, GST_MESSAGE_SRC_NAME (message));
+      g_print ("%s\n", s);
+      gss_server_log (vod->server, s);
+      g_free (s);
+
+      //program->restart_delay = 5;
+    }
+      break;
+    case GST_MESSAGE_EOS:
+      g_print ("eos\n");
+      //gss_program_stop (program);
+      break;
+    case GST_MESSAGE_ELEMENT:
+      break;
+    default:
+      break;
+  }
+}
+
+
+static void
+vod_wrote_headers (SoupMessage * msg, void *user_data)
+{
+  GssVOD *vod = user_data;
+  SoupSocket *socket;
+  int fd;
+
+  socket = soup_client_context_get_socket (vod->client);
+  fd = soup_socket_get_fd (socket);
+
+  if (vod->sink) {
+    g_print ("added fd %d\n", fd);
+    g_signal_emit_by_name (vod->sink, "add", fd);
+
+    g_assert (fd < MAX_FDS);
+    fd_table[fd] = socket;
+
+#if 0
+    gss_metrics_add_client (stream->metrics, stream->bitrate);
+    gss_metrics_add_client (stream->program->metrics, stream->bitrate);
+    gss_metrics_add_client (stream->program->server->metrics, stream->bitrate);
+#endif
+  } else {
+    soup_socket_disconnect (socket);
+  }
+
+  //g_free (vod);
+}
+
+
+static void
+vod_resource_gst (GssTransaction * t)
+{
+  GssVOD *vod;
+  GString *pipe_desc;
+  GstElement *pipe;
+  GstBus *bus;
+  GError *error;
+  GstElement *e;
+
+  g_print ("vod resource\n");
+  vod = g_malloc0 (sizeof (GssVOD));
+  vod->msg = t->msg;
+  vod->client = t->client;
+  vod->server = t->server;
+
+  pipe_desc = g_string_new ("");
+
+  g_string_append_printf (pipe_desc,
+      "filesrc name=src location=.%s ! ", t->path);
+  g_string_append (pipe_desc, "matroskaparse name=parse ! ");
+  g_string_append (pipe_desc, "queue ! ");
+  g_string_append_printf (pipe_desc,
+      "multifdsink name=sink "
+      "sync=false "
+      "time-min=200000000 "
+      "recover-policy=keyframe "
+      "unit-type=2 "
+      "units-max=20000000000 "
+      "units-soft-max=11000000000 "
+      "sync-method=burst-keyframe " "burst-unit=2 " "burst-value=3000000000");
+
+  if (1 || verbose) {
+    g_print ("pipeline: %s\n", pipe_desc->str);
+  }
+  error = NULL;
+  pipe = gst_parse_launch (pipe_desc->str, &error);
+  if (error != NULL) {
+    if (1 || verbose)
+      g_print ("pipeline parse error: %s\n", error->message);
+  }
+  g_string_free (pipe_desc, TRUE);
+
+  e = gst_bin_get_by_name (GST_BIN (pipe), "sink");
+  g_assert (e != NULL);
+  g_object_unref (e);
+
+  vod->sink = e;
+  vod->pipeline = pipe;
+
+  gst_element_set_state (vod->pipeline, GST_STATE_PAUSED);
+
+  bus = gst_pipeline_get_bus (GST_PIPELINE (pipe));
+  gst_bus_add_signal_watch (bus);
+  g_signal_connect (bus, "message", G_CALLBACK (vod_handle_pipeline_message),
+      vod);
+  g_object_unref (bus);
+
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
+
+  soup_message_headers_set_encoding (t->msg->response_headers,
+      SOUP_ENCODING_EOF);
+
+  g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (vod_wrote_headers),
+      vod);
+
+}
 
 #define SIZE 65536
 
@@ -2567,7 +2746,7 @@ vod_setup (GssServer * server)
             stream->ext);
         s = g_strdup_printf ("/%s", stream->name);
         gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
-            stream->content_type, vod_resource_chunked,
+            stream->content_type, 1 ? vod_resource_chunked : vod_resource_gst,
             NULL, NULL, stream);
         g_free (s);
 
