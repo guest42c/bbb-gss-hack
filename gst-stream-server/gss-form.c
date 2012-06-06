@@ -51,7 +51,7 @@ gss_config_form_add_select (GString * s, GssField * item, const char *value)
     g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
   g_string_append_printf (s, "%s: <select id=\"%s\" name=\"%s\">\n",
       item->long_name, item->config_name, item->config_name);
-  for (i = 0; i < 10; i++) {
+  for (i = 0; i < GSS_FORM_NUM_OPTIONS; i++) {
     if (item->options[i].long_name) {
       gboolean selected;
 
@@ -134,7 +134,7 @@ gss_config_form_add_radio (GString * s, GssField * item, const char *value)
     g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
   g_string_append_printf (s, "%s\n", item->long_name);
   gss_html_append_break (s);
-  for (i = 0; i < 10; i++) {
+  for (i = 0; i < GSS_FORM_NUM_OPTIONS; i++) {
     if (item->options[i].long_name) {
       gboolean selected;
 

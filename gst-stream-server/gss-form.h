@@ -29,6 +29,8 @@
 
 G_BEGIN_DECLS
 
+#define GSS_FORM_NUM_OPTIONS 32
+
 typedef enum {
   GSS_FIELD_NONE = 0,
   GSS_FIELD_TEXT_INPUT,
@@ -58,7 +60,7 @@ struct _GssField {
   char *default_value;
   int indent;
 
-  GssOption options[10];
+  GssOption options[GSS_FORM_NUM_OPTIONS];
 };
 
 void gss_config_form_add_select (GString *s, GssField *item, const char *value);
