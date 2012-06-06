@@ -112,9 +112,9 @@ gss_html_append_image_printf (GString * s, const char *url_format, int width,
 void
 gss_html_header (GssTransaction * t)
 {
-  int i;
   GString *s = t->s;
   gchar *session_id;
+  GList *g;
 
   if (t->session) {
     session_id = g_strdup_printf ("?session_id=%s", t->session->session_id);
@@ -213,8 +213,8 @@ gss_html_header (GssTransaction * t)
       "            <ul class='nav nav-list'>\n"
       "              <li class='nav-header'>Programs</li>\n",
       session_id, session_id, session_id, session_id, session_id);
-  for (i = 0; i < t->server->n_programs; i++) {
-    GssProgram *program = t->server->programs[i];
+  for (g = t->server->programs; g; g = g_list_next (g)) {
+    GssProgram *program = g->data;
     g_string_append_printf (s,
         "              <li><a href='/%s%s'>%s</a></li>\n",
         program->location, session_id, program->location);

@@ -135,7 +135,6 @@ gss_server_init (GssServer * server)
     server->https_port = 8000 + DEFAULT_HTTPS_PORT;
   }
 
-  server->n_programs = 0;
   server->programs = NULL;
 
   server->title = g_strdup ("GStreamer Streaming Server");
@@ -170,13 +169,13 @@ static void
 gss_server_finalize (GObject * object)
 {
   GssServer *server = GSS_SERVER (object);
-  int i;
+  GList *g;
 
-  for (i = 0; i < server->n_programs; i++) {
-    GssProgram *program = server->programs[i];
-
+  for (g = server->programs; g; g = g_list_next (g)) {
+    GssProgram *program = g->data;
     gss_program_free (program);
   }
+  g_list_free (server->programs);
 
   if (server->server)
     g_object_unref (server->server);
@@ -192,7 +191,6 @@ gss_server_finalize (GObject * object)
   g_free (server->base_url);
   g_free (server->base_url_https);
   g_free (server->server_name);
-  g_free (server->programs);
   g_free (server->title);
   g_object_unref (server->client_session);
 
@@ -706,10 +704,7 @@ gss_server_add_program (GssServer * server, const char *program_name)
   program = g_malloc0 (sizeof (GssProgram));
   program->metrics = gss_metrics_new ();
 
-  server->programs = g_realloc (server->programs,
-      sizeof (GssProgram *) * (server->n_programs + 1));
-  server->programs[server->n_programs] = program;
-  server->n_programs++;
+  server->programs = g_list_append (server->programs, program);
 
   program->server = server;
   program->location = g_strdup (program_name);
@@ -759,19 +754,7 @@ gss_program_set_jpegsink (GssProgram * program, GstElement * jpegsink)
 void
 gss_server_remove_program (GssServer * server, GssProgram * program)
 {
-
-  int i;
-
-  for (i = 0; i < server->n_programs; i++) {
-    if (server->programs[i] == program) {
-      if (i + 1 < server->n_programs) {
-        memmove (server->programs + i, server->programs + i + 1,
-            server->n_programs - i - 1);
-      }
-      server->n_programs--;
-    }
-  }
-
+  server->programs = g_list_remove (server->programs, program);
   gss_program_free (program);
 }
 
@@ -1371,7 +1354,7 @@ static void
 main_page_resource (GssTransaction * t)
 {
   GString *s;
-  int i;
+  GList *g;
 
   s = t->s = g_string_new ("");
 
@@ -1380,8 +1363,8 @@ main_page_resource (GssTransaction * t)
   g_string_append_printf (s, "<h2>Available Programs</h2>\n");
 
   g_string_append_printf (s, "<ul class='thumbnails'>\n");
-  for (i = 0; i < t->server->n_programs; i++) {
-    GssProgram *program = t->server->programs[i];
+  for (g = t->server->programs; g; g = g_list_next (g)) {
+    GssProgram *program = g->data;
 
     g_string_append_printf (s, "<li class='span4'>\n");
     //g_string_append_printf (s, "<div class='well' style='width:1000;'>\n");
@@ -1415,12 +1398,12 @@ static void
 list_resource (GssTransaction * t)
 {
   GString *s;
-  int i;
+  GList *g;
 
   s = t->s = g_string_new ("");
 
-  for (i = 0; i < t->server->n_programs; i++) {
-    GssProgram *program = t->server->programs[i];
+  for (g = t->server->programs; g; g = g_list_next (g)) {
+    GssProgram *program = g->data;
     g_string_append_printf (s, "%s\n", program->location);
   }
 }
@@ -2408,10 +2391,10 @@ static gboolean
 periodic_timer (gpointer data)
 {
   GssServer *server = (GssServer *) data;
-  int i;
+  GList *g;
 
-  for (i = 0; i < server->n_programs; i++) {
-    GssProgram *program = server->programs[i];
+  for (g = server->programs; g; g = g_list_next (g)) {
+    GssProgram *program = g->data;
 
     if (program->restart_delay) {
       program->restart_delay--;

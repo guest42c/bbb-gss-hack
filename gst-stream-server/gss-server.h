@@ -233,8 +233,7 @@ struct _GssServer
   int https_port;
   char *title;
 
-  int n_programs;
-  GssProgram **programs;
+  GList *programs;
   GssMetrics *metrics;
 
   SoupServer *server;
