@@ -311,6 +311,7 @@ void gss_stream_get_stats (GssServerStream *stream, guint64 *n_bytes_in,
     guint64 *n_bytes_out);
 
 void gss_server_add_admin_callbacks (GssServer *server, SoupServer *soupserver);
+GssProgram * gss_server_get_program_by_name (GssServer *server, const char *name);
 
 void add_video_block (GssProgram *program, GString *s, int max_width,
     const char *base_url);

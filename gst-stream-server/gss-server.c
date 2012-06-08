@@ -2757,3 +2757,19 @@ vod_setup (GssServer * server)
     g_dir_close (dir);
   }
 }
+
+
+GssProgram *
+gss_server_get_program_by_name (GssServer *server, const char *name)
+{
+  GList *g;
+
+  for(g=server->programs; g; g=g_list_next (g)) {
+    GssProgram *program = g->data;
+    if (strcmp(program->location, name) == 0) {
+      return program;
+    }
+  }
+  return NULL;
+}
+
