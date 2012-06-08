@@ -211,13 +211,13 @@ gss_html_header (GssTransaction * t)
       "        <div class='span3'>\n"
       "          <div class='well sidebar-nav'>\n",
       session_id, session_id, session_id, session_id, session_id);
-  g_string_append_printf (s,
-      "            <ul class='nav nav-list'>\n");
+  g_string_append_printf (s, "            <ul class='nav nav-list'>\n");
   g_string_append_printf (s,
       "              <li class='nav-header'>Programs</li>\n");
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
-    if (program->is_archive) continue;
+    if (program->is_archive)
+      continue;
     g_string_append_printf (s,
         "              <li><a href='/%s%s'>%s</a></li>\n",
         program->location, session_id, program->location);
@@ -227,7 +227,8 @@ gss_html_header (GssTransaction * t)
       "              <li class='nav-header'>Archive</li>\n");
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
-    if (!program->is_archive) continue;
+    if (!program->is_archive)
+      continue;
     g_string_append_printf (s,
         "              <li><a href='/%s%s'>%s</a></li>\n",
         program->location, session_id, program->location);

@@ -1381,7 +1381,8 @@ main_page_resource (GssTransaction * t)
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
 
-    if (program->is_archive) continue;
+    if (program->is_archive)
+      continue;
 
     g_string_append_printf (s, "<li class='span4'>\n");
     g_string_append_printf (s, "<div class='thumbnail'>\n");
@@ -1413,7 +1414,8 @@ main_page_resource (GssTransaction * t)
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
 
-    if (!program->is_archive) continue;
+    if (!program->is_archive)
+      continue;
 
     g_string_append_printf (s, "<li class='span4'>\n");
     //g_string_append_printf (s, "<div class='well' style='width:1000;'>\n");
@@ -2723,7 +2725,7 @@ vod_finished (SoupMessage * msg, GssVOD * vod)
 static void
 vod_resource_chunked (GssTransaction * t)
 {
-  GssProgram *program = (GssProgram *)t->resource->priv;
+  GssProgram *program = (GssProgram *) t->resource->priv;
   GssVOD *vod;
   char *chunk;
   int len;
@@ -2737,7 +2739,7 @@ vod_resource_chunked (GssTransaction * t)
   s = g_strdup_printf ("%s/%s", t->server->archive_dir, program->location);
   vod->fd = open (s, O_RDONLY);
   if (vod->fd < 0) {
-    g_print("file not found %s\n", s);
+    g_print ("file not found %s\n", s);
     g_free (s);
     g_free (vod);
     soup_message_set_status (t->msg, SOUP_STATUS_NOT_FOUND);
@@ -2805,16 +2807,15 @@ vod_setup (GssServer * server)
 
 
 GssProgram *
-gss_server_get_program_by_name (GssServer *server, const char *name)
+gss_server_get_program_by_name (GssServer * server, const char *name)
 {
   GList *g;
 
-  for(g=server->programs; g; g=g_list_next (g)) {
+  for (g = server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
-    if (strcmp(program->location, name) == 0) {
+    if (strcmp (program->location, name) == 0) {
       return program;
     }
   }
   return NULL;
 }
-
