@@ -1375,7 +1375,7 @@ main_page_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  g_string_append_printf (s, "<h2>Available Programs</h2>\n");
+  g_string_append_printf (s, "<h2>Input Media</h2>\n");
 
   g_string_append_printf (s, "<ul class='thumbnails'>\n");
   for (g = t->server->programs; g; g = g_list_next (g)) {
@@ -1752,7 +1752,7 @@ program_get_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  g_string_append_printf (s, "<h1>Live Stream: %s</h1>\n", program->location);
+  g_string_append_printf (s, "<h1>%s</h1>\n", program->location);
 
   add_video_block (program, s, 0, "");
 
