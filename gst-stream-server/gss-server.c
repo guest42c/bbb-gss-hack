@@ -18,6 +18,11 @@
  * Boston, MA 02110-1301, USA.
  */
 
+#ifdef USE_LOCAL
+#define DEFAULT_ARCHIVE_DIR "."
+#else
+#define DEFAULT_ARCHIVE_DIR "/mnt/sdb1"
+#endif
 
 #include "config.h"
 
@@ -140,6 +145,7 @@ gss_server_init (GssServer * server)
   }
 
   server->programs = NULL;
+  server->archive_dir = g_strdup (".");
 
   server->title = g_strdup ("GStreamer Streaming Server");
 
@@ -1371,6 +1377,40 @@ main_page_resource (GssTransaction * t)
   g_string_append_printf (s, "<ul class='thumbnails'>\n");
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
+
+    if (program->is_archive) continue;
+
+    g_string_append_printf (s, "<li class='span4'>\n");
+    g_string_append_printf (s, "<div class='thumbnail'>\n");
+    g_string_append_printf (s,
+        "<a href=\"/%s%s%s\">",
+        program->location,
+        t->session ? "?session_id=" : "",
+        t->session ? t->session->session_id : "");
+    if (program->running) {
+      if (program->jpegsink) {
+        gss_html_append_image_printf (s,
+            "/%s-snapshot.jpeg", 0, 0, "snapshot image", program->location);
+      } else {
+        g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
+      }
+    } else {
+      g_string_append_printf (s, "<img src='/offline.png'>\n");
+    }
+    g_string_append_printf (s, "</a>\n");
+    g_string_append_printf (s, "<h5>%s</h5>\n", program->location);
+    g_string_append_printf (s, "</div>\n");
+    g_string_append_printf (s, "</li>\n");
+  }
+  g_string_append_printf (s, "</ul>\n");
+
+  g_string_append_printf (s, "<h2>Archived Media</h2>\n");
+
+  g_string_append_printf (s, "<ul class='thumbnails'>\n");
+  for (g = t->server->programs; g; g = g_list_next (g)) {
+    GssProgram *program = g->data;
+
+    if (!program->is_archive) continue;
 
     g_string_append_printf (s, "<li class='span4'>\n");
     //g_string_append_printf (s, "<div class='well' style='width:1000;'>\n");
@@ -2680,6 +2720,7 @@ vod_finished (SoupMessage * msg, GssVOD * vod)
 static void
 vod_resource_chunked (GssTransaction * t)
 {
+  GssProgram *program = (GssProgram *)t->resource->priv;
   GssVOD *vod;
   char *chunk;
   int len;
@@ -2690,14 +2731,16 @@ vod_resource_chunked (GssTransaction * t)
   vod->client = t->client;
   vod->server = t->server;
 
-  s = g_strdup_printf ("/mnt/sdb1%s", t->path);
+  s = g_strdup_printf ("%s/%s", t->server->archive_dir, program->location);
   vod->fd = open (s, O_RDONLY);
-  g_free (s);
   if (vod->fd < 0) {
+    g_print("file not found %s\n", s);
+    g_free (s);
     g_free (vod);
     soup_message_set_status (t->msg, SOUP_STATUS_NOT_FOUND);
     return;
   }
+  g_free (s);
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
@@ -2723,9 +2766,7 @@ vod_setup (GssServer * server)
 {
   GDir *dir;
 
-  dir = g_dir_open ("/mnt/sdb1/", 0, NULL);
-  if (dir == NULL)
-    dir = g_dir_open (".", 0, NULL);
+  dir = g_dir_open (server->archive_dir, 0, NULL);
   if (dir) {
     const gchar *name = g_dir_read_name (dir);
 
@@ -2736,6 +2777,7 @@ vod_setup (GssServer * server)
         char *s;
 
         program = gss_server_add_program (server, name);
+        program->is_archive = TRUE;
 
         stream = gss_stream_new (GSS_SERVER_STREAM_WEBM, 640, 360, 600);
         gss_program_add_stream (program, stream);
@@ -2747,7 +2789,7 @@ vod_setup (GssServer * server)
         s = g_strdup_printf ("/%s", stream->name);
         gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
             stream->content_type, 1 ? vod_resource_chunked : vod_resource_gst,
-            NULL, NULL, stream);
+            NULL, NULL, program);
         g_free (s);
 
         program->running = TRUE;

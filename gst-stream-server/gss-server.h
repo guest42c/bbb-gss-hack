@@ -70,6 +70,7 @@ struct _GssProgram {
   GssServer *server;
 
   GssProgramType program_type;
+  gboolean is_archive;
 
   char *location;
   char *follow_uri;
@@ -259,6 +260,7 @@ struct _GssServer
   void *footer_html_priv;
 
   GList *admin_resources;
+  char *archive_dir;
 };
 
 struct _GssServerClass
