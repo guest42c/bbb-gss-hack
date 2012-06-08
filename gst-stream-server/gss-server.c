@@ -163,6 +163,9 @@ gss_server_deinit (void)
 void
 gss_server_log (GssServer * server, char *message)
 {
+  g_return_if_fail (server);
+  g_return_if_fail (message);
+
   if (verbose)
     g_print ("%s\n", message);
   server->messages = g_list_append (server->messages, message);
