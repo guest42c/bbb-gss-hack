@@ -260,6 +260,7 @@ struct _GssServer
   void *footer_html_priv;
 
   GList *admin_resources;
+  GList *featured_resources;
   char *archive_dir;
 };
 
@@ -341,7 +342,8 @@ void gss_server_add_string_resource (GssServer * server, const char *filename,
 
 void gss_server_add_admin_resource (GssServer * server, GssResource *resource,
     const char *name);
-
+void gss_server_add_featured_resource (GssServer * server, GssResource *resource,
+    const char *name);
 
 GssMetrics * gss_metrics_new (void);
 void gss_metrics_free (GssMetrics * metrics);

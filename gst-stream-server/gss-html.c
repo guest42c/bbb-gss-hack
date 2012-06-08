@@ -212,6 +212,16 @@ gss_html_header (GssTransaction * t)
       "          <div class='well sidebar-nav'>\n",
       session_id, session_id, session_id, session_id, session_id);
   g_string_append_printf (s, "            <ul class='nav nav-list'>\n");
+  if (t->server->featured_resources) {
+    g_string_append_printf (s,
+        "              <li class='nav-header'>Featured Pages</li>\n");
+    for (g = t->server->featured_resources; g; g = g_list_next (g)) {
+      GssResource *resource = g->data;
+      g_string_append_printf (s,
+          "              <li><a href='%s%s'>%s</a></li>\n",
+          resource->location, session_id, resource->name);
+    };
+  }
   g_string_append_printf (s,
       "              <li class='nav-header'>Programs</li>\n");
   for (g = t->server->programs; g; g = g_list_next (g)) {

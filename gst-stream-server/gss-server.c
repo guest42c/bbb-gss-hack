@@ -2504,6 +2504,15 @@ gss_server_add_admin_resource (GssServer * server, GssResource * resource,
   server->admin_resources = g_list_append (server->admin_resources, resource);
 }
 
+void
+gss_server_add_featured_resource (GssServer * server, GssResource * resource,
+    const char *name)
+{
+  resource->name = g_strdup (name);
+  server->featured_resources =
+      g_list_append (server->featured_resources, resource);
+}
+
 
 typedef struct _GssVOD GssVOD;
 
