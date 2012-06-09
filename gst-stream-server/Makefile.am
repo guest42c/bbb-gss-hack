@@ -1,5 +1,6 @@
 
 lib_LTLIBRARIES = libgss-@GST_MAJORMINOR@.la
+noinst_LTLIBRARIES = libgss.la
 
 gss_includedir = $(includedir)/gstreamer-@GST_MAJORMINOR@/gss
 
@@ -8,7 +9,9 @@ libgss_@GST_MAJORMINOR@_la_LIBS = $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIB
 libgss_@GST_MAJORMINOR@_la_LDFLAGS = \
 	-version-info $(GSS_LIBVERSION) \
 	-no-undefined -export-symbols-regex 'gss_'
-libgss_@GST_MAJORMINOR@_la_SOURCES = $(libgss_la_SOURCES)
+libgss_@GST_MAJORMINOR@_la_LIBADD = libgss.la
+libgss_@GST_MAJORMINOR@_la_SOURCES = null.c
+
 libgss_la_SOURCES = \
 	gss-hls-server.c \
 	gss-server.c \
@@ -24,9 +27,7 @@ libgss_la_SOURCES = \
 	gss-vod.c \
 	gss-resource.c \
 	gss-program.c
-	
 
-noinst_LTLIBRARIES = libgss.la
 
 libgss_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS) $(JSON_GLIB_CFLAGS)
 libgss_la_LIBS = $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS) $(JSON_GLIB_LIBS)
