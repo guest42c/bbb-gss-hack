@@ -33,6 +33,8 @@
 
 G_BEGIN_DECLS
 
+#define GSS_STREAM_HLS_CHUNKS 20
+
 enum {
   GSS_SERVER_STREAM_UNKNOWN,
   GSS_SERVER_STREAM_OGG,
@@ -78,8 +80,7 @@ struct _GssServerStream {
   GstAdapter *adapter;
 
   int n_chunks;
-#define N_CHUNKS 20
-  GssHLSSegment chunks[N_CHUNKS];
+  GssHLSSegment chunks[GSS_STREAM_HLS_CHUNKS];
   struct {
     gboolean need_index_update;
     SoupBuffer *index_buffer; /* contents of current index file */
@@ -116,7 +117,9 @@ void gss_stream_resource (GssTransaction * transaction);
 void gss_stream_set_sink (GssServerStream * stream, GstElement * sink);
 void gss_stream_create_follow_pipeline (GssServerStream * stream);
 void gss_stream_create_push_pipeline (GssServerStream * stream);
+void gss_stream_add_resources (GssServerStream *stream);
 
+void gss_stream_handle_m3u8 (GssTransaction * t);
 
 
 G_END_DECLS

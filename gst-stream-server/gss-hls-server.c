@@ -184,7 +184,7 @@ gss_program_add_hls_chunk (GssServerStream * stream, SoupBuffer * buf)
 {
   GssHLSSegment *segment;
 
-  segment = &stream->chunks[stream->n_chunks % N_CHUNKS];
+  segment = &stream->chunks[stream->n_chunks % GSS_STREAM_HLS_CHUNKS];
 
   if (segment->buffer) {
     gss_server_remove_resource (stream->program->server, segment->location);
@@ -249,7 +249,7 @@ gss_hls_update_index (GssServerStream * stream)
   g_string_append (s, "#EXT-X-VERSION:1\n");
 
   for (i = seq_num; i < stream->n_chunks; i++) {
-    GssHLSSegment *segment = &stream->chunks[i % N_CHUNKS];
+    GssHLSSegment *segment = &stream->chunks[i % GSS_STREAM_HLS_CHUNKS];
 
     g_string_append_printf (s,
         "#EXTINF:%d,\n"
@@ -350,4 +350,21 @@ gss_hls_handle_ts_chunk (GssTransaction * t)
       "Cache-Control", "no-store");
 
   soup_message_body_append_buffer (t->msg->response_body, segment->buffer);
+}
+
+void
+gss_stream_handle_m3u8 (GssTransaction * t)
+{
+  GssServerStream *stream = (GssServerStream *) t->resource->priv;
+  char *content;
+
+  content = g_strdup_printf ("#EXTM3U\n"
+      "#EXT-X-TARGETDURATION:10\n"
+      "#EXTINF:10,\n"
+      "%s/%s\n", stream->program->server->base_url, stream->name);
+
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
+
+  soup_message_body_append (t->msg->response_body, SOUP_MEMORY_TAKE,
+      content, strlen (content));
 }

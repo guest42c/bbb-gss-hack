@@ -102,6 +102,7 @@ gss_program_add_stream (GssProgram * program, GssServerStream * stream)
   program->n_streams++;
 
   stream->program = program;
+  gss_stream_add_resources (stream);
 }
 
 void

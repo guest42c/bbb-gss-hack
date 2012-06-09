@@ -28,14 +28,14 @@ libgss_la_SOURCES = \
 	gss-resource.c \
 	gss-program.c \
 	gss-program-follow.c \
-	gss-program-push.c
+	gss-program-push.c \
+	gss-stream.c
 
 
 libgss_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS) $(JSON_GLIB_CFLAGS)
 libgss_la_LIBS = $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS) $(JSON_GLIB_LIBS)
 
 gss_include_HEADERS = \
-	gss-hls-server.h \
 	gss-server.h \
 	gss-session.h \
 	gss-config.h \
