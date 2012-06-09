@@ -18,12 +18,6 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifdef USE_LOCAL
-#define DEFAULT_ARCHIVE_DIR "."
-#else
-#define DEFAULT_ARCHIVE_DIR "/mnt/sdb1"
-#endif
-
 #include "config.h"
 
 #include "gss-server.h"

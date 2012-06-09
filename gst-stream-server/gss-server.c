@@ -110,7 +110,7 @@ gss_server_init (GssServer * server)
   }
 
   server->programs = NULL;
-  server->archive_dir = g_strdup (".");
+  server->archive_dir = g_strdup (DEFAULT_ARCHIVE_DIR);
 
   server->title = g_strdup ("GStreamer Streaming Server");
 
