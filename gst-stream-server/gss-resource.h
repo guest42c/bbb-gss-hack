@@ -55,6 +55,23 @@ struct _GssResource {
 };
 
 
+void gss_resource_unimplemented (GssTransaction * t);
+void gss_resource_file (GssTransaction * transaction);
+void gss_resource_onetime (GssTransaction * t);
+
+void gss_resource_free (GssResource * resource);
+
+void gss_resource_onetime_redirect (GssTransaction *t);
+
+GssResource * gss_resource_new_file (const char *filename, GssResourceFlags flags,
+    const char *content_type);
+GssResource * gss_resource_new_static (const char *filename,
+    GssResourceFlags flags, const char *content_type, const char *string,
+    int len);
+GssResource * gss_resource_new_string (const char *filename,
+    GssResourceFlags flags, const char *content_type, const char *string);
+
+
 G_END_DECLS
 
 #endif

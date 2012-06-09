@@ -21,7 +21,8 @@ libgss_la_SOURCES = \
 	gss-metrics.c \
 	gss-content.c \
 	gss-content.h \
-	gss-vod.c
+	gss-vod.c \
+	gss-resource.c
 	
 
 noinst_LTLIBRARIES = libgss.la
