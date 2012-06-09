@@ -52,32 +52,39 @@ enum
 
 char *get_time_string (void);
 
-static void resource_callback (SoupServer * soupserver, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
+/* Server Resources */
+static void gss_server_resource_main_page (GssTransaction * transaction);
+static void gss_server_resource_list (GssTransaction * transaction);
+static void gss_server_resource_log (GssTransaction * transaction);
 
-static void main_page_resource (GssTransaction * transaction);
-static void list_resource (GssTransaction * transaction);
-static void log_resource (GssTransaction * transaction);
-static void unimplemented_resource (GssTransaction * t);
+/* Generic Resources */
+static void gss_resource_unimplemented (GssTransaction * t);
+static void gss_resource_file (GssTransaction * transaction);
+static void gss_resource_onetime (GssTransaction * t);
 
-static void push_wrote_headers (SoupMessage * msg, void *user_data);
-static void file_resource (GssTransaction * transaction);
-static void program_get_resource (GssTransaction * transaction);
-static void program_put_resource (GssTransaction * transaction);
-static void program_frag_resource (GssTransaction * transaction);
-static void program_list_resource (GssTransaction * transaction);
-static void program_png_resource (GssTransaction * transaction);
-static void program_jpeg_resource (GssTransaction * transaction);
+/* Program resources */
+static void gss_program_get_resource (GssTransaction * transaction);
+static void gss_program_put_resource (GssTransaction * transaction);
+static void gss_program_frag_resource (GssTransaction * transaction);
+static void gss_program_list_resource (GssTransaction * transaction);
+static void gss_program_png_resource (GssTransaction * transaction);
+static void gss_program_jpeg_resource (GssTransaction * transaction);
 
+/* GssServer internals */
+static void gss_server_resource_callback (SoupServer * soupserver,
+    SoupMessage * msg, const char *path, GHashTable * query,
+    SoupClientContext * client, gpointer user_data);
 static void gss_server_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gss_server_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
-static void setup_paths (GssServer * server);
+static void gss_server_setup_resources (GssServer * server);
 
 static void gss_server_notify (const char *key, void *priv);
 
+
+/* misc */
+static void push_wrote_headers (SoupMessage * msg, void *user_data);
 static void
 client_removed (GstElement * e, int arg0, int arg1, gpointer user_data);
 static void client_fd_removed (GstElement * e, int fd, gpointer user_data);
@@ -94,14 +101,17 @@ static void
 handle_pipeline_message (GstBus * bus, GstMessage * message,
     gpointer user_data);
 
+/* GssProgram API */
 void gss_program_stop (GssProgram * program);
 void gss_program_start (GssProgram * program);
+
+/* GssStream API */
 void gss_stream_set_sink (GssServerStream * stream, GstElement * sink);
 void gss_stream_create_follow_pipeline (GssServerStream * stream);
 void gss_stream_create_push_pipeline (GssServerStream * stream);
 
+/* one-time internals */
 static void onetime_redirect (GssTransaction * t);
-static void onetime_resource (GssTransaction * t);
 static gboolean onetime_expire (gpointer priv);
 
 
@@ -377,7 +387,7 @@ gss_server_new (void)
     return NULL;
   }
 
-  soup_server_add_handler (server->server, "/", resource_callback,
+  soup_server_add_handler (server->server, "/", gss_server_resource_callback,
       server, NULL);
 
   server->ssl_server = soup_server_new (SOUP_SERVER_PORT,
@@ -392,11 +402,11 @@ gss_server_new (void)
   }
 
   if (server->ssl_server) {
-    soup_server_add_handler (server->ssl_server, "/", resource_callback,
-        server, NULL);
+    soup_server_add_handler (server->ssl_server, "/",
+        gss_server_resource_callback, server, NULL);
   }
 
-  setup_paths (server);
+  gss_server_setup_resources (server);
 
   soup_server_run_async (server->server);
   if (server->ssl_server) {
@@ -456,31 +466,31 @@ gss_server_remove_resource (GssServer * server, const char *location)
 }
 
 static void
-setup_paths (GssServer * server)
+gss_server_setup_resources (GssServer * server)
 {
   gss_session_add_session_callbacks (server);
 
   gss_server_add_resource (server, "/", GSS_RESOURCE_UI, "text/html",
-      main_page_resource, NULL, NULL, NULL);
+      gss_server_resource_main_page, NULL, NULL, NULL);
   gss_server_add_resource (server, "/list", GSS_RESOURCE_UI, "text/plain",
-      list_resource, NULL, NULL, NULL);
+      gss_server_resource_list, NULL, NULL, NULL);
   gss_server_add_resource (server, "/log", GSS_RESOURCE_UI, "text/plain",
-      log_resource, NULL, NULL, NULL);
+      gss_server_resource_log, NULL, NULL, NULL);
 
   gss_server_add_resource (server, "/about", GSS_RESOURCE_UI, "text/html",
-      unimplemented_resource, NULL, NULL, NULL);
+      gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/contact", GSS_RESOURCE_UI, "text/html",
-      unimplemented_resource, NULL, NULL, NULL);
+      gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/add_program", GSS_RESOURCE_UI, "text/html",
-      unimplemented_resource, NULL, NULL, NULL);
+      gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/dashboard", GSS_RESOURCE_UI, "text/html",
-      unimplemented_resource, NULL, NULL, NULL);
+      gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/profile", GSS_RESOURCE_UI, "text/html",
-      unimplemented_resource, NULL, NULL, NULL);
+      gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/monitor", GSS_RESOURCE_UI, "text/html",
-      unimplemented_resource, NULL, NULL, NULL);
+      gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/meep", GSS_RESOURCE_UI, "text/html",
-      unimplemented_resource, NULL, NULL, NULL);
+      gss_resource_unimplemented, NULL, NULL, NULL);
 
   if (enable_cortado) {
     gss_server_add_file_resource (server, "/cortado.jar", 0,
@@ -569,7 +579,7 @@ generate_etag (GssStaticResource * sr)
 }
 
 static void
-file_resource (GssTransaction * t)
+gss_resource_file (GssTransaction * t)
 {
   GssStaticResource *sr = (GssStaticResource *) t->resource;
 
@@ -613,7 +623,7 @@ gss_server_add_file_resource (GssServer * server,
   sr->resource.destroy = (GDestroyNotify) gss_static_resource_destroy;
   sr->resource.location = g_strdup (filename);
   sr->resource.flags = flags;
-  sr->resource.get_callback = file_resource;
+  sr->resource.get_callback = gss_resource_file;
   generate_etag (sr);
 
   g_hash_table_replace (server->resources, sr->resource.location,
@@ -638,7 +648,7 @@ gss_server_add_static_resource (GssServer * server, const char *filename,
   sr->resource.destroy = (GDestroyNotify) gss_static_resource_destroy;
   sr->resource.location = g_strdup (filename);
   sr->resource.flags = flags;
-  sr->resource.get_callback = file_resource;
+  sr->resource.get_callback = gss_resource_file;
 
   g_hash_table_replace (server->resources, sr->resource.location,
       (GssResource *) sr);
@@ -720,28 +730,28 @@ gss_server_add_program (GssServer * server, const char *program_name)
 
   s = g_strdup_printf ("/%s", program_name);
   gss_server_add_resource (server, s, GSS_RESOURCE_UI, "text/html",
-      program_get_resource, program_put_resource, NULL, program);
+      gss_program_get_resource, gss_program_put_resource, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", program_name);
   gss_server_add_resource (server, s, GSS_RESOURCE_UI, "text/plain",
-      program_frag_resource, NULL, NULL, program);
+      gss_program_frag_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.list", program_name);
   gss_server_add_resource (server, s, GSS_RESOURCE_UI, "text/plain",
-      program_list_resource, NULL, NULL, program);
+      gss_program_list_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.png", program_name);
   gss_server_add_resource (server, s, GSS_RESOURCE_UI, "image/png",
-      program_png_resource, NULL, NULL, program);
+      gss_program_png_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.jpeg", program_name);
   gss_server_add_resource (server, s, GSS_RESOURCE_HTTP_ONLY,
       "multipart/x-mixed-replace;boundary=myboundary",
-      program_jpeg_resource, NULL, NULL, program);
+      gss_program_jpeg_resource, NULL, NULL, program);
   g_free (s);
 
   return program;
@@ -1162,7 +1172,7 @@ gss_stream_set_sink (GssServerStream * stream, GstElement * sink)
 }
 
 static void
-resource_callback (SoupServer * soupserver, SoupMessage * msg,
+gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
     const char *path, GHashTable * query, SoupClientContext * client,
     gpointer user_data)
 {
@@ -1302,7 +1312,7 @@ onetime_redirect (GssTransaction * t)
   or->resource.location = g_strdup_printf ("/%s", id);
   g_free (id);
   or->resource.flags = 0;
-  or->resource.get_callback = onetime_resource;
+  or->resource.get_callback = gss_resource_onetime;
   or->resource.destroy = onetime_destroy;
 
   or->underlying_resource = t->resource;
@@ -1333,7 +1343,7 @@ onetime_expire (gpointer priv)
 }
 
 static void
-onetime_resource (GssTransaction * t)
+gss_resource_onetime (GssTransaction * t)
 {
   GssOnetimeResource *or = (GssOnetimeResource *) t->resource;
   GssResource *r = or->underlying_resource;
@@ -1345,7 +1355,7 @@ onetime_resource (GssTransaction * t)
 }
 
 static void
-unimplemented_resource (GssTransaction * t)
+gss_resource_unimplemented (GssTransaction * t)
 {
   t->s = g_string_new ("");
 
@@ -1358,7 +1368,7 @@ unimplemented_resource (GssTransaction * t)
 }
 
 static void
-main_page_resource (GssTransaction * t)
+gss_server_resource_main_page (GssTransaction * t)
 {
   GString *s;
   GList *g;
@@ -1438,7 +1448,7 @@ main_page_resource (GssTransaction * t)
 }
 
 static void
-list_resource (GssTransaction * t)
+gss_server_resource_list (GssTransaction * t)
 {
   GString *s;
   GList *g;
@@ -1452,7 +1462,7 @@ list_resource (GssTransaction * t)
 }
 
 static void
-log_resource (GssTransaction * t)
+gss_server_resource_log (GssTransaction * t)
 {
   GString *s = g_string_new ("");
   GList *g;
@@ -1720,7 +1730,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 }
 
 static void
-program_frag_resource (GssTransaction * t)
+gss_program_frag_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   GString *s;
@@ -1735,7 +1745,7 @@ program_frag_resource (GssTransaction * t)
 }
 
 static void
-program_get_resource (GssTransaction * t)
+gss_program_get_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   GString *s = g_string_new ("");
@@ -1790,7 +1800,7 @@ program_get_resource (GssTransaction * t)
 
 
 static void
-program_put_resource (GssTransaction * t)
+gss_program_put_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   const char *content_type;
@@ -1880,7 +1890,7 @@ program_put_resource (GssTransaction * t)
 }
 
 static void
-program_list_resource (GssTransaction * t)
+gss_program_list_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   GString *s = g_string_new ("");
@@ -1916,7 +1926,7 @@ program_list_resource (GssTransaction * t)
 }
 
 static void
-program_png_resource (GssTransaction * t)
+gss_program_png_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   GstBuffer *buffer = NULL;
@@ -1944,7 +1954,7 @@ program_png_resource (GssTransaction * t)
 }
 
 static void
-program_jpeg_resource (GssTransaction * t)
+gss_program_jpeg_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   GssConnection *connection;
