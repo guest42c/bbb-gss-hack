@@ -84,6 +84,14 @@ struct _GssProgram {
 };
 
 
+GssProgram * gss_program_new (const char *program_name);
+void gss_program_add_server_resources (GssProgram *program);
+void gss_program_remove_server_resources (GssProgram *program);
+void gss_program_free (GssProgram *program);
+void gss_program_set_jpegsink (GssProgram *program, GstElement *jpegsink);
+void gss_program_stop (GssProgram * program);
+void gss_program_start (GssProgram * program);
+
 void gss_program_follow (GssProgram *program, const char *host,
     const char *stream);
 void gss_program_http_follow (GssProgram *progra, const char *uri);
@@ -102,8 +110,6 @@ void gss_program_enable_streaming (GssProgram *program);
 void gss_program_disable_streaming (GssProgram *program);
 void gss_program_set_running (GssProgram *program, gboolean running);
 
-void gss_program_free (GssProgram *program);
-void gss_program_set_jpegsink (GssProgram *program, GstElement *jpegsink);
 
 void gss_program_add_video_block (GssProgram *program, GString *s, int max_width,
     const char *base_url);

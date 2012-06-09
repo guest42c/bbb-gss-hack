@@ -101,12 +101,22 @@ struct _GssConnection {
   GssProgram *program;
 };
 
+
+#define GSS_STREAM_MAX_FDS 65536
+extern void *gss_stream_fd_table[GSS_STREAM_MAX_FDS];
+
+
 void gss_server_stream_add_hls (GssServerStream *stream);
 GssServerStream * gss_stream_new (int type, int width, int height, int bitrate);
 void gss_stream_free (GssServerStream *stream);
 void gss_stream_get_stats (GssServerStream *stream, guint64 *n_bytes_in,
     guint64 *n_bytes_out);
 void gss_stream_resource (GssTransaction * transaction);
+
+void gss_stream_set_sink (GssServerStream * stream, GstElement * sink);
+void gss_stream_create_follow_pipeline (GssServerStream * stream);
+void gss_stream_create_push_pipeline (GssServerStream * stream);
+
 
 
 G_END_DECLS
