@@ -119,9 +119,6 @@ void gss_server_deinit (void);
 void gss_server_add_admin_callbacks (GssServer *server, SoupServer *soupserver);
 GssProgram * gss_server_get_program_by_name (GssServer *server, const char *name);
 
-void add_video_block (GssProgram *program, GString *s, int max_width,
-    const char *base_url);
-
 void gss_server_log (GssServer *server, char *message);
 
 void gss_server_add_static_file (SoupServer *soupserver, const char *filename,
@@ -147,6 +144,7 @@ void gss_server_add_admin_resource (GssServer * server, GssResource *resource,
     const char *name);
 void gss_server_add_featured_resource (GssServer * server, GssResource *resource,
     const char *name);
+
 
 G_END_DECLS
 

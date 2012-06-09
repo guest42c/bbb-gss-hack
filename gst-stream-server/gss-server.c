@@ -1576,7 +1576,7 @@ file_callback (SoupServer * server, SoupMessage * msg,
 
 
 void
-add_video_block (GssProgram * program, GString * s, int max_width,
+gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     const char *base_url)
 {
   int i;
@@ -1731,7 +1731,7 @@ program_frag_resource (GssTransaction * t)
   }
 
   t->s = s = g_string_new ("");
-  add_video_block (program, s, 0, program->server->base_url);
+  gss_program_add_video_block (program, s, 0, program->server->base_url);
 }
 
 static void
@@ -1748,7 +1748,7 @@ program_get_resource (GssTransaction * t)
 
   g_string_append_printf (s, "<h1>%s</h1>\n", program->location);
 
-  add_video_block (program, s, 0, "");
+  gss_program_add_video_block (program, s, 0, "");
 
   gss_html_append_break (s);
   for (i = 0; i < program->n_streams; i++) {
