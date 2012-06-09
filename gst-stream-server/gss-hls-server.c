@@ -31,16 +31,10 @@ enum
 };
 
 
-static void gss_hls_handle_m3u8 (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
-static void gss_hls_handle_stream_m3u8 (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
+static void gss_hls_handle_m3u8 (GssTransaction * t);
+static void gss_hls_handle_stream_m3u8 (GssTransaction * t);
+static void gss_hls_handle_ts_chunk (GssTransaction * t);
 
-static void gss_hls_handle_ts_chunk (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
 void gss_program_add_hls_chunk (GssServerStream * stream, SoupBuffer * buf);
 
 static gboolean
@@ -64,8 +58,8 @@ gss_server_stream_add_hls (GssServerStream * stream)
     program->enable_hls = TRUE;
 
     s = g_strdup_printf ("/%s.m3u8", program->location);
-    soup_server_add_handler (program->server->server, s, gss_hls_handle_m3u8,
-        program, NULL);
+    gss_server_add_resource (program->server, s, 0,
+        "video/x-mpegurl", gss_hls_handle_m3u8, NULL, NULL, program);
     g_free (s);
   }
 
@@ -116,8 +110,8 @@ gss_server_stream_add_hls (GssServerStream * stream)
 
   s = g_strdup_printf ("/%s-%dx%d-%dkbps%s.m3u8", program->location,
       stream->width, stream->height, stream->bitrate / 1000, stream->mod);
-  soup_server_add_handler (program->server->server, s,
-      gss_hls_handle_stream_m3u8, stream, NULL);
+  gss_server_add_resource (program->server, s, 0,
+      "video/x-mpegurl", gss_hls_handle_stream_m3u8, NULL, NULL, stream);
   g_free (s);
 
   gss_hls_update_variant (program);
@@ -193,8 +187,7 @@ gss_program_add_hls_chunk (GssServerStream * stream, SoupBuffer * buf)
   segment = &stream->chunks[stream->n_chunks % N_CHUNKS];
 
   if (segment->buffer) {
-    soup_server_remove_handler (stream->program->server->server,
-        segment->location);
+    gss_server_remove_resource (stream->program->server, segment->location);
     g_free (segment->location);
     soup_buffer_free (segment->buffer);
   }
@@ -207,8 +200,8 @@ gss_program_add_hls_chunk (GssServerStream * stream, SoupBuffer * buf)
 
   stream->hls.need_index_update = TRUE;
 
-  soup_server_add_handler (stream->program->server->server,
-      segment->location, gss_hls_handle_ts_chunk, segment, NULL);
+  gss_server_add_resource (stream->program->server, segment->location,
+      0, "video/mp2t", gss_hls_handle_ts_chunk, NULL, NULL, segment);
 
   stream->n_chunks++;
   stream->program->n_hls_chunks = stream->n_chunks;
@@ -317,57 +310,44 @@ gss_hls_update_variant (GssProgram * program)
 }
 
 static void
-gss_hls_handle_m3u8 (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+gss_hls_handle_m3u8 (GssTransaction * t)
 {
-  GssProgram *program = (GssProgram *) user_data;
+  GssProgram *program = (GssProgram *) t->resource->priv;
 
   g_assert (program->hls.variant_buffer != NULL);
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
-  soup_message_headers_replace (msg->response_headers,
-      "Cache-Control", "no-cache");
-  soup_message_headers_replace (msg->response_headers, "Content-Type",
-      "video/x-mpegurl");
-  soup_message_body_append_buffer (msg->response_body,
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
+  soup_message_headers_replace (t->msg->response_headers,
+      "Cache-Control", "no-store");
+  soup_message_body_append_buffer (t->msg->response_body,
       program->hls.variant_buffer);
 }
 
 static void
-gss_hls_handle_stream_m3u8 (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+gss_hls_handle_stream_m3u8 (GssTransaction * t)
 {
-  GssServerStream *stream = (GssServerStream *) user_data;
+  GssServerStream *stream = (GssServerStream *) t->resource->priv;
 
   if (stream->hls.index_buffer == NULL || stream->hls.need_index_update) {
     gss_hls_update_index (stream);
   }
 
-
-  soup_message_set_status (msg, SOUP_STATUS_OK);
-  soup_message_headers_replace (msg->response_headers, "Content-Type",
-      "video/x-mpegurl");
-  soup_message_headers_replace (msg->response_headers,
-      "Cache-Control", "no-cache");
-  soup_message_body_append_buffer (msg->response_body,
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
+  soup_message_headers_replace (t->msg->response_headers,
+      "Cache-Control", "no-store");
+  soup_message_body_append_buffer (t->msg->response_body,
       stream->hls.index_buffer);
 }
 
 static void
-gss_hls_handle_ts_chunk (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+gss_hls_handle_ts_chunk (GssTransaction * t)
 {
-  GssHLSSegment *segment = (GssHLSSegment *) user_data;
+  GssHLSSegment *segment = (GssHLSSegment *) t->resource->priv;
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_headers_replace (msg->response_headers,
-      "Cache-Control", "no-cache");
-  soup_message_headers_replace (msg->response_headers, "Content-Type",
-      "video/mp2t");
+  soup_message_headers_replace (t->msg->response_headers,
+      "Cache-Control", "no-store");
 
-  soup_message_body_append_buffer (msg->response_body, segment->buffer);
+  soup_message_body_append_buffer (t->msg->response_body, segment->buffer);
 }

@@ -75,10 +75,7 @@ client_removed (GstElement * e, int arg0, int arg1, gpointer user_data);
 static void client_fd_removed (GstElement * e, int fd, gpointer user_data);
 static void msg_wrote_headers (SoupMessage * msg, void *user_data);
 static void stream_resource (GssTransaction * transaction);
-static void
-gss_stream_handle_m3u8 (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data);
+static void gss_stream_handle_m3u8 (GssTransaction * transaction);
 static gboolean periodic_timer (gpointer data);
 
 static void
@@ -811,21 +808,19 @@ msg_wrote_headers (SoupMessage * msg, void *user_data)
 }
 
 static void
-gss_stream_handle_m3u8 (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
+gss_stream_handle_m3u8 (GssTransaction * t)
 {
+  GssServerStream *stream = (GssServerStream *) t->resource->priv;
   char *content;
-  GssServerStream *stream = (GssServerStream *) user_data;
 
   content = g_strdup_printf ("#EXTM3U\n"
       "#EXT-X-TARGETDURATION:10\n"
       "#EXTINF:10,\n"
       "%s/%s\n", stream->program->server->base_url, stream->name);
 
-  soup_message_set_status (msg, SOUP_STATUS_OK);
+  soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_set_response (msg, "application/x-mpegurl", SOUP_MEMORY_TAKE,
+  soup_message_body_append (t->msg->response_body, SOUP_MEMORY_TAKE,
       content, strlen (content));
 }
 
@@ -881,7 +876,6 @@ GssServerStream *
 gss_program_add_stream_full (GssProgram * program,
     int type, int width, int height, int bitrate, GstElement * sink)
 {
-  SoupServer *soupserver = program->server->server;
   GssServerStream *stream;
   char *s;
 
@@ -907,7 +901,8 @@ gss_program_add_stream_full (GssProgram * program,
       stream->width, stream->height, stream->bitrate / 1000, stream->mod,
       stream->ext);
   s = g_strdup_printf ("/%s", stream->playlist_name);
-  soup_server_add_handler (soupserver, s, gss_stream_handle_m3u8, stream, NULL);
+  gss_server_add_resource (program->server, s, 0, "application/x-mpegurl",
+      gss_stream_handle_m3u8, NULL, NULL, stream);
   g_free (s);
 
   gss_stream_set_sink (stream, sink);
