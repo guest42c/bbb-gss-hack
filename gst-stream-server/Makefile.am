@@ -26,7 +26,9 @@ libgss_la_SOURCES = \
 	gss-content.h \
 	gss-vod.c \
 	gss-resource.c \
-	gss-program.c
+	gss-program.c \
+	gss-program-follow.c \
+	gss-program-push.c
 
 
 libgss_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS) $(JSON_GLIB_CFLAGS)
