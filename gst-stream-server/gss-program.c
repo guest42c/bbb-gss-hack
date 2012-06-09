@@ -26,6 +26,7 @@
 #include "gss-soup.h"
 #include "gss-rtsp.h"
 #include "gss-content.h"
+#include "gss-utils.h"
 
 
 
@@ -253,34 +254,6 @@ gss_program_free (GssProgram * program)
   g_free (program->follow_uri);
   g_free (program->follow_host);
   g_free (program);
-}
-
-/* FIXME move to gss-utils.c */
-static char *
-gss_utils_get_time_string (void)
-{
-  GDateTime *datetime;
-  char *s;
-
-  datetime = g_date_time_new_now_local ();
-
-#if 0
-  /* RFC 822 */
-  strftime (thetime, 79, "%a, %d %b %y %T %z", tmp);
-#endif
-  /* RFC 2822 */
-  s = g_date_time_format (datetime, "%a, %d %b %Y %H:%M:%S %z");
-  /* Workaround for a glib bug that was fixed some time ago */
-  if (s[27] == '-')
-    s[27] = '0';
-#if 0
-  /* RFC 3339, almost */
-  strftime (thetime, 79, "%Y-%m-%d %H:%M:%S%z", tmp);
-#endif
-
-  g_date_time_unref (datetime);
-
-  return s;
 }
 
 void

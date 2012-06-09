@@ -32,10 +32,9 @@
 #include "gss-soup.h"
 #include "gss-rtsp.h"
 #include "gss-content.h"
+#include "gss-utils.h"
 #include "gss-vod.h"
 
-#include <sys/ioctl.h>
-#include <net/if.h>
 
 
 #define BASE "/"
@@ -68,8 +67,6 @@ static void gss_server_setup_resources (GssServer * server);
 static void gss_server_notify (const char *key, void *priv);
 
 
-/* misc */
-static char *gethostname_alloc (void);
 static gboolean periodic_timer (gpointer data);
 
 
@@ -235,48 +232,6 @@ gss_server_set_title (GssServer * server, const char *title)
   server->title = g_strdup (title);
 }
 
-static char *
-get_ip_address_string (const char *interface)
-{
-  int sock;
-  int ret;
-  struct ifreq ifr;
-
-  sock = socket (AF_INET, SOCK_DGRAM, 0);
-
-  memset (&ifr, 0, sizeof (ifr));
-  strcpy (ifr.ifr_name, "eth0");
-
-  ret = ioctl (sock, SIOCGIFADDR, &ifr);
-  if (ret == 0) {
-    struct sockaddr_in *sa = (struct sockaddr_in *) &ifr.ifr_addr;
-    guint32 quad = ntohl (sa->sin_addr.s_addr);
-
-    return g_strdup_printf ("%d.%d.%d.%d", (quad >> 24) & 0xff,
-        (quad >> 16) & 0xff, (quad >> 8) & 0xff, (quad >> 0) & 0xff);
-  }
-
-  return strdup ("127.0.0.1");
-}
-
-static char *
-gethostname_alloc (void)
-{
-  char *s;
-  char *t;
-  int ret;
-
-  s = g_malloc (1000);
-  ret = gethostname (s, 1000);
-  if (ret == 0) {
-    t = g_strdup (s);
-  } else {
-    t = get_ip_address_string ("eth0");
-  }
-  g_free (s);
-  return t;
-}
-
 static void
 dump_header (const char *name, const char *value, gpointer user_data)
 {
@@ -315,7 +270,7 @@ gss_server_new (void)
       server);
 
   //server->config_filename = "/opt/entropywave/ew-oberon/config";
-  server->server_name = gethostname_alloc ();
+  server->server_name = gss_utils_gethostname ();
 
   if (server->port == 80) {
     server->base_url = g_strdup_printf ("http://%s", server->server_name);

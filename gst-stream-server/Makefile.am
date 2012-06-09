@@ -29,7 +29,8 @@ libgss_la_SOURCES = \
 	gss-program.c \
 	gss-program-follow.c \
 	gss-program-push.c \
-	gss-stream.c
+	gss-stream.c \
+	gss-utils.c
 
 
 libgss_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS) $(JSON_GLIB_CFLAGS)
@@ -49,6 +50,7 @@ gss_include_HEADERS = \
 	gss-stream.h \
 	gss-transaction.h \
 	gss-types.h \
+	gss-utils.h \
 	gss-vod.h
 
 content_files= \
