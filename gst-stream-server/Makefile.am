@@ -33,10 +33,16 @@ gss_include_HEADERS = \
 	gss-server.h \
 	gss-session.h \
 	gss-config.h \
+	gss-program.h \
 	gss-form.h \
 	gss-html.h \
 	gss-soup.h \
-	gss-rtsp.h
+	gss-rtsp.h \
+	gss-metrics.h \
+	gss-resource.h \
+	gss-stream.h \
+	gss-transaction.h \
+	gss-types.h
 
 content_files= \
 	content/bootstrap-responsive.css \

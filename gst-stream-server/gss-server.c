@@ -42,10 +42,6 @@
 
 #define BASE "/"
 
-#define enable_video_tag TRUE
-#define enable_flash TRUE
-#define enable_cortado FALSE
-
 #define verbose FALSE
 
 enum
@@ -118,8 +114,6 @@ G_DEFINE_TYPE (GssServer, gss_server, G_TYPE_OBJECT);
 
 #define DEFAULT_HTTP_PORT 80
 #define DEFAULT_HTTPS_PORT 443
-
-static gboolean enable_rtsp = FALSE;
 
 static const gchar *soup_method_source;
 #define SOUP_METHOD_SOURCE (soup_method_source)
