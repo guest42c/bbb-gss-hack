@@ -20,7 +20,8 @@ libgss_la_SOURCES = \
 	gss-rtsp.c \
 	gss-metrics.c \
 	gss-content.c \
-	gss-content.h
+	gss-content.h \
+	gss-vod.c
 	
 
 noinst_LTLIBRARIES = libgss.la
@@ -42,7 +43,8 @@ gss_include_HEADERS = \
 	gss-resource.h \
 	gss-stream.h \
 	gss-transaction.h \
-	gss-types.h
+	gss-types.h \
+	gss-vod.h
 
 content_files= \
 	content/bootstrap-responsive.css \
