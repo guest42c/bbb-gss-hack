@@ -145,6 +145,11 @@ void gss_server_add_admin_resource (GssServer * server, GssResource *resource,
 void gss_server_add_featured_resource (GssServer * server, GssResource *resource,
     const char *name);
 
+void gss_server_add_resource_simple (GssServer * server, GssResource * r);
+void gss_server_add_program_simple (GssServer * server, GssProgram * program);
+
+
+
 
 G_END_DECLS
 

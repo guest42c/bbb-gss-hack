@@ -34,11 +34,8 @@
 #include "gss-content.h"
 #include "gss-vod.h"
 
-#include <glib/gstdio.h>
-
 #include <sys/ioctl.h>
 #include <net/if.h>
-#include <fcntl.h>
 
 
 #define BASE "/"
@@ -72,6 +69,7 @@ static void gss_server_notify (const char *key, void *priv);
 
 
 /* misc */
+static char *gethostname_alloc (void);
 static void
 client_removed (GstElement * e, int arg0, int arg1, gpointer user_data);
 static void client_fd_removed (GstElement * e, int fd, gpointer user_data);
@@ -213,6 +211,9 @@ gss_server_set_property (GObject * object, guint prop_id,
     case PROP_PORT:
       server->port = g_value_get_int (value);
       break;
+    default:
+      g_assert_not_reached ();
+      break;
   }
 }
 
@@ -227,6 +228,9 @@ gss_server_get_property (GObject * object, guint prop_id,
   switch (prop_id) {
     case PROP_PORT:
       g_value_set_int (value, server->port);
+      break;
+    default:
+      g_assert_not_reached ();
       break;
   }
 }
@@ -246,7 +250,7 @@ gss_server_set_title (GssServer * server, const char *title)
   server->title = g_strdup (title);
 }
 
-char *
+static char *
 get_ip_address_string (const char *interface)
 {
   int sock;
@@ -270,7 +274,7 @@ get_ip_address_string (const char *interface)
   return strdup ("127.0.0.1");
 }
 
-char *
+static char *
 gethostname_alloc (void)
 {
   char *s;
@@ -727,10 +731,10 @@ static void
 client_fd_removed (GstElement * e, int fd, gpointer user_data)
 {
   GssServerStream *stream = user_data;
-  SoupSocket *socket = gss_stream_fd_table[fd];
+  SoupSocket *sock = gss_stream_fd_table[fd];
 
-  if (socket) {
-    soup_socket_disconnect (socket);
+  if (sock) {
+    soup_socket_disconnect (sock);
     gss_stream_fd_table[fd] = NULL;
   } else {
     stream->custom_client_fd_removed (stream, fd, stream->custom_user_data);
@@ -782,11 +786,11 @@ static void
 msg_wrote_headers (SoupMessage * msg, void *user_data)
 {
   GssConnection *connection = user_data;
-  SoupSocket *socket;
+  SoupSocket *sock;
   int fd;
 
-  socket = soup_client_context_get_socket (connection->client);
-  fd = soup_socket_get_fd (socket);
+  sock = soup_client_context_get_socket (connection->client);
+  fd = soup_socket_get_fd (sock);
 
   if (connection->stream->sink) {
     GssServerStream *stream = connection->stream;
@@ -794,13 +798,13 @@ msg_wrote_headers (SoupMessage * msg, void *user_data)
     g_signal_emit_by_name (connection->stream->sink, "add", fd);
 
     g_assert (fd < GSS_STREAM_MAX_FDS);
-    gss_stream_fd_table[fd] = socket;
+    gss_stream_fd_table[fd] = sock;
 
     gss_metrics_add_client (stream->metrics, stream->bitrate);
     gss_metrics_add_client (stream->program->metrics, stream->bitrate);
     gss_metrics_add_client (stream->program->server->metrics, stream->bitrate);
   } else {
-    soup_socket_disconnect (socket);
+    soup_socket_disconnect (sock);
   }
 
   g_free (connection);
@@ -864,6 +868,9 @@ gss_stream_new (int type, int width, int height, int bitrate)
       stream->content_type = g_strdup ("video/x-flv");
       stream->mod = "";
       stream->ext = "flv";
+      break;
+    default:
+      g_assert_not_reached ();
       break;
   }
 
@@ -1333,6 +1340,9 @@ gss_stream_create_follow_pipeline (GssServerStream * stream)
     case GSS_SERVER_STREAM_WEBM:
       g_string_append (pipe_desc, "matroskaparse name=parse ! ");
       break;
+    default:
+      g_assert_not_reached ();
+      break;
   }
   g_string_append (pipe_desc, "queue ! ");
   g_string_append_printf (pipe_desc, "%s name=sink ",
@@ -1411,6 +1421,9 @@ gss_stream_create_push_pipeline (GssServerStream * stream)
       break;
     case GSS_SERVER_STREAM_WEBM:
       g_string_append (pipe_desc, "matroskaparse name=parse ! ");
+      break;
+    default:
+      g_assert_not_reached ();
       break;
   }
   g_string_append (pipe_desc, "queue ! ");

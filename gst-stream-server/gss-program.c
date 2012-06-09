@@ -33,11 +33,7 @@
 #include "gss-rtsp.h"
 #include "gss-content.h"
 
-#include <glib/gstdio.h>
 
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <fcntl.h>
 
 
 static void gss_program_get_resource (GssTransaction * transaction);
@@ -508,6 +504,9 @@ gss_program_get_resource (GssTransaction * t)
       case GSS_SERVER_STREAM_FLV:
         typename = "FLV";
         break;
+      default:
+        g_assert_not_reached ();
+        break;
     }
     gss_html_append_break (s);
     g_string_append_printf (s,
@@ -660,6 +659,9 @@ gss_program_list_resource (GssTransaction * t)
         break;
       case GSS_SERVER_STREAM_FLV:
         typename = "flv";
+        break;
+      default:
+        g_assert_not_reached ();
         break;
     }
     g_string_append_printf (s,

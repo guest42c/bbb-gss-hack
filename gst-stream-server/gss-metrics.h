@@ -30,8 +30,8 @@ G_BEGIN_DECLS
 struct _GssMetrics {
   int n_clients;
   int max_clients;
-  guint64 bitrate;
-  guint64 max_bitrate;
+  gint64 bitrate;
+  gint64 max_bitrate;
 };
 
 GssMetrics * gss_metrics_new (void);

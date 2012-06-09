@@ -240,7 +240,7 @@ gss_config_load_defaults (GssConfig * config, GssConfigDefault * list)
   }
 }
 
-void
+static void
 _gss_config_load_from_file (GssConfig * config, gboolean lock)
 {
   gboolean ret;

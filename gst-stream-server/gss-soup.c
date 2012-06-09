@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include "gss-html.h"
+#include "gss-soup.h"
 
 #include <string.h>
 

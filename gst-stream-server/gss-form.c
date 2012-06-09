@@ -26,20 +26,6 @@
 #include "gss-form.h"
 #include "gss-html.h"
 
-#include <glib/gstdio.h>
-#include <glib-object.h>
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <string.h>
-#include <glib/gstdio.h>
 
 
 void

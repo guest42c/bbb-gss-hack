@@ -61,6 +61,7 @@ void gss_session_login_callback (SoupServer *server, SoupMessage *msg,
 void gss_session_logout_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
+gboolean gss_session_is_valid (GssSession * session);
 
 
 G_END_DECLS

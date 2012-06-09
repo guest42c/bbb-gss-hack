@@ -27,8 +27,6 @@
 #include "gss-html.h"
 #include "gss-soup.h"
 
-#include <glib/gstdio.h>
-#include <glib-object.h>
 #include <json-glib/json-glib.h>
 
 #include <fcntl.h>

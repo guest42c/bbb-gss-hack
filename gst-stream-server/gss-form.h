@@ -48,16 +48,16 @@ typedef enum {
 
 typedef struct _GssOption GssOption;
 struct _GssOption {
-  char *config_name;
-  char *long_name;
+  const char *config_name;
+  const char *long_name;
 };
 
 typedef struct _GssField GssField;
 struct _GssField {
   GssFieldType type;
-  char *config_name;
-  char *long_name;
-  char *default_value;
+  const char *config_name;
+  const char *long_name;
+  const char *default_value;
   int indent;
 
   GssOption options[GSS_FORM_NUM_OPTIONS];
@@ -71,6 +71,7 @@ void gss_config_form_add_file (GString *s, GssField *item, const char *value);
 void gss_config_form_add_radio (GString *s, GssField *item, const char *value);
 void gss_config_form_add_submit (GString *s, GssField *item, const char *value);
 void gss_config_form_add_hidden (GString *s, GssField *item, const char *value);
+void gss_config_form_add_enable (GString * s, GssField * item, const char *value);
 void gss_config_form_add_form (GssServer *server, GString * s, const char *action,
     const char *name, GssField *fields, GssSession *session);
 

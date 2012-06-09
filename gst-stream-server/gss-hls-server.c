@@ -23,14 +23,6 @@
 
 #include "gss-server.h"
 
-#if 0
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#endif
 
 
 enum
@@ -140,7 +132,7 @@ struct _ChunkCallback
   int n;
 };
 
-gboolean
+static gboolean
 gss_program_add_hls_chunk_callback (gpointer data)
 {
   ChunkCallback *chunk_callback = (ChunkCallback *) data;
@@ -322,12 +314,6 @@ gss_hls_update_variant (GssProgram * program)
       soup_buffer_new (SOUP_MEMORY_TAKE, s->str, s->len);
   g_string_free (s, FALSE);
 
-}
-
-const char *
-soup_message_get_uri_path (SoupMessage * msg)
-{
-  return soup_message_get_uri (msg)->path;
 }
 
 static void

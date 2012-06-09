@@ -32,11 +32,8 @@
 #include "gss-soup.h"
 #include "gss-rtsp.h"
 #include "gss-content.h"
+#include "gss-vod.h"
 
-#include <glib/gstdio.h>
-
-#include <sys/ioctl.h>
-#include <net/if.h>
 #include <fcntl.h>
 
 
