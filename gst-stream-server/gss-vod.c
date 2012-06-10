@@ -143,7 +143,7 @@ gss_vod_setup (GssServer * server)
         program = gss_server_add_program (server, name);
         program->is_archive = TRUE;
 
-        stream = gss_stream_new (GSS_SERVER_STREAM_WEBM, 640, 360, 600);
+        stream = gss_stream_new (GSS_STREAM_TYPE_WEBM, 640, 360, 600);
         gss_program_add_stream (program, stream);
 
         stream->name =

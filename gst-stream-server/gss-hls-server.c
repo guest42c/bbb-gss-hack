@@ -67,9 +67,9 @@ gss_stream_add_hls (GssStream * stream)
       G_CALLBACK (sink_data_probe_callback), stream);
 
   profile = 0;
-  if (stream->type == GSS_SERVER_STREAM_TS) {
+  if (stream->type == GSS_STREAM_TYPE_TS) {
     profile = 0x42e0;           /* baseline */
-  } else if (stream->type == GSS_SERVER_STREAM_TS_MAIN) {
+  } else if (stream->type == GSS_STREAM_TYPE_TS_MAIN) {
     profile = 0x4d40;           /* main */
   }
 

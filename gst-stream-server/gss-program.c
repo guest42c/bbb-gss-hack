@@ -90,7 +90,7 @@ gss_program_finalize (GObject * object)
   for (i = 0; i < program->n_streams; i++) {
     GssStream *stream = program->streams[i];
 
-    gss_stream_free (stream);
+    g_object_unref (stream);
   }
 
   if (program->hls.variant_buffer) {
@@ -256,7 +256,7 @@ gss_program_stop (GssProgram * program)
   if (program->program_type != GSS_PROGRAM_MANUAL) {
     for (i = 0; i < program->n_streams; i++) {
       stream = program->streams[i];
-      gss_stream_free (stream);
+      g_object_unref (stream);
     }
     program->n_streams = 0;
   }
@@ -273,7 +273,7 @@ gss_program_start (GssProgram * program)
       gss_program_follow_get_list (program);
       break;
     case GSS_PROGRAM_HTTP_FOLLOW:
-      gss_program_add_stream_follow (program, GSS_SERVER_STREAM_OGG, 640, 360,
+      gss_program_add_stream_follow (program, GSS_STREAM_TYPE_OGG, 640, 360,
           700000, program->follow_uri);
       break;
     case GSS_PROGRAM_MANUAL:
@@ -371,7 +371,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       width = stream->width;
     if (stream->height > height)
       height = stream->height;
-    if (stream->type != GSS_SERVER_STREAM_FLV) {
+    if (stream->type != GSS_STREAM_TYPE_FLV) {
       flash_only = FALSE;
     }
   }
@@ -387,7 +387,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 
     for (i = program->n_streams - 1; i >= 0; i--) {
       GssStream *stream = program->streams[i];
-      if (stream->type == GSS_SERVER_STREAM_WEBM) {
+      if (stream->type == GSS_STREAM_TYPE_WEBM) {
         g_string_append_printf (s,
             "<source src=\"%s/%s\" type='video/webm; codecs=\"vp8, vorbis\"'>\n",
             base_url, stream->name);
@@ -396,7 +396,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 
     for (i = program->n_streams - 1; i >= 0; i--) {
       GssStream *stream = program->streams[i];
-      if (stream->type == GSS_SERVER_STREAM_OGG) {
+      if (stream->type == GSS_STREAM_TYPE_OGG) {
         g_string_append_printf (s,
             "<source src=\"%s/%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
             base_url, stream->name);
@@ -405,8 +405,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 
     for (i = program->n_streams - 1; i >= 0; i--) {
       GssStream *stream = program->streams[i];
-      if (stream->type == GSS_SERVER_STREAM_TS ||
-          stream->type == GSS_SERVER_STREAM_TS_MAIN) {
+      if (stream->type == GSS_STREAM_TYPE_TS ||
+          stream->type == GSS_STREAM_TYPE_TS_MAIN) {
         g_string_append_printf (s,
             "<source src=\"%s/%s.m3u8\" >\n", base_url, program->location);
         break;
@@ -418,7 +418,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   if (enable_cortado) {
     for (i = 0; i < program->n_streams; i++) {
       GssStream *stream = program->streams[i];
-      if (stream->type == GSS_SERVER_STREAM_OGG) {
+      if (stream->type == GSS_STREAM_TYPE_OGG) {
         g_string_append_printf (s,
             "<applet code=\"com.fluendo.player.Cortado.class\"\n"
             "  archive=\"%s/cortado.jar\" width=\"%d\" height=\"%d\">\n"
@@ -432,7 +432,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   if (enable_flash) {
     for (i = 0; i < program->n_streams; i++) {
       GssStream *stream = program->streams[i];
-      if (stream->type == GSS_SERVER_STREAM_FLV) {
+      if (stream->type == GSS_STREAM_TYPE_FLV) {
         g_string_append_printf (s,
             " <object width='%d' height='%d' id='flvPlayer' "
             "type=\"application/x-shockwave-flash\" "
@@ -511,19 +511,19 @@ gss_program_get_resource (GssTransaction * t)
     GssStream *stream = program->streams[i];
 
     switch (stream->type) {
-      case GSS_SERVER_STREAM_OGG:
+      case GSS_STREAM_TYPE_OGG:
         typename = "Ogg/Theora";
         break;
-      case GSS_SERVER_STREAM_WEBM:
+      case GSS_STREAM_TYPE_WEBM:
         typename = "WebM";
         break;
-      case GSS_SERVER_STREAM_TS:
+      case GSS_STREAM_TYPE_TS:
         typename = "MPEG-TS";
         break;
-      case GSS_SERVER_STREAM_TS_MAIN:
+      case GSS_STREAM_TYPE_TS_MAIN:
         typename = "MPEG-TS main";
         break;
-      case GSS_SERVER_STREAM_FLV:
+      case GSS_STREAM_TYPE_FLV:
         typename = "FLV";
         break;
       default:
@@ -589,20 +589,20 @@ gss_program_put_resource (GssTransaction * t)
       "Content-Type");
   if (content_type) {
     if (strcmp (content_type, "application/ogg") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_OGG;
+      program->push_media_type = GSS_STREAM_TYPE_OGG;
     } else if (strcmp (content_type, "video/webm") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_WEBM;
+      program->push_media_type = GSS_STREAM_TYPE_WEBM;
     } else if (strcmp (content_type, "video/mpeg-ts") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_TS;
+      program->push_media_type = GSS_STREAM_TYPE_TS;
     } else if (strcmp (content_type, "video/mp2t") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_TS;
+      program->push_media_type = GSS_STREAM_TYPE_TS;
     } else if (strcmp (content_type, "video/x-flv") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_FLV;
+      program->push_media_type = GSS_STREAM_TYPE_FLV;
     } else {
-      program->push_media_type = GSS_SERVER_STREAM_OGG;
+      program->push_media_type = GSS_STREAM_TYPE_OGG;
     }
   } else {
-    program->push_media_type = GSS_SERVER_STREAM_OGG;
+    program->push_media_type = GSS_STREAM_TYPE_OGG;
   }
 
   if (program->push_client == NULL) {
@@ -666,19 +666,19 @@ gss_program_list_resource (GssTransaction * t)
     GssStream *stream = program->streams[i];
     const char *typename = "unknown";
     switch (stream->type) {
-      case GSS_SERVER_STREAM_OGG:
+      case GSS_STREAM_TYPE_OGG:
         typename = "ogg";
         break;
-      case GSS_SERVER_STREAM_WEBM:
+      case GSS_STREAM_TYPE_WEBM:
         typename = "webm";
         break;
-      case GSS_SERVER_STREAM_TS:
+      case GSS_STREAM_TYPE_TS:
         typename = "mpeg-ts";
         break;
-      case GSS_SERVER_STREAM_TS_MAIN:
+      case GSS_STREAM_TYPE_TS_MAIN:
         typename = "mpeg-ts-main";
         break;
-      case GSS_SERVER_STREAM_FLV:
+      case GSS_STREAM_TYPE_FLV:
         typename = "flv";
         break;
       default:

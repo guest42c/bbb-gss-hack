@@ -33,15 +33,27 @@
 
 G_BEGIN_DECLS
 
+#define GSS_TYPE_STREAM \
+  (gss_stream_get_type())
+#define GSS_STREAM(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GSS_TYPE_STREAM,GssStream))
+#define GSS_STREAM_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),GSS_TYPE_STREAM,GssStreamClass))
+#define GSS_IS_STREAM(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GSS_TYPE_STREAM))
+#define GSS_IS_STREAM_CLASS(obj) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass),GSS_TYPE_STREAM))
+
+
 #define GSS_STREAM_HLS_CHUNKS 20
 
 enum {
-  GSS_SERVER_STREAM_UNKNOWN,
-  GSS_SERVER_STREAM_OGG,
-  GSS_SERVER_STREAM_WEBM,
-  GSS_SERVER_STREAM_TS,
-  GSS_SERVER_STREAM_TS_MAIN,
-  GSS_SERVER_STREAM_FLV
+  GSS_STREAM_TYPE_UNKNOWN,
+  GSS_STREAM_TYPE_OGG,
+  GSS_STREAM_TYPE_WEBM,
+  GSS_STREAM_TYPE_TS,
+  GSS_STREAM_TYPE_TS_MAIN,
+  GSS_STREAM_TYPE_FLV
 };
 
 struct _GssHLSSegment {
@@ -52,11 +64,13 @@ struct _GssHLSSegment {
 };
 
 struct _GssStream {
+  GObject object;
+
   GssProgram *program;
   int index;
   char *name;
   char *codecs;
-  char *content_type;
+  const char *content_type;
   char *playlist_name;
   const char *ext; /* filaname extension */
   const char *mod; /* stream modifier ('-main') */
@@ -95,6 +109,12 @@ struct _GssStream {
   gpointer custom_user_data;
 };
 
+typedef struct _GssStreamClass GssStreamClass;
+struct _GssStreamClass {
+  GObjectClass object_class;
+
+};
+
 struct _GssConnection {
   SoupMessage *msg;
   SoupClientContext *client;
@@ -106,10 +126,12 @@ struct _GssConnection {
 #define GSS_STREAM_MAX_FDS 65536
 extern void *gss_stream_fd_table[GSS_STREAM_MAX_FDS];
 
+GType gss_stream_get_type (void);
+
+void gss_stream_set_type (GssStream *stream, int type);
 
 void gss_stream_add_hls (GssStream *stream);
 GssStream * gss_stream_new (int type, int width, int height, int bitrate);
-void gss_stream_free (GssStream *stream);
 void gss_stream_get_stats (GssStream *stream, guint64 *n_bytes_in,
     guint64 *n_bytes_out);
 void gss_stream_resource (GssTransaction * transaction);

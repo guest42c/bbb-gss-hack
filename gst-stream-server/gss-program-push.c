@@ -58,14 +58,14 @@ gss_stream_create_push_pipeline (GssStream * stream)
     g_string_append_printf (pipe_desc, "appsrc name=src do-timestamp=true ! ");
   }
   switch (stream->type) {
-    case GSS_SERVER_STREAM_OGG:
+    case GSS_STREAM_TYPE_OGG:
       g_string_append (pipe_desc, "oggparse name=parse ! ");
       break;
-    case GSS_SERVER_STREAM_TS:
-    case GSS_SERVER_STREAM_TS_MAIN:
+    case GSS_STREAM_TYPE_TS:
+    case GSS_STREAM_TYPE_TS_MAIN:
       g_string_append (pipe_desc, "mpegtsparse name=parse ! ");
       break;
-    case GSS_SERVER_STREAM_WEBM:
+    case GSS_STREAM_TYPE_WEBM:
       g_string_append (pipe_desc, "matroskaparse name=parse ! ");
       break;
     default:

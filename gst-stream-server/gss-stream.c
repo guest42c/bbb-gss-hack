@@ -27,6 +27,21 @@
 #include "gss-rtsp.h"
 #include "gss-content.h"
 
+enum
+{
+  PROP_NAME = 1,
+  PROP_TYPE,
+  PROP_WIDTH,
+  PROP_HEIGHT,
+  PROP_BITRATE
+};
+
+#define DEFAULT_NAME NULL
+#define DEFAULT_TYPE GSS_STREAM_TYPE_UNKNOWN
+#define DEFAULT_WIDTH 0
+#define DEFAULT_HEIGHT 0
+#define DEFAULT_BITRATE 0
+
 
 #define verbose FALSE
 
@@ -34,15 +49,72 @@ static void msg_wrote_headers (SoupMessage * msg, void *user_data);
 
 void *gss_stream_fd_table[GSS_STREAM_MAX_FDS];
 
-void
-gss_stream_free (GssStream * stream)
+static void gss_stream_finalize (GObject * object);
+static void gss_stream_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec);
+static void gss_stream_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec);
+
+static GObjectClass *parent_class;
+
+
+G_DEFINE_TYPE (GssStream, gss_stream, G_TYPE_OBJECT);
+
+static void
+gss_stream_init (GssStream * stream)
 {
+
+  stream->metrics = gss_metrics_new ();
+
+  stream->width = 0;
+  stream->height = 0;
+  stream->bitrate = 0;
+
+  gss_stream_set_type (stream, GSS_STREAM_TYPE_UNKNOWN);
+
+}
+
+static void
+gss_stream_class_init (GssStreamClass * stream_class)
+{
+  G_OBJECT_CLASS (stream_class)->set_property = gss_stream_set_property;
+  G_OBJECT_CLASS (stream_class)->get_property = gss_stream_get_property;
+  G_OBJECT_CLASS (stream_class)->finalize = gss_stream_finalize;
+
+  g_object_class_install_property (G_OBJECT_CLASS (stream_class),
+      PROP_NAME,
+      g_param_spec_string ("name", "Name",
+          "Name", DEFAULT_NAME,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (stream_class),
+      PROP_TYPE, g_param_spec_int ("type", "type",
+          "type", 0, GSS_STREAM_TYPE_FLV, DEFAULT_TYPE,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (stream_class),
+      PROP_WIDTH, g_param_spec_int ("width", "Width",
+          "Width", 0, 3840, DEFAULT_WIDTH,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (stream_class),
+      PROP_HEIGHT, g_param_spec_int ("height", "height",
+          "height", 0, 2160, DEFAULT_HEIGHT,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (stream_class),
+      PROP_BITRATE, g_param_spec_int ("bitrate", "Bit Rate",
+          "Bit Rate", 0, G_MAXINT, DEFAULT_BITRATE,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+
+  parent_class = g_type_class_peek_parent (stream_class);
+}
+
+static void
+gss_stream_finalize (GObject * object)
+{
+  GssStream *stream = GSS_STREAM (object);
   int i;
 
   g_free (stream->name);
   g_free (stream->playlist_name);
   g_free (stream->codecs);
-  g_free (stream->content_type);
   g_free (stream->follow_url);
 
   for (i = 0; i < GSS_STREAM_HLS_CHUNKS; i++) {
@@ -77,9 +149,111 @@ gss_stream_free (GssStream * stream)
   if (stream->adapter)
     g_object_unref (stream->adapter);
   gss_metrics_free (stream->metrics);
-
-  g_free (stream);
 }
+
+static void
+gss_stream_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec)
+{
+  GssStream *stream;
+
+  stream = GSS_STREAM (object);
+
+  switch (prop_id) {
+    case PROP_NAME:
+      //gss_stream_set_name (stream, g_value_get_string (value));
+      break;
+    case PROP_TYPE:
+      gss_stream_set_type (stream, g_value_get_int (value));
+      break;
+    case PROP_WIDTH:
+      stream->width = g_value_get_int (value);
+      break;
+    case PROP_HEIGHT:
+      stream->height = g_value_get_int (value);
+      break;
+    case PROP_BITRATE:
+      stream->bitrate = g_value_get_int (value);
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+  }
+}
+
+static void
+gss_stream_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec)
+{
+  GssStream *stream;
+
+  stream = GSS_STREAM (object);
+
+  switch (prop_id) {
+    case PROP_NAME:
+      //g_value_set_string (value, stream->location);
+      break;
+    case PROP_TYPE:
+      g_value_set_int (value, stream->type);
+      break;
+    case PROP_WIDTH:
+      g_value_set_int (value, stream->width);
+      break;
+    case PROP_HEIGHT:
+      g_value_set_int (value, stream->height);
+      break;
+    case PROP_BITRATE:
+      g_value_set_int (value, stream->bitrate);
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+  }
+}
+
+void
+gss_stream_set_type (GssStream * stream, int type)
+{
+  g_return_if_fail (GSS_IS_STREAM (stream));
+
+  stream->type = type;
+  switch (type) {
+    case GSS_STREAM_TYPE_UNKNOWN:
+      stream->content_type = "unknown/unknown";
+      stream->mod = "";
+      stream->ext = "";
+      break;
+    case GSS_STREAM_TYPE_OGG:
+      stream->content_type = "video/ogg";
+      stream->mod = "";
+      stream->ext = "ogv";
+      break;
+    case GSS_STREAM_TYPE_WEBM:
+      stream->content_type = "video/webm";
+      stream->mod = "";
+      stream->ext = "webm";
+      break;
+    case GSS_STREAM_TYPE_TS:
+      stream->content_type = "video/mp2t";
+      stream->mod = "";
+      stream->ext = "ts";
+      break;
+    case GSS_STREAM_TYPE_TS_MAIN:
+      stream->content_type = "video/mp2t";
+      stream->mod = "-main";
+      stream->ext = "ts";
+      break;
+    case GSS_STREAM_TYPE_FLV:
+      stream->content_type = "video/x-flv";
+      stream->mod = "";
+      stream->ext = "flv";
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+  }
+}
+
 
 void
 gss_stream_get_stats (GssStream * stream, guint64 * in, guint64 * out)
@@ -187,49 +361,8 @@ msg_wrote_headers (SoupMessage * msg, void *user_data)
 GssStream *
 gss_stream_new (int type, int width, int height, int bitrate)
 {
-  GssStream *stream;
-
-  stream = g_malloc0 (sizeof (GssStream));
-
-  stream->metrics = gss_metrics_new ();
-
-  stream->type = type;
-  stream->width = width;
-  stream->height = height;
-  stream->bitrate = bitrate;
-
-  switch (type) {
-    case GSS_SERVER_STREAM_OGG:
-      stream->content_type = g_strdup ("video/ogg");
-      stream->mod = "";
-      stream->ext = "ogv";
-      break;
-    case GSS_SERVER_STREAM_WEBM:
-      stream->content_type = g_strdup ("video/webm");
-      stream->mod = "";
-      stream->ext = "webm";
-      break;
-    case GSS_SERVER_STREAM_TS:
-      stream->content_type = g_strdup ("video/mp2t");
-      stream->mod = "";
-      stream->ext = "ts";
-      break;
-    case GSS_SERVER_STREAM_TS_MAIN:
-      stream->content_type = g_strdup ("video/mp2t");
-      stream->mod = "-main";
-      stream->ext = "ts";
-      break;
-    case GSS_SERVER_STREAM_FLV:
-      stream->content_type = g_strdup ("video/x-flv");
-      stream->mod = "";
-      stream->ext = "flv";
-      break;
-    default:
-      g_assert_not_reached ();
-      break;
-  }
-
-  return stream;
+  return g_object_new (GSS_TYPE_STREAM, "type", type,
+      "width", width, "height", height, "bitrate", bitrate, NULL);
 }
 
 GssStream *
@@ -254,7 +387,7 @@ gss_stream_add_resources (GssStream * stream)
   char *s;
 
   if (enable_rtsp) {
-    if (stream->type == GSS_SERVER_STREAM_OGG) {
+    if (stream->type == GSS_STREAM_TYPE_OGG) {
       stream->rtsp_stream = gss_rtsp_stream_new (stream);
       gss_rtsp_stream_start (stream->rtsp_stream);
     }
@@ -295,8 +428,8 @@ gss_stream_set_sink (GssStream * stream, GstElement * sink)
         G_CALLBACK (client_removed), stream);
     g_signal_connect (stream->sink, "client-fd-removed",
         G_CALLBACK (client_fd_removed), stream);
-    if (stream->type == GSS_SERVER_STREAM_TS ||
-        stream->type == GSS_SERVER_STREAM_TS_MAIN) {
+    if (stream->type == GSS_STREAM_TYPE_TS ||
+        stream->type == GSS_STREAM_TYPE_TS_MAIN) {
       gss_stream_add_hls (stream);
     }
   }
