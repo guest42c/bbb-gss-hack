@@ -331,11 +331,6 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       GssServerStream *stream = program->streams[i];
       if (stream->type == GSS_SERVER_STREAM_TS ||
           stream->type == GSS_SERVER_STREAM_TS_MAIN) {
-#if 0
-        g_string_append_printf (s,
-            "<source src=\"%s/%s\" type='video/x-mpegURL; codecs=\"avc1.42E01E, mp4a.40.2\"' >\n",
-            base_url, stream->playlist_name);
-#endif
         g_string_append_printf (s,
             "<source src=\"%s/%s.m3u8\" >\n", base_url, program->location);
         break;
@@ -379,23 +374,6 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
             "&autoplay=off"
             "&vTitle=TITLE"
             "&showTitle=yes\">\n", width, height + 24, base_url, stream->name);
-#if 0
-        g_string_append_printf (s,
-            "  <embed src='OSplayer.swf"
-            "?movie=%s/%s"
-            "&btncolor=0x333333"
-            "&accentcolor=0x31b8e9"
-            "&txtcolor=0xdddddd"
-            "&volume=30"
-            "&autoload=on"
-            "&autoplay=off"
-            "&vTitle=TITLE"
-            "&showTitle=yes' width='%d' height='%d' "
-            "allowFullScreen='true' "
-            "type='application/x-shockwave-flash' "
-            "allowScriptAccess='always'>\n"
-            " </embed>\n", base_url, stream->name, width, height);
-#endif
         if (program->enable_snapshot) {
           gss_html_append_image_printf (s,
               "%s/%s-snapshot.png", 0, 0, "snapshot image",
@@ -517,6 +495,7 @@ gss_program_put_resource (GssTransaction * t)
   GssServerStream *stream;
   gboolean is_icecast;
 
+  /* FIXME should check if another client has connected */
 #if 0
   if (program->push_client) {
     gss_program_log (program, "busy");
@@ -524,8 +503,6 @@ gss_program_put_resource (GssTransaction * t)
     return;
   }
 #endif
-
-  //soup_message_headers_foreach (t->msg->request_headers, dump_header, NULL);
 
   is_icecast = FALSE;
   if (soup_message_headers_get_one (t->msg->request_headers, "ice-name")) {

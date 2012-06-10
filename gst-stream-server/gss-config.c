@@ -374,16 +374,6 @@ gss_config_handle_post (GssConfig * config, SoupMessage * msg)
     g_free (filename);
     g_free (media_type);
   }
-#if 0
-  if (hash) {
-    GHashTableIter iter;
-    char *key, *value;
-    g_hash_table_iter_init (&iter, hash);
-    while (g_hash_table_iter_next (&iter, (gpointer) & key, (gpointer) & value)) {
-      g_print ("%s=%s\n", key, value);
-    }
-  }
-#endif
 
   if (hash) {
     const char *s, *t;
@@ -414,9 +404,6 @@ gss_config_handle_post (GssConfig * config, SoupMessage * msg)
 #define REALM "Entropy Wave E1000"
         gss_config_set (config, "admin_token",
             soup_auth_domain_digest_encode_password ("admin", REALM, s));
-#if 0
-        gss_config_set (config, "admin_hash", password_hash ("admin", s));
-#endif
       }
       g_hash_table_remove (hash, "admin_token0");
       g_hash_table_remove (hash, "admin_token1");
@@ -430,9 +417,6 @@ gss_config_handle_post (GssConfig * config, SoupMessage * msg)
       if (s && t && strcmp (s, t) == 0) {
         gss_config_set (config, "editor_token",
             soup_auth_domain_digest_encode_password ("editor", REALM, s));
-#if 0
-        gss_config_set (config, "editor_hash", password_hash ("admin", s));
-#endif
       }
       g_hash_table_remove (hash, "editor_token0");
       g_hash_table_remove (hash, "editor_token1");

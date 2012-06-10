@@ -104,13 +104,6 @@ gss_session_notify_hosts_allow (const char *key, void *priv)
       hosts_allow[n_hosts_allow].mask = 64;
       n_hosts_allow++;
 
-#if 0
-      memset (&hosts_allow[n_hosts_allow], 0, sizeof (struct in6_addr));
-      hosts_allow[n_hosts_allow].addr.s6_addr[10] = 0xff;
-      hosts_allow[n_hosts_allow].addr.s6_addr[11] = 0xff;
-      hosts_allow[n_hosts_allow].mask = 96 + bits;
-      n_hosts_allow++;
-#endif
     } else {
       char **d;
       int bits;
@@ -167,20 +160,6 @@ gss_session_notify_hosts_allow (const char *key, void *priv)
   hosts_allow[n_hosts_allow].mask = 96 + 8;
   n_hosts_allow++;
 
-#if 0
-  for (i = 0; i < n_hosts_allow; i++) {
-    struct in6_addr *in6a = &hosts_allow[i].addr;
-
-    g_print
-        ("allow [%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x]/%d\n",
-        in6a->s6_addr[0], in6a->s6_addr[1], in6a->s6_addr[2], in6a->s6_addr[3],
-        in6a->s6_addr[4], in6a->s6_addr[5], in6a->s6_addr[6], in6a->s6_addr[7],
-        in6a->s6_addr[8], in6a->s6_addr[9], in6a->s6_addr[10],
-        in6a->s6_addr[11], in6a->s6_addr[12], in6a->s6_addr[13],
-        in6a->s6_addr[14], in6a->s6_addr[15], hosts_allow[i].mask);
-  }
-#endif
-
   g_strfreev (chunks);
 }
 
@@ -190,37 +169,22 @@ host_validate (const struct in6_addr *in6a)
   int i;
   int j;
 
-#if 0
-  g_print
-      ("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n",
-      in6a->s6_addr[0], in6a->s6_addr[1], in6a->s6_addr[2], in6a->s6_addr[3],
-      in6a->s6_addr[4], in6a->s6_addr[5], in6a->s6_addr[6], in6a->s6_addr[7],
-      in6a->s6_addr[8], in6a->s6_addr[9], in6a->s6_addr[10], in6a->s6_addr[11],
-      in6a->s6_addr[12], in6a->s6_addr[13], in6a->s6_addr[14],
-      in6a->s6_addr[15]);
-#endif
-
   for (i = 0; i < n_hosts_allow; i++) {
     int mask = hosts_allow[i].mask;
 
-    //g_print("check %d\n", i);
     for (j = 0; j < 16; j++) {
       if (mask >= 8) {
         if (hosts_allow[i].addr.s6_addr[j] != in6a->s6_addr[j]) {
-          //g_print("+ %02x!=%02x\n", hosts_allow[i].addr.s6_addr[j], in6a->s6_addr[j]);
           break;
         }
-        //g_print("+ %02x=%02x\n", hosts_allow[i].addr.s6_addr[j], in6a->s6_addr[j]);
       } else if (mask <= 0) {
         return TRUE;
       } else {
         int maskbits = 0xff & (0xff00 >> mask);
         if ((hosts_allow[i].addr.s6_addr[j] & maskbits) !=
             (in6a->s6_addr[j] & maskbits)) {
-          //g_print("+ %02x!=%02x (%02x)\n", hosts_allow[i].addr.s6_addr[j], in6a->s6_addr[j], maskbits);
           break;
         }
-        //g_print("+ %02x=%02x (%02x)\n", hosts_allow[i].addr.s6_addr[j], in6a->s6_addr[j], maskbits);
       }
       mask -= 8;
     }
@@ -480,19 +444,6 @@ gss_session_unref (GssSession * session)
   }
 }
 
-#if 0
-static void
-dump_hash (GHashTable * hash)
-{
-  GHashTableIter iter;
-  gpointer key, value;
-
-  g_hash_table_iter_init (&iter, hash);
-  while (g_hash_table_iter_next (&iter, &key, &value)) {
-    g_print ("%s: %s\n", (gchar *) key, (gchar *) value);
-  }
-}
-#endif
 
 typedef struct _BrowserIDVerify BrowserIDVerify;
 struct _BrowserIDVerify

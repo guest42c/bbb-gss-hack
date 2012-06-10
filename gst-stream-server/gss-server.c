@@ -46,8 +46,6 @@ enum
   PROP_PORT = 1
 };
 
-char *get_time_string (void);
-
 /* Server Resources */
 static void gss_server_resource_main_page (GssTransaction * transaction);
 static void gss_server_resource_list (GssTransaction * transaction);
@@ -591,34 +589,6 @@ gss_server_get_program_by_name (GssServer * server, const char *name)
   return NULL;
 }
 
-char *
-get_time_string (void)
-{
-  GDateTime *datetime;
-  char *s;
-
-  datetime = g_date_time_new_now_local ();
-
-#if 0
-  /* RFC 822 */
-  strftime (thetime, 79, "%a, %d %b %y %T %z", tmp);
-#endif
-  /* RFC 2822 */
-  s = g_date_time_format (datetime, "%a, %d %b %Y %H:%M:%S %z");
-  /* Workaround for a glib bug that was fixed some time ago */
-  if (s[27] == '-')
-    s[27] = '0';
-#if 0
-  /* RFC 3339, almost */
-  strftime (thetime, 79, "%Y-%m-%d %H:%M:%S%z", tmp);
-#endif
-
-  g_date_time_unref (datetime);
-
-  return s;
-}
-
-
 const char *
 gss_server_get_multifdsink_string (void)
 {
@@ -732,10 +702,6 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
         content, len);
     soup_message_set_status (msg, SOUP_STATUS_OK);
   }
-#if 0
-  soup_message_headers_replace (t->msg->response_headers, "Keep-Alive",
-      "timeout=5, max=100");
-#endif
 
   g_free (transaction);
 }
@@ -843,7 +809,7 @@ gss_server_resource_log (GssTransaction * t)
 
   t->s = s;
 
-  time_string = get_time_string ();
+  time_string = gss_utils_get_time_string ();
   g_string_append_printf (s, "Server time: %s\n", time_string);
   g_free (time_string);
   g_string_append_printf (s, "Recent log messages:\n");
@@ -853,111 +819,6 @@ gss_server_resource_log (GssTransaction * t)
   }
 }
 
-#if 0
-static void
-dump_header (const char *name, const char *value, gpointer user_data)
-{
-  g_print ("%s: %s\n", name, value);
-}
-
-static void
-gss_transaction_dump (GssTransaction * t)
-{
-  soup_message_headers_foreach (t->msg->request_headers, dump_header, NULL);
-}
-#endif
-
-#if 0
-static void
-push_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
-{
-  GssProgram *program;
-  const char *content_type;
-
-  program = gss_server_add_program (t->server, "push_stream");
-  program->program_type = GSS_PROGRAM_HTTP_PUT;
-
-  content_type = soup_message_headers_get_one (t->msg->request_headers,
-      "Content-Type");
-  if (content_type) {
-    if (strcmp (content_type, "application/ogg") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_OGG;
-    } else if (strcmp (content_type, "video/webm") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_WEBM;
-    } else if (strcmp (content_type, "video/mpeg-ts") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_TS;
-    } else if (strcmp (content_type, "video/mp2t") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_TS;
-    } else if (strcmp (content_type, "video/x-flv") == 0) {
-      program->push_media_type = GSS_SERVER_STREAM_FLV;
-    } else {
-      program->push_media_type = GSS_SERVER_STREAM_OGG;
-    }
-  } else {
-    program->push_media_type = GSS_SERVER_STREAM_OGG;
-  }
-
-  gss_program_start (program);
-
-  program->push_client = t->client;
-
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-
-  soup_message_headers_set_encoding (t->msg->response_headers,
-      SOUP_ENCODING_EOF);
-
-  g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
-      program);
-
-}
-#endif
-
-#if 0
-static void
-file_callback (SoupServer * server, SoupMessage * msg,
-    const char *path, GHashTable * query, SoupClientContext * client,
-    gpointer user_data)
-{
-  char *contents;
-  gboolean ret;
-  gsize size;
-  GError *error = NULL;
-  const char *content_type = user_data;
-
-  ret = g_file_get_contents (path + 1, &contents, &size, &error);
-  if (!ret) {
-    gss_html_error_404 (msg);
-    if (verbose)
-      g_print ("missing file %s\n", path);
-    return;
-  }
-
-  soup_message_set_status (msg, SOUP_STATUS_OK);
-
-  soup_message_set_response (msg, content_type, SOUP_MEMORY_TAKE, contents,
-      size);
-}
-#endif
-
-
-#if 0
-static int
-get_timestamp (const char *filename)
-{
-  struct stat statbuf;
-  int ret;
-
-  ret = g_stat (filename, &statbuf);
-  if (ret == 0) {
-    return statbuf.st_mtime;
-  }
-  return 0;
-}
-#endif
-
-
 void
 gss_server_read_config (GssServer * server, const char *config_filename)
 {
@@ -965,7 +826,6 @@ gss_server_read_config (GssServer * server, const char *config_filename)
   char *s;
   GError *error;
 
-  //server->config_timestamp = get_timestamp (config_filename);
   error = NULL;
   kf = g_key_file_new ();
   g_key_file_load_from_file (kf, config_filename,

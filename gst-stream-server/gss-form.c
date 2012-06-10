@@ -83,15 +83,6 @@ gss_config_form_add_checkbox (GString * s, GssField * item, const char *value)
   selected = (value && g_str_equal (value, "on"));
   if (item->indent)
     g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
-#if 0
-  g_string_append_printf (s,
-      "<script type=\"text/javascript\">\n"
-      "function toggle() {\n"
-      "var node = document.getElementById(\"%s\");\n"
-      "var e = document.getElementById(\"%s\");\n"
-      "e.disabled = node.checked;\n"
-      "}\n" "</script>\n", item->config_name, "admin_token0");
-#endif
   g_string_append_printf (s, "%s: <input type=\"hidden\" name=\"%s\" value=off>"
       "<input id=\"%s\" type=\"checkbox\" name=\"%s\" %s onclick=\"toggle()\">\n",
       item->long_name,

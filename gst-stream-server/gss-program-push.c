@@ -37,16 +37,6 @@ static void handle_pipeline_message (GstBus * bus, GstMessage * message,
 static gboolean
 push_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
 {
-#if 0
-  //GssServerStream *stream = (GssServerStream *) user_data;
-
-  if (GST_IS_BUFFER (mo)) {
-    GstBuffer *buffer = GST_BUFFER (mo);
-
-    g_print ("push got %d bytes\n", GST_BUFFER_SIZE (buffer));
-    //gst_util_dump_mem (GST_BUFFER_DATA(buffer), 16);
-  }
-#endif
 
   return TRUE;
 }

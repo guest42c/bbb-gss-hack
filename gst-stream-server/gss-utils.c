@@ -97,3 +97,15 @@ gss_utils_gethostname (void)
   g_free (s);
   return t;
 }
+
+void
+gss_utils_dump_hash (GHashTable * hash)
+{
+  GHashTableIter iter;
+  char *key, *value;
+
+  g_hash_table_iter_init (&iter, hash);
+  while (g_hash_table_iter_next (&iter, (gpointer) & key, (gpointer) & value)) {
+    g_print ("%s=%s\n", key, value);
+  }
+}

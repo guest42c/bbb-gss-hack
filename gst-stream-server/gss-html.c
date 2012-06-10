@@ -284,27 +284,6 @@ gss_html_bootstrap_doc (GssTransaction * t)
       "            <p>Content #1.</p>\n"
       "            <p><a class='btn btn-primary btn-large'>Learn more &raquo;</a></p>\n"
       "          </div>\n");
-
-#if 0
-  g_string_append (s,
-      "          <div class='row-fluid'>\n"
-      "            <div class='span4'>\n"
-      "              <h2>Heading</h2>\n"
-      "              <p>Content #2. </p>\n"
-      "              <p><a class='btn' href='#'>View details &raquo;</a></p>\n"
-      "            </div><!--/span-->\n"
-      "            <div class='span4'>\n"
-      "              <h2>Heading</h2>\n"
-      "              <p>Content #2. </p>\n"
-      "              <p><a class='btn' href='#'>View details &raquo;</a></p>\n"
-      "            </div><!--/span-->\n"
-      "            <div class='span4'>\n"
-      "              <h2>Heading</h2>\n"
-      "              <p>Content #2. </p>\n"
-      "              <p><a class='btn' href='#'>View details &raquo;</a></p>\n"
-      "            </div><!--/span-->\n" "          </div><!--/row-->\n");
-#endif
-
 }
 
 void

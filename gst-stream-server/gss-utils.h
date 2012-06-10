@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 char * gss_utils_get_time_string (void);
 char * gss_utils_get_ip_address_string (const char *interface);
 char * gss_utils_gethostname (void);
+void gss_utils_dump_hash (GHashTable *hash);
   
 
 G_END_DECLS
