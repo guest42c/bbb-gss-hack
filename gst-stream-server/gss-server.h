@@ -57,10 +57,14 @@ struct _GssServer
 
   GssConfig *config;
   //char * config_filename;
-  char * server_name;
+  
+  /* properties */
   int port;
   int https_port;
+  char * server_name;
   char *title;
+  int max_connections;
+  gint64 max_bitrate;
 
   GList *programs;
   GssMetrics *metrics;
@@ -77,9 +81,6 @@ struct _GssServer
   GstRTSPServer *rtsp_server;
 
   //time_t config_timestamp;
-
-  int max_connections;
-  gint64 max_bitrate;
 
   GList *messages;
   int n_messages;
@@ -102,7 +103,7 @@ struct _GssServerClass
 GType gss_server_get_type (void);
 
 GssServer * gss_server_new (void);
-void gss_server_set_hostname (GssServer *server, const char *hostname);
+void gss_server_set_server_name (GssServer *server, const char *hostname);
 void gss_server_read_config (GssServer *server, const char *config_filename);
 
 GssProgram * gss_server_add_program (GssServer *server, const char *program_name);

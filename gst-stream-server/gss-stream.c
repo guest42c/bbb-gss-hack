@@ -239,9 +239,11 @@ gss_program_add_stream_full (GssProgram * program,
   GssServerStream *stream;
 
   stream = gss_stream_new (type, width, height, bitrate);
-  gss_stream_set_sink (stream, sink);
 
   gss_program_add_stream (program, stream);
+
+  /* FIXME this should be called before adding the stream, but it fails */
+  gss_stream_set_sink (stream, sink);
 
   return stream;
 }

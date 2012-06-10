@@ -28,7 +28,12 @@
 #include "gss-content.h"
 #include "gss-utils.h"
 
+enum
+{
+  PROP_NAME = 1
+};
 
+#define DEFAULT_NAME NULL
 
 
 static void gss_program_get_resource (GssTransaction * transaction);
@@ -38,21 +43,119 @@ static void gss_program_list_resource (GssTransaction * transaction);
 static void gss_program_png_resource (GssTransaction * transaction);
 static void gss_program_jpeg_resource (GssTransaction * transaction);
 
+static void gss_program_finalize (GObject * object);
+static void gss_program_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec);
+static void gss_program_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec);
+
+static GObjectClass *parent_class;
+
+
+G_DEFINE_TYPE (GssProgram, gss_program, G_TYPE_OBJECT);
+
+static void
+gss_program_init (GssProgram * program)
+{
+
+  program->metrics = gss_metrics_new ();
+
+  program->location = NULL;
+  program->enable_streaming = TRUE;
+  program->running = FALSE;
+}
+
+static void
+gss_program_class_init (GssProgramClass * program_class)
+{
+  G_OBJECT_CLASS (program_class)->set_property = gss_program_set_property;
+  G_OBJECT_CLASS (program_class)->get_property = gss_program_get_property;
+  G_OBJECT_CLASS (program_class)->finalize = gss_program_finalize;
+
+  g_object_class_install_property (G_OBJECT_CLASS (program_class),
+      PROP_NAME,
+      g_param_spec_string ("name", "Name",
+          "Name", DEFAULT_NAME,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+
+  parent_class = g_type_class_peek_parent (program_class);
+}
+
+static void
+gss_program_finalize (GObject * object)
+{
+  GssProgram *program = GSS_PROGRAM (object);
+  int i;
+
+  for (i = 0; i < program->n_streams; i++) {
+    GssServerStream *stream = program->streams[i];
+
+    gss_stream_free (stream);
+  }
+
+  if (program->hls.variant_buffer) {
+    soup_buffer_free (program->hls.variant_buffer);
+  }
+
+  if (program->pngappsink)
+    g_object_unref (program->pngappsink);
+  if (program->jpegsink)
+    g_object_unref (program->jpegsink);
+  gss_metrics_free (program->metrics);
+  g_free (program->location);
+  g_free (program->streams);
+  g_free (program->follow_uri);
+  g_free (program->follow_host);
+}
+
+static void
+gss_program_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec)
+{
+  GssProgram *program;
+
+  program = GSS_PROGRAM (object);
+
+  switch (prop_id) {
+    case PROP_NAME:
+      gss_program_set_name (program, g_value_get_string (value));
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+  }
+}
+
+static void
+gss_program_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec)
+{
+  GssProgram *program;
+
+  program = GSS_PROGRAM (object);
+
+  switch (prop_id) {
+    case PROP_NAME:
+      g_value_set_string (value, program->location);
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+  }
+}
 
 
 GssProgram *
 gss_program_new (const char *program_name)
 {
-  GssProgram *program;
+  return g_object_new (GSS_TYPE_PROGRAM, "name", program_name, NULL);
+}
 
-  program = g_malloc0 (sizeof (GssProgram));
-  program->metrics = gss_metrics_new ();
-
+void
+gss_program_set_name (GssProgram * program, const char *program_name)
+{
+  g_free (program->location);
   program->location = g_strdup (program_name);
-  program->enable_streaming = TRUE;
-  program->running = FALSE;
-
-  return program;
 }
 
 void
@@ -227,33 +330,6 @@ gss_program_set_jpegsink (GssProgram * program, GstElement * jpegsink)
       G_CALLBACK (client_removed), NULL);
   g_signal_connect (jpegsink, "client-fd-removed",
       G_CALLBACK (client_fd_removed), NULL);
-}
-
-void
-gss_program_free (GssProgram * program)
-{
-  int i;
-
-  for (i = 0; i < program->n_streams; i++) {
-    GssServerStream *stream = program->streams[i];
-
-    gss_stream_free (stream);
-  }
-
-  if (program->hls.variant_buffer) {
-    soup_buffer_free (program->hls.variant_buffer);
-  }
-
-  if (program->pngappsink)
-    g_object_unref (program->pngappsink);
-  if (program->jpegsink)
-    g_object_unref (program->jpegsink);
-  gss_metrics_free (program->metrics);
-  g_free (program->location);
-  g_free (program->streams);
-  g_free (program->follow_uri);
-  g_free (program->follow_host);
-  g_free (program);
 }
 
 void

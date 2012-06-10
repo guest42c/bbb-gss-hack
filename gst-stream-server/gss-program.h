@@ -32,6 +32,17 @@
 
 G_BEGIN_DECLS
 
+#define GSS_TYPE_PROGRAM \
+  (gss_program_get_type())
+#define GSS_PROGRAM(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj),GSS_TYPE_PROGRAM,GssProgram))
+#define GSS_PROGRAM_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass),GSS_TYPE_PROGRAM,GssProgramClass))
+#define GSS_IS_PROGRAM(obj) \
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GSS_TYPE_PROGRAM))
+#define GSS_IS_PROGRAM_CLASS(obj) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass),GSS_TYPE_PROGRAM))
+
 
 typedef enum {
   GSS_PROGRAM_EW_FOLLOW,
@@ -43,6 +54,8 @@ typedef enum {
 } GssProgramType;
 
 struct _GssProgram {
+  GObject object;
+
   GssServer *server;
 
   GssProgramType program_type;
@@ -83,14 +96,23 @@ struct _GssProgram {
   } hls;
 };
 
+typedef struct _GssProgramClass GssProgramClass;
+struct _GssProgramClass
+{
+  GObjectClass object_class;
+
+};
+
+GType gss_program_get_type (void);
 
 GssProgram * gss_program_new (const char *program_name);
 void gss_program_add_server_resources (GssProgram *program);
 void gss_program_remove_server_resources (GssProgram *program);
-void gss_program_free (GssProgram *program);
 void gss_program_set_jpegsink (GssProgram *program, GstElement *jpegsink);
 void gss_program_stop (GssProgram * program);
 void gss_program_start (GssProgram * program);
+
+void gss_program_set_name (GssProgram *program, const char *program_name);
 
 void gss_program_follow (GssProgram *program, const char *host,
     const char *stream);
