@@ -33,6 +33,7 @@
 
 static int enable_machine = TRUE;
 
+void ew_stream_server_add_admin_callbacks (GssServer * server);
 
 static void admin_resource_get (GssTransaction * t);
 
@@ -280,11 +281,11 @@ admin_log_resource_get (GssTransaction * t)
 
 
   {
-    int i;
+    GList *g;
     g_string_append_printf (s, "<h2>Programs</h2>\n");
     g_string_append_printf (s, "<pre>\n");
-    for (i = 0; i < t->server->n_programs; i++) {
-      GssProgram *program = t->server->programs[i];
+    for (g = t->server->programs; g; g = g_list_next (g)) {
+      GssProgram *program = g->data;
       GssServerStream *stream;
       guint64 n_bytes_in = 0;
       guint64 n_bytes_out = 0;
