@@ -72,7 +72,7 @@ struct _GssProgram {
   gboolean enable_streaming;
 
   int n_streams;
-  GssServerStream **streams;
+  GssStream **streams;
   GssMetrics *metrics;
 
   gboolean enable_ogv;
@@ -121,11 +121,11 @@ void gss_program_ew_contrib (GssProgram *program);
 void gss_program_http_put (GssProgram *program);
 void gss_program_icecast (GssProgram *program);
 void gss_program_follow_get_list (GssProgram *program);
-GssServerStream * gss_program_add_ogv_stream (GssProgram *program);
-GssServerStream * gss_program_add_webm_stream (GssProgram *program);
-GssServerStream * gss_program_add_hls_stream (GssProgram *program);
-void gss_program_add_stream (GssProgram *program, GssServerStream *stream);
-GssServerStream * gss_program_add_stream_full (GssProgram *program,
+GssStream * gss_program_add_ogv_stream (GssProgram *program);
+GssStream * gss_program_add_webm_stream (GssProgram *program);
+GssStream * gss_program_add_hls_stream (GssProgram *program);
+void gss_program_add_stream (GssProgram *program, GssStream *stream);
+GssStream * gss_program_add_stream_full (GssProgram *program,
     int type, int width, int height, int bitrate, GstElement *sink);
 void gss_program_log (GssProgram *program, const char *message, ...);
 void gss_program_enable_streaming (GssProgram *program);

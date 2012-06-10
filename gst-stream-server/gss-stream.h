@@ -51,7 +51,7 @@ struct _GssHLSSegment {
   int duration;
 };
 
-struct _GssServerStream {
+struct _GssStream {
   GssProgram *program;
   int index;
   char *name;
@@ -90,7 +90,7 @@ struct _GssServerStream {
 
   GssRtspStream *rtsp_stream;
 
-  void (*custom_client_fd_removed) (GssServerStream *stream, int fd,
+  void (*custom_client_fd_removed) (GssStream *stream, int fd,
       gpointer user_data);
   gpointer custom_user_data;
 };
@@ -98,7 +98,7 @@ struct _GssServerStream {
 struct _GssConnection {
   SoupMessage *msg;
   SoupClientContext *client;
-  GssServerStream *stream;
+  GssStream *stream;
   GssProgram *program;
 };
 
@@ -107,17 +107,17 @@ struct _GssConnection {
 extern void *gss_stream_fd_table[GSS_STREAM_MAX_FDS];
 
 
-void gss_server_stream_add_hls (GssServerStream *stream);
-GssServerStream * gss_stream_new (int type, int width, int height, int bitrate);
-void gss_stream_free (GssServerStream *stream);
-void gss_stream_get_stats (GssServerStream *stream, guint64 *n_bytes_in,
+void gss_stream_add_hls (GssStream *stream);
+GssStream * gss_stream_new (int type, int width, int height, int bitrate);
+void gss_stream_free (GssStream *stream);
+void gss_stream_get_stats (GssStream *stream, guint64 *n_bytes_in,
     guint64 *n_bytes_out);
 void gss_stream_resource (GssTransaction * transaction);
 
-void gss_stream_set_sink (GssServerStream * stream, GstElement * sink);
-void gss_stream_create_follow_pipeline (GssServerStream * stream);
-void gss_stream_create_push_pipeline (GssServerStream * stream);
-void gss_stream_add_resources (GssServerStream *stream);
+void gss_stream_set_sink (GssStream * stream, GstElement * sink);
+void gss_stream_create_follow_pipeline (GssStream * stream);
+void gss_stream_create_push_pipeline (GssStream * stream);
+void gss_stream_add_resources (GssStream *stream);
 
 void gss_stream_handle_m3u8 (GssTransaction * t);
 

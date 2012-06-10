@@ -88,7 +88,7 @@ gss_program_finalize (GObject * object)
   int i;
 
   for (i = 0; i < program->n_streams; i++) {
-    GssServerStream *stream = program->streams[i];
+    GssStream *stream = program->streams[i];
 
     gss_stream_free (stream);
   }
@@ -197,7 +197,7 @@ gss_program_remove_server_resources (GssProgram * program)
 }
 
 void
-gss_program_add_stream (GssProgram * program, GssServerStream * stream)
+gss_program_add_stream (GssProgram * program, GssStream * stream)
 {
   program->streams = g_realloc (program->streams,
       sizeof (GssProgram *) * (program->n_streams + 1));
@@ -222,7 +222,7 @@ gss_program_disable_streaming (GssProgram * program)
 
   program->enable_streaming = FALSE;
   for (i = 0; i < program->n_streams; i++) {
-    GssServerStream *stream = program->streams[i];
+    GssStream *stream = program->streams[i];
     g_signal_emit_by_name (stream->sink, "clear");
   }
 }
@@ -237,7 +237,7 @@ void
 gss_program_stop (GssProgram * program)
 {
   int i;
-  GssServerStream *stream;
+  GssStream *stream;
 
   gss_program_log (program, "stop");
 
@@ -294,7 +294,7 @@ gss_program_start (GssProgram * program)
 static void
 client_removed (GstElement * e, int fd, int status, gpointer user_data)
 {
-  GssServerStream *stream = user_data;
+  GssStream *stream = user_data;
 
   if (gss_stream_fd_table[fd]) {
     if (stream) {
@@ -310,7 +310,7 @@ client_removed (GstElement * e, int fd, int status, gpointer user_data)
 static void
 client_fd_removed (GstElement * e, int fd, gpointer user_data)
 {
-  GssServerStream *stream = user_data;
+  GssStream *stream = user_data;
   SoupSocket *socket = gss_stream_fd_table[fd];
 
   if (socket) {
@@ -366,7 +366,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   }
 
   for (i = 0; i < program->n_streams; i++) {
-    GssServerStream *stream = program->streams[i];
+    GssStream *stream = program->streams[i];
     if (stream->width > width)
       width = stream->width;
     if (stream->height > height)
@@ -386,7 +386,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
         "id=video width=\"%d\" height=\"%d\">\n", width, height);
 
     for (i = program->n_streams - 1; i >= 0; i--) {
-      GssServerStream *stream = program->streams[i];
+      GssStream *stream = program->streams[i];
       if (stream->type == GSS_SERVER_STREAM_WEBM) {
         g_string_append_printf (s,
             "<source src=\"%s/%s\" type='video/webm; codecs=\"vp8, vorbis\"'>\n",
@@ -395,7 +395,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     }
 
     for (i = program->n_streams - 1; i >= 0; i--) {
-      GssServerStream *stream = program->streams[i];
+      GssStream *stream = program->streams[i];
       if (stream->type == GSS_SERVER_STREAM_OGG) {
         g_string_append_printf (s,
             "<source src=\"%s/%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
@@ -404,7 +404,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     }
 
     for (i = program->n_streams - 1; i >= 0; i--) {
-      GssServerStream *stream = program->streams[i];
+      GssStream *stream = program->streams[i];
       if (stream->type == GSS_SERVER_STREAM_TS ||
           stream->type == GSS_SERVER_STREAM_TS_MAIN) {
         g_string_append_printf (s,
@@ -417,7 +417,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 
   if (enable_cortado) {
     for (i = 0; i < program->n_streams; i++) {
-      GssServerStream *stream = program->streams[i];
+      GssStream *stream = program->streams[i];
       if (stream->type == GSS_SERVER_STREAM_OGG) {
         g_string_append_printf (s,
             "<applet code=\"com.fluendo.player.Cortado.class\"\n"
@@ -431,7 +431,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 
   if (enable_flash) {
     for (i = 0; i < program->n_streams; i++) {
-      GssServerStream *stream = program->streams[i];
+      GssStream *stream = program->streams[i];
       if (stream->type == GSS_SERVER_STREAM_FLV) {
         g_string_append_printf (s,
             " <object width='%d' height='%d' id='flvPlayer' "
@@ -508,7 +508,7 @@ gss_program_get_resource (GssTransaction * t)
   gss_html_append_break (s);
   for (i = 0; i < program->n_streams; i++) {
     const char *typename = "Unknown";
-    GssServerStream *stream = program->streams[i];
+    GssStream *stream = program->streams[i];
 
     switch (stream->type) {
       case GSS_SERVER_STREAM_OGG:
@@ -550,7 +550,7 @@ gss_program_get_resource (GssTransaction * t)
 static void
 push_wrote_headers (SoupMessage * msg, void *user_data)
 {
-  GssServerStream *stream = (GssServerStream *) user_data;
+  GssStream *stream = (GssStream *) user_data;
   SoupSocket *socket;
 
   socket = soup_client_context_get_socket (stream->program->push_client);
@@ -568,7 +568,7 @@ gss_program_put_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   const char *content_type;
-  GssServerStream *stream;
+  GssStream *stream;
   gboolean is_icecast;
 
   /* FIXME should check if another client has connected */
@@ -663,7 +663,7 @@ gss_program_list_resource (GssTransaction * t)
   t->s = s;
 
   for (i = 0; i < program->n_streams; i++) {
-    GssServerStream *stream = program->streams[i];
+    GssStream *stream = program->streams[i];
     const char *typename = "unknown";
     switch (stream->type) {
       case GSS_SERVER_STREAM_OGG:

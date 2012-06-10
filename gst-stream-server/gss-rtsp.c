@@ -42,7 +42,7 @@ gss_server_rtsp_init (GssServer * server)
 
 
 GssRtspStream *
-gss_rtsp_stream_new (GssServerStream * stream)
+gss_rtsp_stream_new (GssStream * stream)
 {
   GssRtspStream *rtsp_stream;
 

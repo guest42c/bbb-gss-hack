@@ -31,7 +31,7 @@ G_BEGIN_DECLS
 
 struct _GssRtspStream {
 
-  GssServerStream *stream;
+  GssStream *stream;
   GstRTSPServer *server;
 
   GstRTSPMediaMapping *mapping;
@@ -40,7 +40,7 @@ struct _GssRtspStream {
 
 void gss_server_rtsp_init (GssServer *server);
 
-GssRtspStream * gss_rtsp_stream_new (GssServerStream *stream);
+GssRtspStream * gss_rtsp_stream_new (GssStream *stream);
 void gss_rtsp_stream_free (GssRtspStream *rtsp_stream);
 void gss_rtsp_stream_start (GssRtspStream *rtsp_stream);
 

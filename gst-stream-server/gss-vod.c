@@ -137,7 +137,7 @@ gss_vod_setup (GssServer * server)
     while (name) {
       if (g_str_has_suffix (name, ".webm")) {
         GssProgram *program;
-        GssServerStream *stream;
+        GssStream *stream;
         char *s;
 
         program = gss_server_add_program (server, name);

@@ -25,7 +25,7 @@
 G_BEGIN_DECLS
 
 typedef struct _GssProgram GssProgram;
-typedef struct _GssServerStream GssServerStream;
+typedef struct _GssStream GssStream;
 typedef struct _GssServer GssServer;
 typedef struct _GssServerClass GssServerClass;
 typedef struct _GssConnection GssConnection;

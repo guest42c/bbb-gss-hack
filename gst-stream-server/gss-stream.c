@@ -35,7 +35,7 @@ static void msg_wrote_headers (SoupMessage * msg, void *user_data);
 void *gss_stream_fd_table[GSS_STREAM_MAX_FDS];
 
 void
-gss_stream_free (GssServerStream * stream)
+gss_stream_free (GssStream * stream)
 {
   int i;
 
@@ -82,7 +82,7 @@ gss_stream_free (GssServerStream * stream)
 }
 
 void
-gss_stream_get_stats (GssServerStream * stream, guint64 * in, guint64 * out)
+gss_stream_get_stats (GssStream * stream, guint64 * in, guint64 * out)
 {
   g_object_get (stream->sink, "bytes-to-serve", in, "bytes-served", out, NULL);
 }
@@ -90,7 +90,7 @@ gss_stream_get_stats (GssServerStream * stream, guint64 * in, guint64 * out)
 static void
 client_removed (GstElement * e, int fd, int status, gpointer user_data)
 {
-  GssServerStream *stream = user_data;
+  GssStream *stream = user_data;
 
   if (gss_stream_fd_table[fd]) {
     if (stream) {
@@ -105,7 +105,7 @@ client_removed (GstElement * e, int fd, int status, gpointer user_data)
 static void
 client_fd_removed (GstElement * e, int fd, gpointer user_data)
 {
-  GssServerStream *stream = user_data;
+  GssStream *stream = user_data;
   SoupSocket *sock = gss_stream_fd_table[fd];
 
   if (sock) {
@@ -119,7 +119,7 @@ client_fd_removed (GstElement * e, int fd, gpointer user_data)
 static void
 stream_resource (GssTransaction * t)
 {
-  GssServerStream *stream = (GssServerStream *) t->resource->priv;
+  GssStream *stream = (GssStream *) t->resource->priv;
   GssConnection *connection;
 
   if (!stream->program->enable_streaming || !stream->program->running) {
@@ -167,7 +167,7 @@ msg_wrote_headers (SoupMessage * msg, void *user_data)
   fd = soup_socket_get_fd (sock);
 
   if (connection->stream->sink) {
-    GssServerStream *stream = connection->stream;
+    GssStream *stream = connection->stream;
 
     g_signal_emit_by_name (connection->stream->sink, "add", fd);
 
@@ -184,12 +184,12 @@ msg_wrote_headers (SoupMessage * msg, void *user_data)
   g_free (connection);
 }
 
-GssServerStream *
+GssStream *
 gss_stream_new (int type, int width, int height, int bitrate)
 {
-  GssServerStream *stream;
+  GssStream *stream;
 
-  stream = g_malloc0 (sizeof (GssServerStream));
+  stream = g_malloc0 (sizeof (GssStream));
 
   stream->metrics = gss_metrics_new ();
 
@@ -232,11 +232,11 @@ gss_stream_new (int type, int width, int height, int bitrate)
   return stream;
 }
 
-GssServerStream *
+GssStream *
 gss_program_add_stream_full (GssProgram * program,
     int type, int width, int height, int bitrate, GstElement * sink)
 {
-  GssServerStream *stream;
+  GssStream *stream;
 
   stream = gss_stream_new (type, width, height, bitrate);
 
@@ -249,7 +249,7 @@ gss_program_add_stream_full (GssProgram * program,
 }
 
 void
-gss_stream_add_resources (GssServerStream * stream)
+gss_stream_add_resources (GssStream * stream)
 {
   char *s;
 
@@ -282,7 +282,7 @@ gss_stream_add_resources (GssServerStream * stream)
 }
 
 void
-gss_stream_set_sink (GssServerStream * stream, GstElement * sink)
+gss_stream_set_sink (GssStream * stream, GstElement * sink)
 {
   if (stream->sink) {
     g_object_unref (stream->sink);
@@ -297,7 +297,7 @@ gss_stream_set_sink (GssServerStream * stream, GstElement * sink)
         G_CALLBACK (client_fd_removed), stream);
     if (stream->type == GSS_SERVER_STREAM_TS ||
         stream->type == GSS_SERVER_STREAM_TS_MAIN) {
-      gss_server_stream_add_hls (stream);
+      gss_stream_add_hls (stream);
     }
   }
 }

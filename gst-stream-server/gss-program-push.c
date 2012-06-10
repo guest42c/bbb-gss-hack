@@ -42,7 +42,7 @@ push_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
 }
 
 void
-gss_stream_create_push_pipeline (GssServerStream * stream)
+gss_stream_create_push_pipeline (GssStream * stream)
 {
   GstElement *pipe;
   GstElement *e;
@@ -113,7 +113,7 @@ gss_stream_create_push_pipeline (GssServerStream * stream)
 static void
 handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
 {
-  GssServerStream *stream = user_data;
+  GssStream *stream = user_data;
   GssProgram *program = stream->program;
 
   switch (GST_MESSAGE_TYPE (message)) {

@@ -39,7 +39,7 @@ void
 gss_program_add_stream_follow (GssProgram * program, int type, int width,
     int height, int bitrate, const char *url)
 {
-  GssServerStream *stream;
+  GssStream *stream;
 
   stream = gss_program_add_stream_full (program, type, width, height,
       bitrate, NULL);
@@ -51,7 +51,7 @@ gss_program_add_stream_follow (GssProgram * program, int type, int width,
 }
 
 void
-gss_stream_create_follow_pipeline (GssServerStream * stream)
+gss_stream_create_follow_pipeline (GssStream * stream)
 {
   GstElement *pipe;
   GstElement *e;
@@ -115,7 +115,7 @@ gss_stream_create_follow_pipeline (GssServerStream * stream)
 static void
 handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
 {
-  GssServerStream *stream = user_data;
+  GssStream *stream = user_data;
   GssProgram *program = stream->program;
 
   switch (GST_MESSAGE_TYPE (message)) {

@@ -286,7 +286,7 @@ admin_log_resource_get (GssTransaction * t)
     g_string_append_printf (s, "<pre>\n");
     for (g = t->server->programs; g; g = g_list_next (g)) {
       GssProgram *program = g->data;
-      GssServerStream *stream;
+      GssStream *stream;
       guint64 n_bytes_in = 0;
       guint64 n_bytes_out = 0;
       int j;

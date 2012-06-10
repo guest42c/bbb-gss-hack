@@ -35,7 +35,7 @@ static void gss_hls_handle_m3u8 (GssTransaction * t);
 static void gss_hls_handle_stream_m3u8 (GssTransaction * t);
 static void gss_hls_handle_ts_chunk (GssTransaction * t);
 
-void gss_program_add_hls_chunk (GssServerStream * stream, SoupBuffer * buf);
+void gss_program_add_hls_chunk (GssStream * stream, SoupBuffer * buf);
 
 static gboolean
 sink_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data);
@@ -43,7 +43,7 @@ sink_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data);
 static void gss_hls_update_variant (GssProgram * program);
 
 void
-gss_server_stream_add_hls (GssServerStream * stream)
+gss_stream_add_hls (GssStream * stream)
 {
   GssProgram *program = stream->program;
   char *s;
@@ -120,7 +120,7 @@ gss_server_stream_add_hls (GssServerStream * stream)
 typedef struct _ChunkCallback ChunkCallback;
 struct _ChunkCallback
 {
-  GssServerStream *stream;
+  GssStream *stream;
   guint8 *data;
   int n;
 };
@@ -144,7 +144,7 @@ gss_program_add_hls_chunk_callback (gpointer data)
 static gboolean
 sink_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
 {
-  GssServerStream *stream = (GssServerStream *) user_data;
+  GssStream *stream = (GssStream *) user_data;
 
   if (GST_IS_BUFFER (mo)) {
     GstBuffer *buffer = GST_BUFFER (mo);
@@ -177,7 +177,7 @@ sink_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
 }
 
 void
-gss_program_add_hls_chunk (GssServerStream * stream, SoupBuffer * buf)
+gss_program_add_hls_chunk (GssStream * stream, SoupBuffer * buf)
 {
   GssHLSSegment *segment;
 
@@ -211,7 +211,7 @@ gss_program_add_hls_chunk (GssServerStream * stream, SoupBuffer * buf)
 
 
 static void
-gss_hls_update_index (GssServerStream * stream)
+gss_hls_update_index (GssStream * stream)
 {
   GssProgram *program = stream->program;
   GString *s;
@@ -320,7 +320,7 @@ gss_hls_handle_m3u8 (GssTransaction * t)
 static void
 gss_hls_handle_stream_m3u8 (GssTransaction * t)
 {
-  GssServerStream *stream = (GssServerStream *) t->resource->priv;
+  GssStream *stream = (GssStream *) t->resource->priv;
 
   if (stream->hls.index_buffer == NULL || stream->hls.need_index_update) {
     gss_hls_update_index (stream);
@@ -349,7 +349,7 @@ gss_hls_handle_ts_chunk (GssTransaction * t)
 void
 gss_stream_handle_m3u8 (GssTransaction * t)
 {
-  GssServerStream *stream = (GssServerStream *) t->resource->priv;
+  GssStream *stream = (GssStream *) t->resource->priv;
   char *content;
 
   content = g_strdup_printf ("#EXTM3U\n"
