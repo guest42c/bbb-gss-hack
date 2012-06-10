@@ -81,7 +81,6 @@ gss_config_set_config_filename (GssConfig * config, const char *filename)
 static int
 get_timestamp (const char *filename)
 {
-  //GStatBuf statbuf;
   struct stat statbuf;
   int ret;
 
@@ -314,10 +313,8 @@ gss_config_handle_post (GssConfig * config, SoupMessage * msg)
 
   hash = NULL;
   if (g_str_equal (content_type, "application/x-www-form-urlencoded")) {
-    //g_print ("urlencoded: %s\n", msg->request_body->data);
     hash = soup_form_decode (msg->request_body->data);
   } else if (g_str_has_prefix (content_type, "multipart/form-data")) {
-    //g_print("multipart/form-data\n");
     hash = soup_form_decode_multipart (msg, "logo_file", &filename,
         &media_type, &buffer);
 

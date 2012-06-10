@@ -267,7 +267,6 @@ gss_server_new (void)
   gss_config_set_notify (server->config, "enable_public_ui", gss_server_notify,
       server);
 
-  //server->config_filename = "/opt/entropywave/ew-oberon/config";
   server->server_name = gss_utils_gethostname ();
 
   if (server->port == 80) {
@@ -594,7 +593,6 @@ gss_server_get_multifdsink_string (void)
 {
   return "multifdsink "
       "sync=false " "time-min=200000000 " "recover-policy=keyframe "
-      //"recover-policy=latest "
       "unit-type=2 "
       "units-max=20000000000 "
       "units-soft-max=11000000000 "
@@ -759,7 +757,6 @@ gss_server_resource_main_page (GssTransaction * t)
       continue;
 
     g_string_append_printf (s, "<li class='span4'>\n");
-    //g_string_append_printf (s, "<div class='well' style='width:1000;'>\n");
     g_string_append_printf (s, "<div class='thumbnail'>\n");
     g_string_append_printf (s,
         "<a href=\"/%s%s%s\">",

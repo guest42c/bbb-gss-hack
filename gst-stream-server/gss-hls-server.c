@@ -72,7 +72,6 @@ gss_server_stream_add_hls (GssServerStream * stream)
   } else if (stream->type == GSS_SERVER_STREAM_TS_MAIN) {
     profile = 0x4d40;           /* main */
   }
-  //profile = 0x6400; // high
 
   mbs_per_sec = ((stream->width + 15) >> 4) * ((stream->height + 15) >> 4) * 30;
   if (mbs_per_sec <= 1485) {
@@ -154,11 +153,9 @@ sink_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
     if (((data[3] >> 4) & 2) && ((data[5] >> 6) & 1)) {
       int n;
 
-      //g_print("key frame\n");
-
       n = gst_adapter_available (stream->adapter);
       if (n < 188 * 100) {
-        //g_print("skipped (too early)\n");
+        /* skipped (too early) */
       } else {
         ChunkCallback *chunk_callback;
 
@@ -173,7 +170,7 @@ sink_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
 
     gst_adapter_push (stream->adapter, gst_buffer_ref (buffer));
   } else {
-    //g_print("got event\n");
+    /* got event */
   }
 
   return TRUE;
@@ -220,8 +217,6 @@ gss_hls_update_index (GssServerStream * stream)
   GString *s;
   int i;
   int seq_num = MAX (0, program->n_hls_chunks - 5);
-
-  //g_print ("seq_num %d\n", seq_num);
 
   s = g_string_new ("#EXTM3U\n");
 
@@ -278,7 +273,6 @@ gss_hls_update_variant (GssProgram * program)
 
   s = g_string_new ("#EXTM3U\n");
   for (j = program->n_streams - 1; j >= 0; j--) {
-    //for(j=0;j<program->n_streams;j++){
     if (!program->streams[j]->is_hls)
       continue;
     if (program->streams[j]->bitrate == 0)

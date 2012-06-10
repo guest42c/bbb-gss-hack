@@ -322,7 +322,6 @@ gss_html_footer (GssTransaction * t)
       "ip.setAttribute('value', assertion);\n"
       "form.appendChild(ip);\n"
       "document.body.appendChild(form);\n" "form.submit();\n"
-      //"document.body.removeChild(form);\n"
       "}\n" "}\n" "</script>\n", base_url, t->path);
   g_free (base_url);
   g_string_append (s, "\n" "  </body>\n" "</html>\n");

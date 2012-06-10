@@ -180,7 +180,6 @@ gss_config_form_add_form (GssServer * server, GString * s, const char *action,
   gboolean in_enable = FALSE;
 
   enctype = "multipart/form-data";
-  //enctype = "application/x-www-form-urlencoded";
 
   g_string_append (s, "<iframe name=\"hidden_frame\" src=\"about:blank\" "
       "style=\"display:none; width:0px; height:0px\"></iframe>\n");
@@ -199,8 +198,6 @@ gss_config_form_add_form (GssServer * server, GString * s, const char *action,
         "<input name=\"session_id\" type=\"hidden\" value=\"%s\">\n",
         session->session_id);
   }
-  //g_string_append (s, "<fieldset>\n");
-  //g_string_append_printf (s, "<legend>%s</legend>\n", name);
 
   for (i = 0; fields[i].type != GSS_FIELD_NONE; i++) {
     const char *default_value = NULL;

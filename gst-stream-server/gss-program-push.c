@@ -141,7 +141,6 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
         g_free (s);
         program->running = TRUE;
       }
-      //gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
     }
       break;
     case GST_MESSAGE_STREAM_STATUS:
