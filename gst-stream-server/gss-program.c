@@ -363,6 +363,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 
   if (!program->running) {
     g_string_append_printf (s, "<img src='/offline.png'>\n");
+    return;
   }
 
   for (i = 0; i < program->n_streams; i++) {
