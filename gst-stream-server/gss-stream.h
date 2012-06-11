@@ -47,14 +47,14 @@ G_BEGIN_DECLS
 
 #define GSS_STREAM_HLS_CHUNKS 20
 
-enum {
+typedef enum {
   GSS_STREAM_TYPE_UNKNOWN,
   GSS_STREAM_TYPE_OGG,
   GSS_STREAM_TYPE_WEBM,
   GSS_STREAM_TYPE_TS,
   GSS_STREAM_TYPE_TS_MAIN,
   GSS_STREAM_TYPE_FLV
-};
+} GssStreamType;
 
 struct _GssHLSSegment {
   int index;
@@ -66,33 +66,45 @@ struct _GssHLSSegment {
 struct _GssStream {
   GObject object;
 
-  GssProgram *program;
-  int index;
+  /* properties */
   char *name;
-  char *codecs;
-  const char *content_type;
-  char *playlist_name;
-  const char *ext; /* filaname extension */
-  const char *mod; /* stream modifier ('-main') */
   int type;
-  char *follow_url;
-  int push_fd;
-  GssMetrics *metrics;
-
-  GstElement *pipeline;
-  GstElement *src;
-  GstElement *sink;
-  int level;
-  int profile;
-  int program_id;
-  int bandwidth;
   int width;
   int height;
   int bitrate;
+
+  int level;
+  int profile;
+
+
+  GssProgram *program;
+  GssMetrics *metrics;
+
+  int index;
+  char *codecs;
+  char *playlist_name;
+
+  /* cached info */
+  const char *content_type;
+  const char *ext; /* filaname extension */
+  const char *mod; /* stream modifier ('-main') */
+
+  /* GStreamer */
+  GstElement *pipeline;
+  GstElement *src;
+  GstElement *sink;
+  int program_id;
+  int bandwidth;
   gboolean is_hls;
 
+  /* For push programs */
   GstAdapter *adapter;
+  int push_fd;
 
+  /* for follow programs */
+  char *follow_url;
+
+  /* HLS */
   int n_chunks;
   GssHLSSegment chunks[GSS_STREAM_HLS_CHUNKS];
   struct {
@@ -102,8 +114,10 @@ struct _GssStream {
     gboolean at_eos; /* true if sliding window is at the end of the stream */
   } hls;
 
+  /* RTSP */
   GssRtspStream *rtsp_stream;
 
+  /* callbacks */
   void (*custom_client_fd_removed) (GssStream *stream, int fd,
       gpointer user_data);
   gpointer custom_user_data;
