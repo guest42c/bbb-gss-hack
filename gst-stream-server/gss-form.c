@@ -33,10 +33,14 @@ gss_config_form_add_select (GString * s, GssField * item, const char *value)
 {
   int i;
 
-  if (item->indent)
-    g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
-  g_string_append_printf (s, "%s: <select id=\"%s\" name=\"%s\">\n",
-      item->long_name, item->config_name, item->config_name);
+  g_string_append (s, "<div class='control-group'>\n");
+  g_string_append_printf (s,
+      "<label class='control-label' for='%s'>%s</label>\n", item->config_name,
+      item->long_name);
+  g_string_append (s, "<div class='controls'>\n");
+
+  g_string_append_printf (s, "<select id='%s' name='%s'>\n",
+      item->config_name, item->config_name);
   for (i = 0; i < GSS_FORM_NUM_OPTIONS; i++) {
     if (item->options[i].long_name) {
       gboolean selected;
@@ -50,29 +54,39 @@ gss_config_form_add_select (GString * s, GssField * item, const char *value)
   }
   g_string_append_printf (s, "</select>\n");
   gss_html_append_break (s);
+  g_string_append (s, "</div>\n");
+  g_string_append (s, "</div>\n");
 
 }
 
 void
 gss_config_form_add_text_input (GString * s, GssField * item, const char *value)
 {
-  if (item->indent)
-    g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
+  g_string_append (s, "<div class='control-group'>\n");
   g_string_append_printf (s,
-      "%s: <input id=\"%s\" type=\"text\" name=\"%s\" size=30 value=\"%s\">\n",
-      item->long_name, item->config_name, item->config_name, value);
-  gss_html_append_break (s);
+      "<label class='control-label' for='%s'>%s</label>\n", item->config_name,
+      item->long_name);
+  g_string_append (s, "<div class='controls'>\n");
+  g_string_append_printf (s,
+      "<input type='text' class='input-xlarge' id='%s' name='%s' value='%s'>\n",
+      item->config_name, item->config_name, value);
+  g_string_append (s, "</div>\n");
+  g_string_append (s, "</div>\n");
 }
 
 void
 gss_config_form_add_password (GString * s, GssField * item, const char *value)
 {
-  if (item->indent)
-    g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
+  g_string_append (s, "<div class='control-group'>\n");
   g_string_append_printf (s,
-      "%s: <input id=\"%s\" type=\"password\" name=\"%s\" size=20>\n",
-      item->long_name, item->config_name, item->config_name);
-  gss_html_append_break (s);
+      "<label class='control-label' for='%s'>%s</label>\n", item->config_name,
+      item->long_name);
+  g_string_append (s, "<div class='controls'>\n");
+  g_string_append_printf (s,
+      "<input type='password' class='input-xlarge' id='%s' name='%s' value='%s'>\n",
+      item->config_name, item->config_name, value);
+  g_string_append (s, "</div>\n");
+  g_string_append (s, "</div>\n");
 }
 
 void
@@ -81,25 +95,35 @@ gss_config_form_add_checkbox (GString * s, GssField * item, const char *value)
   gboolean selected;
 
   selected = (value && g_str_equal (value, "on"));
-  if (item->indent)
-    g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
-  g_string_append_printf (s, "%s: <input type=\"hidden\" name=\"%s\" value=off>"
-      "<input id=\"%s\" type=\"checkbox\" name=\"%s\" %s onclick=\"toggle()\">\n",
-      item->long_name,
+
+  g_string_append (s, "<div class='control-group'>\n");
+  g_string_append_printf (s,
+      "<label class='control-label' for='%s'>%s</label>\n", item->config_name,
+      item->long_name);
+  g_string_append (s, "<div class='controls'>\n");
+  g_string_append_printf (s,
+      "<input type='hidden' name='%s' value=off>"
+      "<input type='checkbox' class='input-xlarge' id='%s' name='%s' value='%s' %s>\n",
       item->config_name,
-      item->config_name, item->config_name, selected ? "checked=on" : "");
-  gss_html_append_break (s);
+      item->config_name, item->config_name, value,
+      selected ? "checked=on" : "");
+  g_string_append (s, "</div>\n");
+  g_string_append (s, "</div>\n");
 }
 
 void
 gss_config_form_add_file (GString * s, GssField * item, const char *value)
 {
-  if (item->indent)
-    g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
+  g_string_append (s, "<div class='control-group'>\n");
   g_string_append_printf (s,
-      "%s: <input id=\"%s\" type=\"file\" name=\"%s\" value=\"%s\">\n",
-      item->long_name, item->config_name, item->config_name, value);
-  gss_html_append_break (s);
+      "<label class='control-label' for='%s'>%s</label>\n", item->config_name,
+      item->long_name);
+  g_string_append (s, "<div class='controls'>\n");
+  g_string_append_printf (s,
+      "<input type='file' class='input-xlarge' id='%s' name='%s' value='%s'>\n",
+      item->config_name, item->config_name, value);
+  g_string_append (s, "</div>\n");
+  g_string_append (s, "</div>\n");
 }
 
 void
@@ -107,33 +131,39 @@ gss_config_form_add_radio (GString * s, GssField * item, const char *value)
 {
   int i;
 
-  if (item->indent)
-    g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
-  g_string_append_printf (s, "%s\n", item->long_name);
-  gss_html_append_break (s);
+  g_string_append (s, "<div class='control-group'>\n");
+  g_string_append_printf (s,
+      "<label class='control-label' for='%s'>%s</label>\n", item->config_name,
+      item->long_name);
+  g_string_append (s, "<div class='controls'>\n");
+
   for (i = 0; i < GSS_FORM_NUM_OPTIONS; i++) {
     if (item->options[i].long_name) {
       gboolean selected;
 
       selected = (value && g_str_equal (value, item->options[i].config_name));
       g_string_append_printf (s,
-          "<input type=\"radio\" name=\"%s\" value=\"%s\" %s>%s\n",
+          "<input class='input-xlarge' type='radio' name='%s' value='%s' %s>%s\n",
           item->config_name,
           item->options[i].config_name,
           selected ? " checked=checked" : "", item->options[i].long_name);
       gss_html_append_break (s);
     }
   }
+  g_string_append (s, "</div>\n");
+  g_string_append (s, "</div>\n");
 }
 
 void
 gss_config_form_add_submit (GString * s, GssField * item, const char *value)
 {
-  gss_html_append_break (s);
+  g_string_append (s, "<div class='control-group'>\n");
+  g_string_append (s, "<div class='controls'>\n");
   g_string_append_printf (s,
-      "<input id=\"%s\" type=\"submit\" value=\"%s\">\n",
-      item->config_name, item->long_name);
-  gss_html_append_break (s);
+      "<input type='submit' class='input-xlarge' value='%s'>\n",
+      item->long_name);
+  g_string_append (s, "</div>\n");
+  g_string_append (s, "</div>\n");
 }
 
 void
@@ -150,8 +180,13 @@ gss_config_form_add_enable (GString * s, GssField * item, const char *value)
   gboolean selected;
 
   selected = (value && g_str_equal (value, "on"));
-  if (item->indent)
-    g_string_append (s, "&nbsp;&nbsp;&nbsp;&nbsp;\n");
+
+  g_string_append (s, "<div class='control-group'>\n");
+  g_string_append_printf (s,
+      "<label class='control-label' for='%s'>%s</label>\n", item->config_name,
+      item->long_name);
+  g_string_append (s, "<div class='controls'>\n");
+
   g_string_append_printf (s,
       "<script type=\"text/javascript\">\n"
       "function toggle(node_name,e_name) {\n"
@@ -159,15 +194,17 @@ gss_config_form_add_enable (GString * s, GssField * item, const char *value)
       "var e = document.getElementById(e_name);\n"
       "if (node.checked) e.style.display='block';\n"
       "else e.style.display='none';\n" "}\n" "</script>\n");
+
   g_string_append_printf (s,
-      "Enable: <input type=\"hidden\" name=\"%s\" value=off>"
+      "<input type=\"hidden\" name=\"%s\" value=off>"
       "<input id=\"%s\" type=\"checkbox\" name=\"%s\" %s "
       "onclick=\"toggle('%s','div_%s')\">\n", item->config_name,
       item->config_name, item->config_name, selected ? "checked=on" : "",
       item->config_name, item->config_name);
+  g_string_append (s, "</div>\n");
+  g_string_append (s, "</div>\n");
   g_string_append_printf (s, "<div id='div_%s' %s>", item->config_name,
       selected ? "" : "style='display:none'");
-  gss_html_append_break (s);
 }
 
 void
@@ -185,11 +222,11 @@ gss_config_form_add_form (GssServer * server, GString * s, const char *action,
       "style=\"display:none; width:0px; height:0px\"></iframe>\n");
   if (session == NULL) {
     g_string_append_printf (s,
-        "<form action=\"%s\" method=\"post\" enctype=\"%s\" >\n",
+        "<form class='form-horizontal' action=\"%s\" method=\"post\" enctype=\"%s\" >\n",
         action, enctype);
   } else {
     g_string_append_printf (s,
-        "<form action=\"%s?session_id=%s\" method=\"post\" enctype=\"%s\" >\n",
+        "<form class='form-horizontal' action=\"%s?session_id=%s\" method=\"post\" enctype=\"%s\" >\n",
         action, session->session_id, enctype);
   }
 
