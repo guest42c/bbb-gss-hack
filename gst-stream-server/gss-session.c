@@ -490,7 +490,7 @@ browserid_verify_done (SoupSession * session, SoupMessage * msg,
     goto err;
   }
   s = json_node_get_string (node2);
-  if (!s && strcmp (s, "okay") != 0) {
+  if (!s || strcmp (s, "okay") != 0) {
     goto err;
   }
 
