@@ -291,7 +291,7 @@ admin_log_resource_get (GssTransaction * t)
       guint64 n_bytes_out = 0;
       int j;
 
-      g_string_append_printf (s, "Program: %s\n", program->location);
+      g_string_append_printf (s, "Program: %s\n", GST_OBJECT_NAME (program));
 
       for (j = 0; j < program->n_streams; j++) {
         if (program->streams == NULL)
@@ -304,7 +304,7 @@ admin_log_resource_get (GssTransaction * t)
             "bitrate=%" G_GUINT64_FORMAT " max_bitrate=%"
             G_GUINT64_FORMAT " in=%" G_GUINT64_FORMAT " out=%"
             G_GUINT64_FORMAT,
-            program->location,
+            GST_OBJECT_NAME (program),
             program->metrics->n_clients,
             program->metrics->max_clients,
             program->metrics->bitrate,

@@ -53,7 +53,7 @@ typedef void (GssFooterHtml) (GssServer *server, GString *s, void *priv);
 
 struct _GssServer
 {
-  GObject object;
+  GstObject object;
 
   GssConfig *config;
   //char * config_filename;
@@ -95,7 +95,7 @@ struct _GssServer
 
 struct _GssServerClass
 {
-  GObjectClass object_class;
+  GstObjectClass object_class;
 
 };
 

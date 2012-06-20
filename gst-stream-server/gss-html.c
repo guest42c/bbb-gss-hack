@@ -230,7 +230,7 @@ gss_html_header (GssTransaction * t)
       continue;
     g_string_append_printf (s,
         "              <li><a href='/%s%s'>%s</a></li>\n",
-        program->location, session_id, program->location);
+        GST_OBJECT_NAME (program), session_id, GST_OBJECT_NAME (program));
   };
 
   g_string_append_printf (s,
@@ -241,7 +241,7 @@ gss_html_header (GssTransaction * t)
       continue;
     g_string_append_printf (s,
         "              <li><a href='/%s%s'>%s</a></li>\n",
-        program->location, session_id, program->location);
+        GST_OBJECT_NAME (program), session_id, GST_OBJECT_NAME (program));
   };
 
   if (t->session) {

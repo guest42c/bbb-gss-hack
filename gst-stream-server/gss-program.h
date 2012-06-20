@@ -54,14 +54,13 @@ typedef enum {
 } GssProgramType;
 
 struct _GssProgram {
-  GObject object;
+  GstObject object;
 
   GssServer *server;
 
   GssProgramType program_type;
   gboolean is_archive;
 
-  char *location;
   char *follow_uri;
   char *follow_host;
 
@@ -99,7 +98,7 @@ struct _GssProgram {
 typedef struct _GssProgramClass GssProgramClass;
 struct _GssProgramClass
 {
-  GObjectClass object_class;
+  GstObjectClass object_class;
 
 };
 
@@ -111,8 +110,6 @@ void gss_program_remove_server_resources (GssProgram *program);
 void gss_program_set_jpegsink (GssProgram *program, GstElement *jpegsink);
 void gss_program_stop (GssProgram * program);
 void gss_program_start (GssProgram * program);
-
-void gss_program_set_name (GssProgram *program, const char *program_name);
 
 void gss_program_follow (GssProgram *program, const char *host,
     const char *stream);

@@ -82,7 +82,7 @@ static gboolean periodic_timer (gpointer data);
 
 
 
-G_DEFINE_TYPE (GssServer, gss_server, G_TYPE_OBJECT);
+G_DEFINE_TYPE (GssServer, gss_server, GST_TYPE_OBJECT);
 
 
 static const gchar *soup_method_source;
@@ -261,7 +261,7 @@ gss_server_finalize (GObject * object)
   for (g = server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
     g_assert (GSS_IS_PROGRAM (program));
-    g_object_unref (program);
+    gst_object_unparent (GST_OBJECT (program));
   }
   g_list_free (server->programs);
 
@@ -625,6 +625,8 @@ gss_server_add_program_simple (GssServer * server, GssProgram * program)
   server->programs = g_list_append (server->programs, program);
   program->server = server;
   gss_program_add_server_resources (program);
+
+  gst_object_set_parent (GST_OBJECT (program), GST_OBJECT (server));
 }
 
 GssProgram *
@@ -644,7 +646,7 @@ gss_server_remove_program (GssServer * server, GssProgram * program)
 
   gss_program_remove_server_resources (program);
   server->programs = g_list_remove (server->programs, program);
-  g_object_unref (program);
+  gst_object_unparent (GST_OBJECT (program));
 }
 
 void
@@ -671,7 +673,7 @@ gss_server_get_program_by_name (GssServer * server, const char *name)
 
   for (g = server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
-    if (strcmp (program->location, name) == 0) {
+    if (strcmp (GST_OBJECT_NAME (program), name) == 0) {
       return program;
     }
   }
@@ -817,13 +819,14 @@ gss_server_resource_main_page (GssTransaction * t)
     g_string_append_printf (s, "<div class='thumbnail'>\n");
     g_string_append_printf (s,
         "<a href=\"/%s%s%s\">",
-        program->location,
+        GST_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
     if (program->running) {
       if (program->jpegsink) {
         gss_html_append_image_printf (s,
-            "/%s-snapshot.jpeg", 0, 0, "snapshot image", program->location);
+            "/%s-snapshot.jpeg", 0, 0, "snapshot image",
+            GST_OBJECT_NAME (program));
       } else {
         g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
       }
@@ -831,7 +834,7 @@ gss_server_resource_main_page (GssTransaction * t)
       g_string_append_printf (s, "<img src='/offline.png'>\n");
     }
     g_string_append_printf (s, "</a>\n");
-    g_string_append_printf (s, "<h5>%s</h5>\n", program->location);
+    g_string_append_printf (s, "<h5>%s</h5>\n", GST_OBJECT_NAME (program));
     g_string_append_printf (s, "</div>\n");
     g_string_append_printf (s, "</li>\n");
   }
@@ -850,13 +853,14 @@ gss_server_resource_main_page (GssTransaction * t)
     g_string_append_printf (s, "<div class='thumbnail'>\n");
     g_string_append_printf (s,
         "<a href=\"/%s%s%s\">",
-        program->location,
+        GST_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
     if (program->running) {
       if (program->jpegsink) {
         gss_html_append_image_printf (s,
-            "/%s-snapshot.jpeg", 0, 0, "snapshot image", program->location);
+            "/%s-snapshot.jpeg", 0, 0, "snapshot image",
+            GST_OBJECT_NAME (program));
       } else {
         g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
       }
@@ -864,7 +868,7 @@ gss_server_resource_main_page (GssTransaction * t)
       g_string_append_printf (s, "<img src='/offline.png'>\n");
     }
     g_string_append_printf (s, "</a>\n");
-    g_string_append_printf (s, "<h5>%s</h5>\n", program->location);
+    g_string_append_printf (s, "<h5>%s</h5>\n", GST_OBJECT_NAME (program));
     g_string_append_printf (s, "</div>\n");
     g_string_append_printf (s, "</li>\n");
   }
@@ -883,7 +887,7 @@ gss_server_resource_list (GssTransaction * t)
 
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
-    g_string_append_printf (s, "%s\n", program->location);
+    g_string_append_printf (s, "%s\n", GST_OBJECT_NAME (program));
   }
 }
 

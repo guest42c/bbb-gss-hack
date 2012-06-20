@@ -138,7 +138,7 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
       if (newstate == GST_STATE_PLAYING
           && message->src == GST_OBJECT (stream->pipeline)) {
         char *s;
-        s = g_strdup_printf ("stream %s started", stream->name);
+        s = g_strdup_printf ("stream %s started", GST_OBJECT_NAME (stream));
         gss_program_log (program, s);
         g_free (s);
         program->running = TRUE;

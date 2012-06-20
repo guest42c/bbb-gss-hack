@@ -30,10 +30,9 @@
 
 enum
 {
-  PROP_NAME = 1
+  PROP_NONE
 };
 
-#define DEFAULT_NAME NULL
 
 
 static void gss_program_get_resource (GssTransaction * transaction);
@@ -52,7 +51,7 @@ static void gss_program_get_property (GObject * object, guint prop_id,
 static GObjectClass *parent_class;
 
 
-G_DEFINE_TYPE (GssProgram, gss_program, G_TYPE_OBJECT);
+G_DEFINE_TYPE (GssProgram, gss_program, GST_TYPE_OBJECT);
 
 static void
 gss_program_init (GssProgram * program)
@@ -60,7 +59,6 @@ gss_program_init (GssProgram * program)
 
   program->metrics = gss_metrics_new ();
 
-  program->location = NULL;
   program->enable_streaming = TRUE;
   program->running = FALSE;
 }
@@ -71,12 +69,6 @@ gss_program_class_init (GssProgramClass * program_class)
   G_OBJECT_CLASS (program_class)->set_property = gss_program_set_property;
   G_OBJECT_CLASS (program_class)->get_property = gss_program_get_property;
   G_OBJECT_CLASS (program_class)->finalize = gss_program_finalize;
-
-  g_object_class_install_property (G_OBJECT_CLASS (program_class),
-      PROP_NAME,
-      g_param_spec_string ("name", "Name",
-          "Name", DEFAULT_NAME,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   parent_class = g_type_class_peek_parent (program_class);
 }
@@ -90,7 +82,7 @@ gss_program_finalize (GObject * object)
   for (i = 0; i < program->n_streams; i++) {
     GssStream *stream = program->streams[i];
 
-    g_object_unref (stream);
+    gst_object_unparent (GST_OBJECT (stream));
   }
 
   if (program->hls.variant_buffer) {
@@ -102,7 +94,6 @@ gss_program_finalize (GObject * object)
   if (program->jpegsink)
     g_object_unref (program->jpegsink);
   gss_metrics_free (program->metrics);
-  g_free (program->location);
   g_free (program->streams);
   g_free (program->follow_uri);
   g_free (program->follow_host);
@@ -115,11 +106,9 @@ gss_program_set_property (GObject * object, guint prop_id,
   GssProgram *program;
 
   program = GSS_PROGRAM (object);
+  (void) program;
 
   switch (prop_id) {
-    case PROP_NAME:
-      gss_program_set_name (program, g_value_get_string (value));
-      break;
     default:
       g_assert_not_reached ();
       break;
@@ -133,11 +122,9 @@ gss_program_get_property (GObject * object, guint prop_id,
   GssProgram *program;
 
   program = GSS_PROGRAM (object);
+  (void) program;
 
   switch (prop_id) {
-    case PROP_NAME:
-      g_value_set_string (value, program->location);
-      break;
     default:
       g_assert_not_reached ();
       break;
@@ -152,38 +139,31 @@ gss_program_new (const char *program_name)
 }
 
 void
-gss_program_set_name (GssProgram * program, const char *program_name)
-{
-  g_free (program->location);
-  program->location = g_strdup (program_name);
-}
-
-void
 gss_program_add_server_resources (GssProgram * program)
 {
   char *s;
 
-  s = g_strdup_printf ("/%s", program->location);
+  s = g_strdup_printf ("/%s", GST_OBJECT_NAME (program));
   gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/html",
       gss_program_get_resource, gss_program_put_resource, NULL, program);
   g_free (s);
 
-  s = g_strdup_printf ("/%s.frag", program->location);
+  s = g_strdup_printf ("/%s.frag", GST_OBJECT_NAME (program));
   gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/plain",
       gss_program_frag_resource, NULL, NULL, program);
   g_free (s);
 
-  s = g_strdup_printf ("/%s.list", program->location);
+  s = g_strdup_printf ("/%s.list", GST_OBJECT_NAME (program));
   gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/plain",
       gss_program_list_resource, NULL, NULL, program);
   g_free (s);
 
-  s = g_strdup_printf ("/%s-snapshot.png", program->location);
+  s = g_strdup_printf ("/%s-snapshot.png", GST_OBJECT_NAME (program));
   gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "image/png",
       gss_program_png_resource, NULL, NULL, program);
   g_free (s);
 
-  s = g_strdup_printf ("/%s-snapshot.jpeg", program->location);
+  s = g_strdup_printf ("/%s-snapshot.jpeg", GST_OBJECT_NAME (program));
   gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
       "multipart/x-mixed-replace;boundary=myboundary",
       gss_program_jpeg_resource, NULL, NULL, program);
@@ -207,6 +187,8 @@ gss_program_add_stream (GssProgram * program, GssStream * stream)
 
   stream->program = program;
   gss_stream_add_resources (stream);
+
+  gst_object_set_parent (GST_OBJECT (stream), GST_OBJECT (program));
 }
 
 void
@@ -347,7 +329,7 @@ gss_program_log (GssProgram * program, const char *message, ...)
   va_end (varargs);
 
   gss_server_log (program->server, g_strdup_printf ("%s: %s: %s",
-          thetime, program->location, s));
+          thetime, GST_OBJECT_NAME (program), s));
   g_free (s);
   g_free (thetime);
 }
@@ -391,7 +373,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       if (stream->type == GSS_STREAM_TYPE_WEBM) {
         g_string_append_printf (s,
             "<source src=\"%s/%s\" type='video/webm; codecs=\"vp8, vorbis\"'>\n",
-            base_url, stream->name);
+            base_url, GST_OBJECT_NAME (stream));
       }
     }
 
@@ -400,7 +382,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       if (stream->type == GSS_STREAM_TYPE_OGG) {
         g_string_append_printf (s,
             "<source src=\"%s/%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
-            base_url, stream->name);
+            base_url, GST_OBJECT_NAME (stream));
       }
     }
 
@@ -409,7 +391,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       if (stream->type == GSS_STREAM_TYPE_TS ||
           stream->type == GSS_STREAM_TYPE_TS_MAIN) {
         g_string_append_printf (s,
-            "<source src=\"%s/%s.m3u8\" >\n", base_url, program->location);
+            "<source src=\"%s/%s.m3u8\" >\n", base_url,
+            GST_OBJECT_NAME (program));
         break;
       }
     }
@@ -424,7 +407,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
             "<applet code=\"com.fluendo.player.Cortado.class\"\n"
             "  archive=\"%s/cortado.jar\" width=\"%d\" height=\"%d\">\n"
             "    <param name=\"url\" value=\"%s/%s\"></param>\n"
-            "</applet>\n", base_url, width, height, base_url, stream->name);
+            "</applet>\n", base_url, width, height,
+            base_url, GST_OBJECT_NAME (stream));
         break;
       }
     }
@@ -450,11 +434,12 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
             "&autoload=on"
             "&autoplay=off"
             "&vTitle=TITLE"
-            "&showTitle=yes\">\n", width, height + 24, base_url, stream->name);
+            "&showTitle=yes\">\n", width, height + 24,
+            base_url, GST_OBJECT_NAME (stream));
         if (program->enable_snapshot) {
           gss_html_append_image_printf (s,
               "%s/%s-snapshot.png", 0, 0, "snapshot image",
-              base_url, program->location);
+              base_url, GST_OBJECT_NAME (program));
         }
         g_string_append_printf (s, " </object>\n");
         break;
@@ -465,7 +450,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     if (program->enable_snapshot) {
       gss_html_append_image_printf (s,
           "%s/%s-snapshot.png", 0, 0, "snapshot image",
-          base_url, program->location);
+          base_url, GST_OBJECT_NAME (program));
     }
   }
 
@@ -502,7 +487,7 @@ gss_program_get_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  g_string_append_printf (s, "<h1>%s</h1>\n", program->location);
+  g_string_append_printf (s, "<h1>%s</h1>\n", GST_OBJECT_NAME (program));
 
   gss_program_add_video_block (program, s, 0, "");
 
@@ -536,12 +521,13 @@ gss_program_get_resource (GssTransaction * t)
         "%d: %s %dx%d %d kbps <a href=\"%s/%s\">stream</a> "
         "<a href=\"%s/%s\">playlist</a>\n", i, typename,
         stream->width, stream->height, stream->bitrate / 1000,
-        base_url, stream->name, base_url, stream->playlist_name);
+        base_url, GST_OBJECT_NAME (stream), base_url, stream->playlist_name);
   }
   if (program->enable_hls) {
     gss_html_append_break (s);
     g_string_append_printf (s,
-        "<a href=\"%s/%s.m3u8\">HLS</a>\n", base_url, program->location);
+        "<a href=\"%s/%s.m3u8\">HLS</a>\n", base_url,
+        GST_OBJECT_NAME (program));
   }
 
   gss_html_footer (t);
@@ -688,7 +674,8 @@ gss_program_list_resource (GssTransaction * t)
     }
     g_string_append_printf (s,
         "%d %s %d %d %d %s/%s\n", i, typename,
-        stream->width, stream->height, stream->bitrate, base_url, stream->name);
+        stream->width, stream->height, stream->bitrate, base_url,
+        GST_OBJECT_NAME (stream));
   }
 }
 

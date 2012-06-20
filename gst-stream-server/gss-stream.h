@@ -64,10 +64,9 @@ struct _GssHLSSegment {
 };
 
 struct _GssStream {
-  GObject object;
+  GstObject object;
 
   /* properties */
-  char *name;
   int type;
   int width;
   int height;
@@ -125,7 +124,7 @@ struct _GssStream {
 
 typedef struct _GssStreamClass GssStreamClass;
 struct _GssStreamClass {
-  GObjectClass object_class;
+  GstObjectClass object_class;
 
 };
 

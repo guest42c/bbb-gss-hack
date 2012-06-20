@@ -57,7 +57,7 @@ gss_stream_add_hls (GssStream * stream)
 
     program->enable_hls = TRUE;
 
-    s = g_strdup_printf ("/%s.m3u8", program->location);
+    s = g_strdup_printf ("/%s.m3u8", GST_OBJECT_NAME (program));
     gss_server_add_resource (program->server, s, 0,
         "video/x-mpegurl", gss_hls_handle_m3u8, NULL, NULL, program);
     g_free (s);
@@ -107,7 +107,7 @@ gss_stream_add_hls (GssStream * stream)
 
   stream->adapter = gst_adapter_new ();
 
-  s = g_strdup_printf ("/%s-%dx%d-%dkbps%s.m3u8", program->location,
+  s = g_strdup_printf ("/%s-%dx%d-%dkbps%s.m3u8", GST_OBJECT_NAME (program),
       stream->width, stream->height, stream->bitrate / 1000, stream->mod);
   gss_server_add_resource (program->server, s, 0,
       "video/x-mpegurl", gss_hls_handle_stream_m3u8, NULL, NULL, stream);
@@ -191,7 +191,7 @@ gss_program_add_hls_chunk (GssStream * stream, SoupBuffer * buf)
   segment->index = stream->n_chunks;
   segment->buffer = buf;
   segment->location = g_strdup_printf ("/%s-%dx%d-%dkbps%s-%05d.ts",
-      stream->program->location, stream->width, stream->height,
+      GST_OBJECT_NAME (stream->program), stream->width, stream->height,
       stream->bitrate / 1000, stream->mod, stream->n_chunks);
   segment->duration = stream->program->hls.target_duration;
 
@@ -289,7 +289,7 @@ gss_hls_update_variant (GssProgram * program)
         program->streams[j]->width, program->streams[j]->height);
     g_string_append_printf (s, "%s/%s-%dx%d-%dkbps%s.m3u8\n",
         program->server->base_url,
-        program->location,
+        GST_OBJECT_NAME (program),
         program->streams[j]->width,
         program->streams[j]->height,
         program->streams[j]->bitrate / 1000, program->streams[j]->mod);
@@ -355,7 +355,7 @@ gss_stream_handle_m3u8 (GssTransaction * t)
   content = g_strdup_printf ("#EXTM3U\n"
       "#EXT-X-TARGETDURATION:10\n"
       "#EXTINF:10,\n"
-      "%s/%s\n", stream->program->server->base_url, stream->name);
+      "%s/%s\n", stream->program->server->base_url, GST_OBJECT_NAME (stream));
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
 

@@ -29,14 +29,12 @@
 
 enum
 {
-  PROP_NAME = 1,
-  PROP_TYPE,
+  PROP_TYPE = 1,
   PROP_WIDTH,
   PROP_HEIGHT,
   PROP_BITRATE
 };
 
-#define DEFAULT_NAME NULL
 #define DEFAULT_TYPE GSS_STREAM_TYPE_UNKNOWN
 #define DEFAULT_WIDTH 0
 #define DEFAULT_HEIGHT 0
@@ -58,7 +56,7 @@ static void gss_stream_get_property (GObject * object, guint prop_id,
 static GObjectClass *parent_class;
 
 
-G_DEFINE_TYPE (GssStream, gss_stream, G_TYPE_OBJECT);
+G_DEFINE_TYPE (GssStream, gss_stream, GST_TYPE_OBJECT);
 
 static void
 gss_stream_init (GssStream * stream)
@@ -81,11 +79,6 @@ gss_stream_class_init (GssStreamClass * stream_class)
   G_OBJECT_CLASS (stream_class)->get_property = gss_stream_get_property;
   G_OBJECT_CLASS (stream_class)->finalize = gss_stream_finalize;
 
-  g_object_class_install_property (G_OBJECT_CLASS (stream_class),
-      PROP_NAME,
-      g_param_spec_string ("name", "Name",
-          "Name", DEFAULT_NAME,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (stream_class),
       PROP_TYPE, g_param_spec_int ("type", "type",
           "type", 0, GSS_STREAM_TYPE_FLV, DEFAULT_TYPE,
@@ -112,7 +105,6 @@ gss_stream_finalize (GObject * object)
   GssStream *stream = GSS_STREAM (object);
   int i;
 
-  g_free (stream->name);
   g_free (stream->playlist_name);
   g_free (stream->codecs);
   g_free (stream->follow_url);
@@ -160,9 +152,6 @@ gss_stream_set_property (GObject * object, guint prop_id,
   stream = GSS_STREAM (object);
 
   switch (prop_id) {
-    case PROP_NAME:
-      //gss_stream_set_name (stream, g_value_get_string (value));
-      break;
     case PROP_TYPE:
       gss_stream_set_type (stream, g_value_get_int (value));
       break;
@@ -190,9 +179,6 @@ gss_stream_get_property (GObject * object, guint prop_id,
   stream = GSS_STREAM (object);
 
   switch (prop_id) {
-    case PROP_NAME:
-      //g_value_set_string (value, stream->location);
-      break;
     case PROP_TYPE:
       g_value_set_int (value, stream->type);
       break;
@@ -393,17 +379,18 @@ gss_stream_add_resources (GssStream * stream)
     }
   }
 
-  stream->name =
-      g_strdup_printf ("%s-%dx%d-%dkbps%s.%s", stream->program->location,
-      stream->width, stream->height, stream->bitrate / 1000, stream->mod,
-      stream->ext);
-  s = g_strdup_printf ("/%s", stream->name);
+  s = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s",
+      GST_OBJECT_NAME (stream->program), stream->width, stream->height,
+      stream->bitrate / 1000, stream->mod, stream->ext);
+  gst_object_set_name (GST_OBJECT (stream), s);
+  g_free (s);
+  s = g_strdup_printf ("/%s", GST_OBJECT_NAME (stream));
   gss_server_add_resource (stream->program->server, s, GSS_RESOURCE_HTTP_ONLY,
       stream->content_type, stream_resource, NULL, NULL, stream);
   g_free (s);
 
   stream->playlist_name = g_strdup_printf ("%s-%dx%d-%dkbps%s-%s.m3u8",
-      stream->program->location,
+      GST_OBJECT_NAME (stream->program),
       stream->width, stream->height, stream->bitrate / 1000, stream->mod,
       stream->ext);
   s = g_strdup_printf ("/%s", stream->playlist_name);
