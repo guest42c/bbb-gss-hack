@@ -129,6 +129,7 @@ void gss_program_disable_streaming (GssProgram *program);
 void gss_program_set_running (GssProgram *program, gboolean running);
 
 
+void gss_program_add_jpeg_block (GssProgram * program, GString * s);
 void gss_program_add_video_block (GssProgram *program, GString *s, int max_width,
     const char *base_url);
 

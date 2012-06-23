@@ -329,6 +329,22 @@ gss_program_log (GssProgram * program, const char *message, ...)
 }
 
 void
+gss_program_add_jpeg_block (GssProgram * program, GString * s)
+{
+  if (program->running) {
+    if (program->jpegsink) {
+      gss_html_append_image_printf (s,
+          "/%s-snapshot.jpeg", 0, 0, "snapshot image",
+          GST_OBJECT_NAME (program));
+    } else {
+      g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
+    }
+  } else {
+    g_string_append_printf (s, "<img src='/offline.png'>\n");
+  }
+}
+
+void
 gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     const char *base_url)
 {

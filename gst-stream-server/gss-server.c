@@ -822,17 +822,7 @@ gss_server_resource_main_page (GssTransaction * t)
         GST_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
-    if (program->running) {
-      if (program->jpegsink) {
-        gss_html_append_image_printf (s,
-            "/%s-snapshot.jpeg", 0, 0, "snapshot image",
-            GST_OBJECT_NAME (program));
-      } else {
-        g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
-      }
-    } else {
-      g_string_append_printf (s, "<img src='/offline.png'>\n");
-    }
+    gss_program_add_jpeg_block (program, s);
     g_string_append_printf (s, "</a>\n");
     g_string_append_printf (s, "<h5>%s</h5>\n", GST_OBJECT_NAME (program));
     g_string_append_printf (s, "</div>\n");
@@ -856,17 +846,7 @@ gss_server_resource_main_page (GssTransaction * t)
         GST_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
-    if (program->running) {
-      if (program->jpegsink) {
-        gss_html_append_image_printf (s,
-            "/%s-snapshot.jpeg", 0, 0, "snapshot image",
-            GST_OBJECT_NAME (program));
-      } else {
-        g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
-      }
-    } else {
-      g_string_append_printf (s, "<img src='/offline.png'>\n");
-    }
+    gss_program_add_jpeg_block (program, s);
     g_string_append_printf (s, "</a>\n");
     g_string_append_printf (s, "<h5>%s</h5>\n", GST_OBJECT_NAME (program));
     g_string_append_printf (s, "</div>\n");
