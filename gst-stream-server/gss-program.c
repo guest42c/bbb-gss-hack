@@ -77,13 +77,14 @@ static void
 gss_program_finalize (GObject * object)
 {
   GssProgram *program = GSS_PROGRAM (object);
-  int i;
+  GList *g;
 
-  for (i = 0; i < program->n_streams; i++) {
-    GssStream *stream = program->streams[i];
+  for (g = program->streams; g; g = g_list_next (g)) {
+    GssStream *stream = g->data;
 
     gst_object_unparent (GST_OBJECT (stream));
   }
+  g_list_free (program->streams);
 
   if (program->hls.variant_buffer) {
     soup_buffer_free (program->hls.variant_buffer);
@@ -94,7 +95,6 @@ gss_program_finalize (GObject * object)
   if (program->jpegsink)
     g_object_unref (program->jpegsink);
   gss_metrics_free (program->metrics);
-  g_free (program->streams);
   g_free (program->follow_uri);
   g_free (program->follow_host);
 }
@@ -179,11 +179,7 @@ gss_program_remove_server_resources (GssProgram * program)
 void
 gss_program_add_stream (GssProgram * program, GssStream * stream)
 {
-  program->streams = g_realloc (program->streams,
-      sizeof (GssProgram *) * (program->n_streams + 1));
-  program->streams[program->n_streams] = stream;
-  stream->index = program->n_streams;
-  program->n_streams++;
+  program->streams = g_list_append (program->streams, stream);
 
   stream->program = program;
   gss_stream_add_resources (stream);
@@ -200,11 +196,11 @@ gss_program_enable_streaming (GssProgram * program)
 void
 gss_program_disable_streaming (GssProgram * program)
 {
-  int i;
+  GList *g;
 
   program->enable_streaming = FALSE;
-  for (i = 0; i < program->n_streams; i++) {
-    GssStream *stream = program->streams[i];
+  for (g = program->streams; g; g = g_list_next (g)) {
+    GssStream *stream = g->data;
     g_signal_emit_by_name (stream->sink, "clear");
   }
 }
@@ -218,13 +214,12 @@ gss_program_set_running (GssProgram * program, gboolean running)
 void
 gss_program_stop (GssProgram * program)
 {
-  int i;
-  GssStream *stream;
+  GList *g;
 
   gss_program_log (program, "stop");
 
-  for (i = 0; i < program->n_streams; i++) {
-    stream = program->streams[i];
+  for (g = program->streams; g; g = g_list_next (g)) {
+    GssStream *stream = g->data;
 
     gss_stream_set_sink (stream, NULL);
     if (stream->pipeline) {
@@ -236,11 +231,10 @@ gss_program_stop (GssProgram * program)
   }
 
   if (program->program_type != GSS_PROGRAM_MANUAL) {
-    for (i = 0; i < program->n_streams; i++) {
-      stream = program->streams[i];
+    for (g = program->streams; g; g = g_list_next (g)) {
+      GssStream *stream = g->data;
       g_object_unref (stream);
     }
-    program->n_streams = 0;
   }
 }
 
@@ -338,7 +332,7 @@ void
 gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     const char *base_url)
 {
-  int i;
+  GList *g;
   int width = 0;
   int height = 0;
   int flash_only = TRUE;
@@ -348,8 +342,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     return;
   }
 
-  for (i = 0; i < program->n_streams; i++) {
-    GssStream *stream = program->streams[i];
+  for (g = program->streams; g; g = g_list_next (g)) {
+    GssStream *stream = g->data;
     if (stream->width > width)
       width = stream->width;
     if (stream->height > height)
@@ -368,8 +362,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
         "<video controls=\"controls\" autoplay=\"autoplay\" "
         "id=video width=\"%d\" height=\"%d\">\n", width, height);
 
-    for (i = program->n_streams - 1; i >= 0; i--) {
-      GssStream *stream = program->streams[i];
+    for (g = g_list_last (program->streams); g; g = g_list_previous (g)) {
+      GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_WEBM) {
         g_string_append_printf (s,
             "<source src=\"%s/%s\" type='video/webm; codecs=\"vp8, vorbis\"'>\n",
@@ -377,8 +371,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       }
     }
 
-    for (i = program->n_streams - 1; i >= 0; i--) {
-      GssStream *stream = program->streams[i];
+    for (g = g_list_last (program->streams); g; g = g_list_previous (g)) {
+      GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_OGG) {
         g_string_append_printf (s,
             "<source src=\"%s/%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
@@ -386,8 +380,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       }
     }
 
-    for (i = program->n_streams - 1; i >= 0; i--) {
-      GssStream *stream = program->streams[i];
+    for (g = g_list_last (program->streams); g; g = g_list_previous (g)) {
+      GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_TS ||
           stream->type == GSS_STREAM_TYPE_TS_MAIN) {
         g_string_append_printf (s,
@@ -400,8 +394,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   }
 
   if (enable_cortado) {
-    for (i = 0; i < program->n_streams; i++) {
-      GssStream *stream = program->streams[i];
+    for (g = program->streams; g; g = g_list_next (g)) {
+      GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_OGG) {
         g_string_append_printf (s,
             "<applet code=\"com.fluendo.player.Cortado.class\"\n"
@@ -415,8 +409,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   }
 
   if (enable_flash) {
-    for (i = 0; i < program->n_streams; i++) {
-      GssStream *stream = program->streams[i];
+    for (g = program->streams; g; g = g_list_next (g)) {
+      GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_FLV) {
         g_string_append_printf (s,
             " <object width='%d' height='%d' id='flvPlayer' "
@@ -481,7 +475,8 @@ gss_program_get_resource (GssTransaction * t)
   GssProgram *program = (GssProgram *) t->resource->priv;
   GString *s = g_string_new ("");
   const char *base_url = "";
-  int i;
+  GList *g;
+  int i = 0;
 
   t->s = s;
 
@@ -492,8 +487,8 @@ gss_program_get_resource (GssTransaction * t)
   gss_program_add_video_block (program, s, 0, "");
 
   gss_html_append_break (s);
-  for (i = 0; i < program->n_streams; i++) {
-    GssStream *stream = program->streams[i];
+  for (g = program->streams; g; g = g_list_next (g), i++) {
+    GssStream *stream = g->data;
 
     gss_html_append_break (s);
     g_string_append_printf (s,
@@ -594,7 +589,8 @@ gss_program_put_resource (GssTransaction * t)
     program->push_client = t->client;
   }
 
-  stream = program->streams[0];
+  /* FIXME the user should specify a stream */
+  stream = program->streams->data;
 
   if (is_icecast) {
     soup_message_headers_set_encoding (t->msg->response_headers,
@@ -624,13 +620,14 @@ gss_program_list_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   GString *s = g_string_new ("");
-  int i;
+  GList *g;
   const char *base_url = "";
+  int i = 0;
 
   t->s = s;
 
-  for (i = 0; i < program->n_streams; i++) {
-    GssStream *stream = program->streams[i];
+  for (g = program->streams; g; g = g_list_next (g), i++) {
+    GssStream *stream = g->data;
     const char *typename = "unknown";
     switch (stream->type) {
       case GSS_STREAM_TYPE_OGG:

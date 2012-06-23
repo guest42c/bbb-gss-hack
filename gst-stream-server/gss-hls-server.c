@@ -268,31 +268,29 @@ gss_hls_update_index (GssStream * stream)
 static void
 gss_hls_update_variant (GssProgram * program)
 {
+  GList *g;
   GString *s;
-  int j;
 
   s = g_string_new ("#EXTM3U\n");
-  for (j = program->n_streams - 1; j >= 0; j--) {
-    if (!program->streams[j]->is_hls)
+  for (g = program->streams; g; g = g_list_next (g)) {
+    GssStream *stream = g->data;
+
+    if (!stream->is_hls)
       continue;
-    if (program->streams[j]->bitrate == 0)
+    if (stream->bitrate == 0)
       continue;
-    if (program->streams[j]->n_chunks == 0)
+    if (stream->n_chunks == 0)
       continue;
 
     g_string_append_printf (s,
         "#EXT-X-STREAM-INF:PROGRAM-ID=%d,BANDWIDTH=%d,"
         "CODECS=\"%s\",RESOLUTION=\"%dx%d\"\n",
-        program->streams[j]->program_id,
-        program->streams[j]->bitrate,
-        program->streams[j]->codecs,
-        program->streams[j]->width, program->streams[j]->height);
+        stream->program_id,
+        stream->bitrate, stream->codecs, stream->width, stream->height);
     g_string_append_printf (s, "%s/%s-%dx%d-%dkbps%s.m3u8\n",
         program->server->base_url,
         GST_OBJECT_NAME (program),
-        program->streams[j]->width,
-        program->streams[j]->height,
-        program->streams[j]->bitrate / 1000, program->streams[j]->mod);
+        stream->width, stream->height, stream->bitrate / 1000, stream->mod);
   }
   if (program->hls.variant_buffer) {
     soup_buffer_free (program->hls.variant_buffer);

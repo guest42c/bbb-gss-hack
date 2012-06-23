@@ -70,8 +70,7 @@ struct _GssProgram {
   gboolean running;
   gboolean enable_streaming;
 
-  int n_streams;
-  GssStream **streams;
+  GList *streams;
   GssMetrics *metrics;
 
   gboolean enable_ogv;

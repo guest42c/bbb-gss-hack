@@ -79,7 +79,6 @@ struct _GssStream {
   GssProgram *program;
   GssMetrics *metrics;
 
-  int index;
   char *codecs;
   char *playlist_name;
 
