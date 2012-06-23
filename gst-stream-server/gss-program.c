@@ -493,33 +493,13 @@ gss_program_get_resource (GssTransaction * t)
 
   gss_html_append_break (s);
   for (i = 0; i < program->n_streams; i++) {
-    const char *typename = "Unknown";
     GssStream *stream = program->streams[i];
 
-    switch (stream->type) {
-      case GSS_STREAM_TYPE_OGG:
-        typename = "Ogg/Theora";
-        break;
-      case GSS_STREAM_TYPE_WEBM:
-        typename = "WebM";
-        break;
-      case GSS_STREAM_TYPE_TS:
-        typename = "MPEG-TS";
-        break;
-      case GSS_STREAM_TYPE_TS_MAIN:
-        typename = "MPEG-TS main";
-        break;
-      case GSS_STREAM_TYPE_FLV:
-        typename = "FLV";
-        break;
-      default:
-        g_assert_not_reached ();
-        break;
-    }
     gss_html_append_break (s);
     g_string_append_printf (s,
         "%d: %s %dx%d %d kbps <a href=\"%s/%s\">stream</a> "
-        "<a href=\"%s/%s\">playlist</a>\n", i, typename,
+        "<a href=\"%s/%s\">playlist</a>\n", i,
+        gss_stream_type_get_name (stream->type),
         stream->width, stream->height, stream->bitrate / 1000,
         base_url, GST_OBJECT_NAME (stream), base_url, stream->playlist_name);
   }

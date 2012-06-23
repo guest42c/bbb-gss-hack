@@ -197,6 +197,25 @@ gss_stream_get_property (GObject * object, guint prop_id,
   }
 }
 
+const char *
+gss_stream_type_get_name (GssStreamType type)
+{
+  switch (type) {
+    case GSS_STREAM_TYPE_OGG:
+      return "Ogg/Theora";
+    case GSS_STREAM_TYPE_WEBM:
+      return "WebM";
+    case GSS_STREAM_TYPE_TS:
+      return "MPEG-TS";
+    case GSS_STREAM_TYPE_TS_MAIN:
+      return "MPEG-TS main";
+    case GSS_STREAM_TYPE_FLV:
+      return "FLV";
+    default:
+      return "unknown";
+  }
+}
+
 void
 gss_stream_set_type (GssStream * stream, int type)
 {

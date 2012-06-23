@@ -156,6 +156,8 @@ void gss_stream_add_resources (GssStream *stream);
 
 void gss_stream_handle_m3u8 (GssTransaction * t);
 
+const char * gss_stream_type_get_name (GssStreamType type);
+
 
 G_END_DECLS
 
