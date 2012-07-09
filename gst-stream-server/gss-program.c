@@ -248,6 +248,9 @@ gss_program_remove_server_resources (GssProgram * program)
 void
 gss_program_add_stream (GssProgram * program, GssStream * stream)
 {
+  g_return_if_fail (GSS_IS_PROGRAM (program));
+  g_return_if_fail (GSS_IS_STREAM (stream));
+
   program->streams = g_list_append (program->streams, stream);
 
   stream->program = program;
@@ -425,12 +428,15 @@ client_fd_removed (GstElement * e, int fd, gpointer user_data)
 void
 gss_program_set_jpegsink (GssProgram * program, GstElement * jpegsink)
 {
-  program->jpegsink = g_object_ref (jpegsink);
+  gst_object_replace ((GstObject **) & program->jpegsink,
+      GST_OBJECT (jpegsink));
 
-  g_signal_connect (jpegsink, "client-removed",
-      G_CALLBACK (client_removed), NULL);
-  g_signal_connect (jpegsink, "client-fd-removed",
-      G_CALLBACK (client_fd_removed), NULL);
+  if (jpegsink) {
+    g_signal_connect (jpegsink, "client-removed",
+        G_CALLBACK (client_removed), NULL);
+    g_signal_connect (jpegsink, "client-fd-removed",
+        G_CALLBACK (client_fd_removed), NULL);
+  }
 }
 
 void
@@ -481,6 +487,16 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   if (program->state != GSS_PROGRAM_STATE_RUNNING) {
     g_string_append_printf (s, "<img src='/offline.png'>\n");
     return;
+  }
+
+  if (program->streams == NULL) {
+    if (program->jpegsink) {
+      gss_html_append_image_printf (s,
+          "/%s-snapshot.jpeg", 0, 0, "snapshot image",
+          GST_OBJECT_NAME (program));
+    } else {
+      g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
+    }
   }
 
   for (g = program->streams; g; g = g_list_next (g)) {
