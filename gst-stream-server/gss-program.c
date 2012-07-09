@@ -30,9 +30,15 @@
 
 enum
 {
-  PROP_NONE
+  PROP_NONE,
+  PROP_ENABLED,
+  PROP_STATE,
+  PROP_DESCRIPTION
 };
 
+#define DEFAULT_ENABLED FALSE
+#define DEFAULT_STATE GSS_PROGRAM_STATE_STOPPED
+#define DEFAULT_DESCRIPTION ""
 
 
 static void gss_program_get_resource (GssTransaction * transaction);
@@ -50,8 +56,41 @@ static void gss_program_get_property (GObject * object, guint prop_id,
 
 static GObjectClass *parent_class;
 
-
 G_DEFINE_TYPE (GssProgram, gss_program, GST_TYPE_OBJECT);
+
+static GType
+gss_program_state_get_type (void)
+{
+  static gsize id = 0;
+  static const GEnumValue values[] = {
+    {GSS_PROGRAM_STATE_UNKNOWN, "unknown", "unknown"},
+    {GSS_PROGRAM_STATE_STOPPED, "stopped", "stopped"},
+    {GSS_PROGRAM_STATE_STARTING, "starting", "starting"},
+    {GSS_PROGRAM_STATE_RUNNING, "running", "running"},
+    {GSS_PROGRAM_STATE_STOPPING, "stopping", "stopping"},
+    {0, NULL, NULL}
+  };
+
+  if (g_once_init_enter (&id)) {
+    GType tmp = g_enum_register_static ("GssProgramState", values);
+    g_once_init_leave (&id, tmp);
+  }
+
+  return (GType) id;
+}
+
+const char *
+gss_program_state_get_name (GssProgramState state)
+{
+  GEnumValue *ev;
+
+  ev = g_enum_get_value (G_ENUM_CLASS (g_type_class_peek
+          (gss_program_state_get_type ())), state);
+  if (ev == NULL)
+    return NULL;
+
+  return ev->value_name;
+}
 
 static void
 gss_program_init (GssProgram * program)
@@ -60,7 +99,10 @@ gss_program_init (GssProgram * program)
   program->metrics = gss_metrics_new ();
 
   program->enable_streaming = TRUE;
-  program->running = FALSE;
+
+  program->state = DEFAULT_STATE;
+  program->enabled = DEFAULT_ENABLED;
+  program->description = g_strdup (DEFAULT_DESCRIPTION);
 }
 
 static void
@@ -69,6 +111,19 @@ gss_program_class_init (GssProgramClass * program_class)
   G_OBJECT_CLASS (program_class)->set_property = gss_program_set_property;
   G_OBJECT_CLASS (program_class)->get_property = gss_program_get_property;
   G_OBJECT_CLASS (program_class)->finalize = gss_program_finalize;
+
+  g_object_class_install_property (G_OBJECT_CLASS (program_class),
+      PROP_ENABLED, g_param_spec_boolean ("enabled", "Enabled",
+          "Enabled", DEFAULT_ENABLED,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (program_class),
+      PROP_STATE, g_param_spec_enum ("state", "State",
+          "State", gss_program_state_get_type (), DEFAULT_STATE,
+          (GParamFlags) (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (program_class),
+      PROP_DESCRIPTION, g_param_spec_string ("description", "Description",
+          "Description", DEFAULT_DESCRIPTION,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   parent_class = g_type_class_peek_parent (program_class);
 }
@@ -106,9 +161,15 @@ gss_program_set_property (GObject * object, guint prop_id,
   GssProgram *program;
 
   program = GSS_PROGRAM (object);
-  (void) program;
 
   switch (prop_id) {
+    case PROP_ENABLED:
+      gss_program_set_enabled (program, g_value_get_boolean (value));
+      break;
+    case PROP_DESCRIPTION:
+      g_free (program->description);
+      program->description = g_value_dup_string (value);
+      break;
     default:
       g_assert_not_reached ();
       break;
@@ -122,9 +183,17 @@ gss_program_get_property (GObject * object, guint prop_id,
   GssProgram *program;
 
   program = GSS_PROGRAM (object);
-  (void) program;
 
   switch (prop_id) {
+    case PROP_ENABLED:
+      g_value_set_boolean (value, program->enabled);
+      break;
+    case PROP_STATE:
+      g_value_set_enum (value, program->state);
+      break;
+    case PROP_DESCRIPTION:
+      g_value_set_string (value, program->description);
+      break;
     default:
       g_assert_not_reached ();
       break;
@@ -205,32 +274,75 @@ gss_program_disable_streaming (GssProgram * program)
   }
 }
 
-void
-gss_program_set_running (GssProgram * program, gboolean running)
+static gboolean
+idle_state_enable (gpointer ptr)
 {
-  program->running = running;
+  GssProgram *program = GSS_PROGRAM (ptr);
+
+  program->state_idle = 0;
+
+  if (program->state == GSS_PROGRAM_STATE_STOPPED && program->enabled) {
+    gss_program_start (program);
+  } else if (program->state == GSS_PROGRAM_STATE_RUNNING && !program->enabled) {
+    gss_program_stop (program);
+  }
+
+  return FALSE;
+}
+
+void
+gss_program_set_state (GssProgram * program, GssProgramState state)
+{
+  program->state = state;
+  if ((program->state == GSS_PROGRAM_STATE_STOPPED && program->enabled) ||
+      (program->state == GSS_PROGRAM_STATE_RUNNING && !program->enabled)) {
+    if (!program->state_idle) {
+      program->state_idle = g_idle_add (idle_state_enable, program);
+    }
+  }
+}
+
+void
+gss_program_set_enabled (GssProgram * program, gboolean enabled)
+{
+  if (program->enabled && !enabled) {
+    gss_program_stop (program);
+  } else if (!program->enabled && enabled) {
+    gss_program_start (program);
+  }
 }
 
 void
 gss_program_stop (GssProgram * program)
 {
-  GList *g;
+  GssProgramClass *program_class;
 
-  gss_program_log (program, "stop");
-
-  for (g = program->streams; g; g = g_list_next (g)) {
-    GssStream *stream = g->data;
-
-    gss_stream_set_sink (stream, NULL);
-    if (stream->pipeline) {
-      gst_element_set_state (stream->pipeline, GST_STATE_NULL);
-
-      g_object_unref (stream->pipeline);
-      stream->pipeline = NULL;
-    }
+  program->enabled = FALSE;
+  if (program->state == GSS_PROGRAM_STATE_STOPPED ||
+      program->state == GSS_PROGRAM_STATE_STOPPING) {
+    return;
   }
+  gss_program_log (program, "stop");
+  gss_program_set_state (program, GSS_PROGRAM_STATE_STOPPING);
 
-  if (program->program_type != GSS_PROGRAM_MANUAL) {
+  program_class = GSS_PROGRAM_GET_CLASS (program);
+  if (program_class->stop) {
+    program_class->stop (program);
+  } else {
+    GList *g;
+
+    for (g = program->streams; g; g = g_list_next (g)) {
+      GssStream *stream = g->data;
+
+      gss_stream_set_sink (stream, NULL);
+      if (stream->pipeline) {
+        gst_element_set_state (stream->pipeline, GST_STATE_NULL);
+
+        g_object_unref (stream->pipeline);
+        stream->pipeline = NULL;
+      }
+    }
+
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
       g_object_unref (stream);
@@ -241,24 +353,37 @@ gss_program_stop (GssProgram * program)
 void
 gss_program_start (GssProgram * program)
 {
+  GssProgramClass *program_class;
 
+  program->enabled = TRUE;
+  if (program->state == GSS_PROGRAM_STATE_STARTING ||
+      program->state == GSS_PROGRAM_STATE_RUNNING ||
+      program->state == GSS_PROGRAM_STATE_STOPPING) {
+    return;
+  }
   gss_program_log (program, "start");
+  gss_program_set_state (program, GSS_PROGRAM_STATE_STARTING);
 
-  switch (program->program_type) {
-    case GSS_PROGRAM_EW_FOLLOW:
-      gss_program_follow_get_list (program);
-      break;
-    case GSS_PROGRAM_HTTP_FOLLOW:
-      gss_program_add_stream_follow (program, GSS_STREAM_TYPE_OGG, 640, 360,
-          700000, program->follow_uri);
-      break;
-    case GSS_PROGRAM_MANUAL:
-    case GSS_PROGRAM_ICECAST:
-    case GSS_PROGRAM_HTTP_PUT:
-      break;
-    default:
-      g_warning ("not implemented");
-      break;
+  program_class = GSS_PROGRAM_GET_CLASS (program);
+  if (program_class->start) {
+    program_class->start (program);
+  } else {
+    switch (program->program_type) {
+      case GSS_PROGRAM_EW_FOLLOW:
+        gss_program_follow_get_list (program);
+        break;
+      case GSS_PROGRAM_HTTP_FOLLOW:
+        gss_program_add_stream_follow (program, GSS_STREAM_TYPE_OGG, 640, 360,
+            700000, program->follow_uri);
+        break;
+      case GSS_PROGRAM_MANUAL:
+      case GSS_PROGRAM_ICECAST:
+      case GSS_PROGRAM_HTTP_PUT:
+        break;
+      default:
+        g_warning ("not implemented");
+        break;
+    }
   }
 }
 
@@ -331,7 +456,7 @@ gss_program_log (GssProgram * program, const char *message, ...)
 void
 gss_program_add_jpeg_block (GssProgram * program, GString * s)
 {
-  if (program->running) {
+  if (program->state == GSS_PROGRAM_STATE_RUNNING) {
     if (program->jpegsink) {
       gss_html_append_image_printf (s,
           "/%s-snapshot.jpeg", 0, 0, "snapshot image",
@@ -353,7 +478,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   int height = 0;
   int flash_only = TRUE;
 
-  if (!program->running) {
+  if (program->state != GSS_PROGRAM_STATE_RUNNING) {
     g_string_append_printf (s, "<img src='/offline.png'>\n");
     return;
   }
@@ -537,7 +662,6 @@ push_wrote_headers (SoupMessage * msg, void *user_data)
   gss_stream_create_push_pipeline (stream);
 
   gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
-  stream->program->running = TRUE;
 }
 
 
@@ -597,7 +721,6 @@ gss_program_put_resource (GssTransaction * t)
       gss_stream_create_push_pipeline (stream);
 
       gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
-      program->running = TRUE;
     }
 
     gss_program_start (program);
@@ -678,7 +801,7 @@ gss_program_png_resource (GssTransaction * t)
   GssProgram *program = (GssProgram *) t->resource->priv;
   GstBuffer *buffer = NULL;
 
-  if (!program->enable_streaming || !program->running) {
+  if (!program->enable_streaming || program->state != GSS_PROGRAM_STATE_RUNNING) {
     soup_message_set_status (t->msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
@@ -710,7 +833,8 @@ jpeg_wrote_headers (SoupMessage * msg, void *user_data)
   socket = soup_client_context_get_socket (connection->client);
   fd = soup_socket_get_fd (socket);
 
-  if (connection->program->jpegsink) {
+  if (connection->program->jpegsink &&
+      connection->program->state == GSS_PROGRAM_STATE_RUNNING) {
     g_signal_emit_by_name (connection->program->jpegsink, "add", fd);
 
     g_assert (fd < GSS_STREAM_MAX_FDS);

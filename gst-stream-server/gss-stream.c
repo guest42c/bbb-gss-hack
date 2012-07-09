@@ -301,7 +301,8 @@ stream_resource (GssTransaction * t)
   GssStream *stream = (GssStream *) t->resource->priv;
   GssConnection *connection;
 
-  if (!stream->program->enable_streaming || !stream->program->running) {
+  if (!stream->program->enable_streaming
+      || stream->program->state != GSS_PROGRAM_STATE_RUNNING) {
     soup_message_set_status (t->msg, SOUP_STATUS_NO_CONTENT);
     return;
   }

@@ -139,7 +139,7 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
         s = g_strdup_printf ("stream %s started", GST_OBJECT_NAME (stream));
         gss_program_log (program, s);
         g_free (s);
-        program->running = TRUE;
+        gss_program_set_state (program, GSS_PROGRAM_STATE_RUNNING);
       }
     }
       break;

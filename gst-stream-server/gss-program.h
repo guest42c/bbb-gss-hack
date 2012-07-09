@@ -38,11 +38,20 @@ G_BEGIN_DECLS
   (G_TYPE_CHECK_INSTANCE_CAST((obj),GSS_TYPE_PROGRAM,GssProgram))
 #define GSS_PROGRAM_CLASS(klass) \
   (G_TYPE_CHECK_CLASS_CAST((klass),GSS_TYPE_PROGRAM,GssProgramClass))
+#define GSS_PROGRAM_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS ((obj), GSS_TYPE_PROGRAM, GssProgramClass))
 #define GSS_IS_PROGRAM(obj) \
   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GSS_TYPE_PROGRAM))
 #define GSS_IS_PROGRAM_CLASS(obj) \
   (G_TYPE_CHECK_CLASS_TYPE((klass),GSS_TYPE_PROGRAM))
 
+typedef enum {
+  GSS_PROGRAM_STATE_UNKNOWN,
+  GSS_PROGRAM_STATE_STOPPED,
+  GSS_PROGRAM_STATE_STARTING,
+  GSS_PROGRAM_STATE_RUNNING,
+  GSS_PROGRAM_STATE_STOPPING,
+} GssProgramState;
 
 typedef enum {
   GSS_PROGRAM_EW_FOLLOW,
@@ -58,6 +67,12 @@ struct _GssProgram {
 
   GssServer *server;
 
+  /* properties */
+  GssProgramState state;
+  gboolean enabled;
+  char *description;
+
+
   GssProgramType program_type;
   gboolean is_archive;
 
@@ -67,7 +82,6 @@ struct _GssProgram {
   SoupClientContext *push_client;
   int push_media_type;
 
-  gboolean running;
   gboolean enable_streaming;
 
   GList *streams;
@@ -78,6 +92,7 @@ struct _GssProgram {
   gboolean enable_hls;
   gboolean enable_snapshot;
   int restart_delay;
+  guint state_idle;
 
   GstElement *pngappsink;
   GstElement *jpegsink;
@@ -99,6 +114,8 @@ struct _GssProgramClass
 {
   GstObjectClass object_class;
 
+  void (*stop) (GssProgram *program);
+  void (*start) (GssProgram *program);
 };
 
 GType gss_program_get_type (void);
@@ -126,12 +143,15 @@ GssStream * gss_program_add_stream_full (GssProgram *program,
 void gss_program_log (GssProgram *program, const char *message, ...);
 void gss_program_enable_streaming (GssProgram *program);
 void gss_program_disable_streaming (GssProgram *program);
-void gss_program_set_running (GssProgram *program, gboolean running);
+void gss_program_set_enabled (GssProgram *program, gboolean enabled);
+void gss_program_set_state (GssProgram *program, GssProgramState state);
 
 
 void gss_program_add_jpeg_block (GssProgram * program, GString * s);
 void gss_program_add_video_block (GssProgram *program, GString *s, int max_width,
     const char *base_url);
+
+const char * gss_program_state_get_name (GssProgramState state);
 
 /* FIXME move to program-follow */
 void

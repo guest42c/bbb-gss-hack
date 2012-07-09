@@ -157,8 +157,6 @@ gss_vod_setup (GssServer * server)
         gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
             stream->content_type, vod_resource_chunked, NULL, NULL, program);
         g_free (s);
-
-        program->running = TRUE;
       }
       name = g_dir_read_name (dir);
     }
