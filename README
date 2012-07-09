@@ -2,3 +2,10 @@
 GStreamer Streaming Server
 
 
+
+
+
+
+Handles Content-Range requests: no
+
+
