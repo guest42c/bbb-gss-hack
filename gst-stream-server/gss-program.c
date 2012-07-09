@@ -615,9 +615,6 @@ gss_program_get_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
   GString *s = g_string_new ("");
-  const char *base_url = "";
-  GList *g;
-  int i = 0;
 
   t->s = s;
 
@@ -628,25 +625,70 @@ gss_program_get_resource (GssTransaction * t)
   gss_program_add_video_block (program, s, 0, "");
 
   gss_html_append_break (s);
+
+  gss_program_add_stream_table (program, s);
+
+  gss_html_footer (t);
+}
+
+void
+gss_program_add_stream_table (GssProgram * program, GString * s)
+{
+  GList *g;
+#if 0
+  int i = 0;
+
   for (g = program->streams; g; g = g_list_next (g), i++) {
     GssStream *stream = g->data;
 
     gss_html_append_break (s);
     g_string_append_printf (s,
-        "%d: %s %dx%d %d kbps <a href=\"%s/%s\">stream</a> "
-        "<a href=\"%s/%s\">playlist</a>\n", i,
+        "%d: %s %dx%d %d kbps <a href=\"/%s\">stream</a> "
+        "<a href=\"/%s\">playlist</a>\n", i,
         gss_stream_type_get_name (stream->type),
         stream->width, stream->height, stream->bitrate / 1000,
-        base_url, GST_OBJECT_NAME (stream), base_url, stream->playlist_name);
+        GST_OBJECT_NAME (stream), stream->playlist_name);
   }
   if (program->enable_hls) {
     gss_html_append_break (s);
     g_string_append_printf (s,
-        "<a href=\"%s/%s.m3u8\">HLS</a>\n", base_url,
-        GST_OBJECT_NAME (program));
+        "<a href=\"/%s.m3u8\">HLS</a>\n", GST_OBJECT_NAME (program));
   }
+#endif
 
-  gss_html_footer (t);
+  g_string_append (s, "<table class='table table-striped table-bordered "
+      "table-condensed'>\n");
+  g_string_append (s, "<thead>\n");
+  g_string_append (s, "<tr>\n");
+  g_string_append (s, "<th>Type</th>\n");
+  g_string_append (s, "<th>Size</th>\n");
+  g_string_append (s, "<th>Bitrate</th>\n");
+  g_string_append (s, "</tr>\n");
+  g_string_append (s, "</thead>\n");
+  g_string_append (s, "<tbody>\n");
+  for (g = program->streams; g; g = g_list_next (g)) {
+    GssStream *stream = g->data;
+
+    g_string_append (s, "<tr>\n");
+    g_string_append_printf (s, "<td>%s</td>\n",
+        gss_stream_type_get_name (stream->type));
+    g_string_append_printf (s, "<td>%dx%d</td>\n", stream->width,
+        stream->height);
+    g_string_append_printf (s, "<td>%d kbps</td>\n", stream->bitrate / 1000);
+    g_string_append_printf (s, "<td><a href=\"/%s\">stream</a></td>\n",
+        GST_OBJECT_NAME (stream));
+    g_string_append_printf (s, "<td><a href=\"/%s\">playlist</a></td>\n",
+        stream->playlist_name);
+    g_string_append (s, "</tr>\n");
+  }
+  g_string_append (s, "<tr>\n");
+  g_string_append_printf (s,
+      "<td colspan='7'><a class='btn btn-mini' href='/'>"
+      "<i class='icon-plus'></i>Add</a></td>\n");
+  g_string_append (s, "</tr>\n");
+  g_string_append (s, "</tbody>\n");
+  g_string_append (s, "</table>\n");
+
 }
 
 

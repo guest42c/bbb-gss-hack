@@ -150,6 +150,7 @@ void gss_program_set_state (GssProgram *program, GssProgramState state);
 void gss_program_add_jpeg_block (GssProgram * program, GString * s);
 void gss_program_add_video_block (GssProgram *program, GString *s, int max_width,
     const char *base_url);
+void gss_program_add_stream_table (GssProgram *program, GString *s);
 
 const char * gss_program_state_get_name (GssProgramState state);
 
