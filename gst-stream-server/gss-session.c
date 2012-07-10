@@ -662,7 +662,7 @@ session_login_post_resource (GssTransaction * t)
     g_hash_table_unref (query_hash);
   }
 
-  gss_html_error_404 (t->msg);
+  gss_html_error_404 (t->server, t->msg);
 }
 
 static void

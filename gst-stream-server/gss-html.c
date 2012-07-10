@@ -29,21 +29,20 @@
 
 
 void
-gss_html_error_404 (SoupMessage * msg)
+gss_html_error_404 (GssServer * server, SoupMessage * msg)
 {
   char *content;
   GString *s;
+  GssTransaction t = { 0 };
 
   s = g_string_new ("");
 
-  g_string_append (s,
-      "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n"
-      "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-      "<head>\n"
-      "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-      "<title>Error 404: Page not found</title>\n"
-      "</head>\n"
-      "<body>\n" "Error 404: Page not found\n" "</body>\n" "</html>\n");
+  t.s = s;
+  t.server = server;
+  t.msg = msg;
+  gss_html_header (&t);
+  g_string_append (s, "<h1>Error 404: Page not found</h1>\n");
+  gss_html_footer (&t);
 
   content = g_string_free (s, FALSE);
 

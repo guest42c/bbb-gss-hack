@@ -34,7 +34,7 @@ G_BEGIN_DECLS
 
 void gss_html_header (GssTransaction *t);
 void gss_html_footer (GssTransaction *t);
-void gss_html_error_404 (SoupMessage *msg);
+void gss_html_error_404 (GssServer *server, SoupMessage *msg);
 void gss_html_append_break (GString *s);
 void gss_html_append_image (GString *s, const char *url, int width, int height,
     const char *alt_text);

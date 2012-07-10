@@ -876,7 +876,7 @@ gss_program_png_resource (GssTransaction * t)
 
     gst_buffer_unref (buffer);
   } else {
-    gss_html_error_404 (t->msg);
+    gss_html_error_404 (t->server, t->msg);
   }
 
 }

@@ -704,20 +704,20 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
   resource = g_hash_table_lookup (server->resources, path);
 
   if (!resource) {
-    gss_html_error_404 (msg);
+    gss_html_error_404 (server, msg);
     return;
   }
 
   if (resource->flags & GSS_RESOURCE_UI) {
     if (!server->enable_public_ui && soupserver == server->server) {
-      gss_html_error_404 (msg);
+      gss_html_error_404 (server, msg);
       return;
     }
   }
 
   if (resource->flags & GSS_RESOURCE_HTTPS_ONLY) {
     if (soupserver != server->ssl_server) {
-      gss_html_error_404 (msg);
+      gss_html_error_404 (server, msg);
       return;
     }
   }
@@ -731,7 +731,7 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
 
   if (resource->flags & GSS_RESOURCE_ADMIN) {
     if (session == NULL || !session->is_admin) {
-      gss_html_error_404 (msg);
+      gss_html_error_404 (server, msg);
       return;
     }
   }
@@ -779,7 +779,7 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
   } else if (msg->method == SOUP_METHOD_SOURCE && resource->put_callback) {
     resource->put_callback (transaction);
   } else {
-    gss_html_error_404 (msg);
+    gss_html_error_404 (server, msg);
   }
 
   if (transaction->s) {
