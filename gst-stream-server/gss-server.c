@@ -38,21 +38,26 @@
 
 enum
 {
-  PROP_PORT = 1,
+  PROP_0,
+  PROP_ENABLE_PUBLIC_INTERFACE,
+  PROP_HTTP_PORT,
   PROP_HTTPS_PORT,
-  PROP_SERVER_NAME,
+  PROP_SERVER_HOSTNAME,
   PROP_TITLE,
   PROP_MAX_CONNECTIONS,
-  PROP_MAX_BITRATE,
+  PROP_MAX_RATE,
+  PROP_ADMIN_HOSTS_ALLOW,
   PROP_ARCHIVE_DIR
 };
 
+#define DEFAULT_ENABLE_PUBLIC_INTERFACE TRUE
 #define DEFAULT_HTTP_PORT 80
 #define DEFAULT_HTTPS_PORT 443
-#define DEFAULT_SERVER_NAME NULL
+#define DEFAULT_SERVER_HOSTNAME ""
 #define DEFAULT_TITLE "GStreamer Streaming Server"
-#define DEFAULT_MAX_CONNECTIONS G_MAXINT
-#define DEFAULT_MAX_BITRATE G_MAXINT64
+#define DEFAULT_MAX_CONNECTIONS 10000
+#define DEFAULT_MAX_RATE 100000
+#define DEFAULT_ADMIN_HOSTS_ALLOW "0.0.0.0/0"
 #ifdef USE_LOCAL
 #define DEFAULT_ARCHIVE_DIR "."
 #else
@@ -75,8 +80,6 @@ static void gss_server_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 static void gss_server_setup_resources (GssServer * server);
 
-static void gss_server_notify (const char *key, void *priv);
-
 
 static gboolean periodic_timer (gpointer data);
 
@@ -95,30 +98,31 @@ gss_server_set_http_port (GssServer * server, int port)
 {
   SoupAddress *if6;
 
-  if (server->port == port)
+  if (server->http_port == port)
     return;
 
   if (server->server) {
     g_object_unref (server->server);
   }
 
-  server->port = port;
+  server->http_port = port;
 
   g_free (server->base_url);
-  if (server->port == 80) {
-    server->base_url = g_strdup_printf ("http://%s", server->server_name);
+  if (server->http_port == 80) {
+    server->base_url = g_strdup_printf ("http://%s", server->server_hostname);
   } else {
-    server->base_url = g_strdup_printf ("http://%s:%d", server->server_name,
-        server->port);
+    server->base_url = g_strdup_printf ("http://%s:%d", server->server_hostname,
+        server->http_port);
   }
 
-  if6 = soup_address_new_any (SOUP_ADDRESS_FAMILY_IPV6, server->port);
+  if6 = soup_address_new_any (SOUP_ADDRESS_FAMILY_IPV6, server->http_port);
   server->server = soup_server_new (SOUP_SERVER_INTERFACE, if6,
-      SOUP_SERVER_PORT, server->port, NULL);
+      SOUP_SERVER_PORT, server->http_port, NULL);
 
   if (server->server == NULL) {
     /* try again with just IPv4 */
-    server->server = soup_server_new (SOUP_SERVER_PORT, server->port, NULL);
+    server->server =
+        soup_server_new (SOUP_SERVER_PORT, server->http_port, NULL);
   }
 
   g_object_unref (if6);
@@ -146,13 +150,13 @@ gss_server_set_https_port (GssServer * server, int port)
 
   if (server->https_port == 443) {
     server->base_url_https = g_strdup_printf ("https://%s",
-        server->server_name);
+        server->server_hostname);
   } else {
     server->base_url_https = g_strdup_printf ("https://%s:%d",
-        server->server_name, server->port);
+        server->server_hostname, server->https_port);
   }
 
-  if6 = soup_address_new_any (SOUP_ADDRESS_FAMILY_IPV6, server->port);
+  if6 = soup_address_new_any (SOUP_ADDRESS_FAMILY_IPV6, server->https_port);
   server->ssl_server = soup_server_new (SOUP_SERVER_PORT, server->https_port,
       SOUP_SERVER_INTERFACE, if6,
       SOUP_SERVER_SSL_CERT_FILE, "server.crt",
@@ -197,31 +201,22 @@ gss_server_init (GssServer * server)
   gss_server_set_http_port (server, port);
   gss_server_set_https_port (server, https_port);
 
+  server->enable_public_interface = DEFAULT_ENABLE_PUBLIC_INTERFACE;
+  s = gss_utils_gethostname ();
+  gss_server_set_server_hostname (server, s);
+  g_free (s);
+  server->title = g_strdup (DEFAULT_TITLE);
   server->max_connections = DEFAULT_MAX_CONNECTIONS;
-  server->max_bitrate = DEFAULT_MAX_BITRATE;
+  server->max_rate = DEFAULT_MAX_RATE;
+  server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_HOSTS_ALLOW);
 
   server->programs = NULL;
   server->archive_dir = g_strdup (DEFAULT_ARCHIVE_DIR);
 
-  server->title = g_strdup (DEFAULT_TITLE);
 
   if (enable_rtsp)
     gss_server_rtsp_init (server);
 
-  gss_config_set_notify (server->config, "max_connections", gss_server_notify,
-      server);
-  gss_config_set_notify (server->config, "max_bandwidth", gss_server_notify,
-      server);
-  gss_config_set_notify (server->config, "server_name", gss_server_notify,
-      server);
-  gss_config_set_notify (server->config, "server_port", gss_server_notify,
-      server);
-  gss_config_set_notify (server->config, "enable_public_ui", gss_server_notify,
-      server);
-
-  s = gss_utils_gethostname ();
-  gss_server_set_server_name (server, s);
-  g_free (s);
   gss_server_setup_resources (server);
 
   g_timeout_add (1000, (GSourceFunc) periodic_timer, server);
@@ -278,8 +273,9 @@ gss_server_finalize (GObject * object)
   gss_config_free (server->config);
   g_free (server->base_url);
   g_free (server->base_url_https);
-  g_free (server->server_name);
+  g_free (server->server_hostname);
   g_free (server->title);
+  g_free (server->admin_hosts_allow);
   g_object_unref (server->client_session);
 
   parent_class->finalize (object);
@@ -294,28 +290,41 @@ gss_server_class_init (GssServerClass * server_class)
   G_OBJECT_CLASS (server_class)->get_property = gss_server_get_property;
   G_OBJECT_CLASS (server_class)->finalize = gss_server_finalize;
 
-  g_object_class_install_property (G_OBJECT_CLASS (server_class), PROP_PORT,
-      g_param_spec_int ("port", "Port",
-          "Port", 0, 65535, DEFAULT_HTTP_PORT,
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ENABLE_PUBLIC_INTERFACE,
+      g_param_spec_boolean ("enable-public-interface",
+          "Enable Public Interface", "Enable Public Interface",
+          DEFAULT_ENABLE_PUBLIC_INTERFACE,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_HTTP_PORT, g_param_spec_int ("http-port", "HTTP Port", "HTTP Port",
+          0, 65535, DEFAULT_HTTP_PORT,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_HTTPS_PORT, g_param_spec_int ("https-port", "HTTPS Port",
           "HTTPS Port", 0, 65535, DEFAULT_HTTPS_PORT,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
-      PROP_SERVER_NAME, g_param_spec_string ("server-name", "Server name",
-          "Server name", DEFAULT_SERVER_NAME,
+      PROP_SERVER_HOSTNAME, g_param_spec_string ("server-hostname",
+          "Server Hostname", "Server Hostname", DEFAULT_SERVER_HOSTNAME,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class), PROP_TITLE,
       g_param_spec_string ("title", "Title", "Title", DEFAULT_TITLE,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
-  g_object_class_install_property (G_OBJECT_CLASS (server_class), PROP_PORT,
-      g_param_spec_int ("max-connections", "Maximum number of connections",
-          "Maximum number of connections", 0, G_MAXINT, 0,
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_MAX_CONNECTIONS, g_param_spec_int ("max-connections",
+          "Maximum number of connections", "Maximum number of connections", 0,
+          G_MAXINT, DEFAULT_MAX_CONNECTIONS,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
-  g_object_class_install_property (G_OBJECT_CLASS (server_class), PROP_PORT,
-      g_param_spec_int64 ("max-bitrate", "Maximum bitrate", "Maximum bitrate",
-          0, G_MAXINT64, 0,
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_MAX_CONNECTIONS, g_param_spec_int ("max-rate",
+          "Maximum bitrate (in kbytes/sec, 0 is unlimited)",
+          "Maximum bitrate (in kbytes/sec)", 0, G_MAXINT, DEFAULT_MAX_RATE,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ADMIN_HOSTS_ALLOW, g_param_spec_string ("admin-hosts-allow",
+          "Allowed Hosts (admin)", "Allowed Hosts (admin)",
+          DEFAULT_ADMIN_HOSTS_ALLOW,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_ARCHIVE_DIR, g_param_spec_string ("archive-dir", "Archive Directory",
@@ -335,14 +344,17 @@ gss_server_set_property (GObject * object, guint prop_id,
   server = GSS_SERVER (object);
 
   switch (prop_id) {
-    case PROP_PORT:
+    case PROP_ENABLE_PUBLIC_INTERFACE:
+      server->enable_public_interface = g_value_get_boolean (value);
+      break;
+    case PROP_HTTP_PORT:
       gss_server_set_http_port (server, g_value_get_int (value));
       break;
     case PROP_HTTPS_PORT:
       gss_server_set_https_port (server, g_value_get_int (value));
       break;
-    case PROP_SERVER_NAME:
-      gss_server_set_server_name (server, g_value_get_string (value));
+    case PROP_SERVER_HOSTNAME:
+      gss_server_set_server_hostname (server, g_value_get_string (value));
       break;
     case PROP_TITLE:
       gss_server_set_title (server, g_value_get_string (value));
@@ -350,8 +362,12 @@ gss_server_set_property (GObject * object, guint prop_id,
     case PROP_MAX_CONNECTIONS:
       server->max_connections = g_value_get_int (value);
       break;
-    case PROP_MAX_BITRATE:
-      server->max_bitrate = g_value_get_int64 (value);
+    case PROP_MAX_RATE:
+      server->max_rate = g_value_get_int (value);
+      break;
+    case PROP_ADMIN_HOSTS_ALLOW:
+      g_free (server->admin_hosts_allow);
+      server->admin_hosts_allow = g_value_dup_string (value);
       break;
     case PROP_ARCHIVE_DIR:
       g_free (server->archive_dir);
@@ -372,14 +388,17 @@ gss_server_get_property (GObject * object, guint prop_id,
   server = GSS_SERVER (object);
 
   switch (prop_id) {
-    case PROP_PORT:
-      g_value_set_int (value, server->port);
+    case PROP_ENABLE_PUBLIC_INTERFACE:
+      g_value_set_boolean (value, server->enable_public_interface);
+      break;
+    case PROP_HTTP_PORT:
+      g_value_set_int (value, server->http_port);
       break;
     case PROP_HTTPS_PORT:
       g_value_set_int (value, server->https_port);
       break;
-    case PROP_SERVER_NAME:
-      g_value_set_string (value, server->server_name);
+    case PROP_SERVER_HOSTNAME:
+      g_value_set_string (value, server->server_hostname);
       break;
     case PROP_TITLE:
       g_value_set_string (value, server->title);
@@ -387,8 +406,11 @@ gss_server_get_property (GObject * object, guint prop_id,
     case PROP_MAX_CONNECTIONS:
       g_value_set_int (value, server->max_connections);
       break;
-    case PROP_MAX_BITRATE:
-      g_value_set_int64 (value, server->max_bitrate);
+    case PROP_MAX_RATE:
+      g_value_set_int (value, server->max_rate);
+      break;
+    case PROP_ADMIN_HOSTS_ALLOW:
+      g_value_set_string (value, server->admin_hosts_allow);
       break;
     case PROP_ARCHIVE_DIR:
       g_value_set_string (value, server->archive_dir);
@@ -569,44 +591,20 @@ gss_server_add_string_resource (GssServer * server, const char *filename,
   gss_server_add_resource_simple (server, r);
 }
 
-static void
-gss_server_notify (const char *key, void *priv)
-{
-  GssServer *server = (GssServer *) priv;
-  const char *s;
-
-  s = gss_config_get (server->config, "server_name");
-  gss_server_set_server_name (server, s);
-
-  s = gss_config_get (server->config, "max_connections");
-  server->max_connections = strtol (s, NULL, 10);
-  if (server->max_connections == 0) {
-    server->max_connections = INT_MAX;
-  }
-
-  s = gss_config_get (server->config, "max_bandwidth");
-  server->max_bitrate = (gint64) strtol (s, NULL, 10) * 8000;
-  if (server->max_bitrate == 0) {
-    server->max_bitrate = G_MAXINT64;
-  }
-
-  server->enable_public_ui = gss_config_value_is_on (server->config,
-      "enable_public_ui");
-}
-
 void
-gss_server_set_server_name (GssServer * server, const char *hostname)
+gss_server_set_server_hostname (GssServer * server, const char *hostname)
 {
-  g_free (server->server_name);
-  server->server_name = g_strdup (hostname);
+  g_free (server->server_hostname);
+  server->server_hostname = g_strdup (hostname);
 
   g_free (server->base_url);
-  if (server->server_name[0]) {
-    if (server->port == 80) {
-      server->base_url = g_strdup_printf ("http://%s", server->server_name);
+  if (server->server_hostname[0]) {
+    if (server->http_port == 80) {
+      server->base_url = g_strdup_printf ("http://%s", server->server_hostname);
     } else {
-      server->base_url = g_strdup_printf ("http://%s:%d", server->server_name,
-          server->port);
+      server->base_url =
+          g_strdup_printf ("http://%s:%d", server->server_hostname,
+          server->http_port);
     }
   } else {
     server->base_url = g_strdup ("");
@@ -653,6 +651,11 @@ void
 gss_server_add_admin_resource (GssServer * server, GssResource * resource,
     const char *name)
 {
+  g_return_if_fail (GSS_IS_SERVER (server));
+  g_return_if_fail (resource != NULL);
+  g_return_if_fail (name != NULL);
+  g_return_if_fail (name[0] != 0);
+
   resource->name = g_strdup (name);
   server->admin_resources = g_list_append (server->admin_resources, resource);
 }
@@ -661,6 +664,11 @@ void
 gss_server_add_featured_resource (GssServer * server, GssResource * resource,
     const char *name)
 {
+  g_return_if_fail (GSS_IS_SERVER (server));
+  g_return_if_fail (resource != NULL);
+  g_return_if_fail (name != NULL);
+  g_return_if_fail (name[0] != 0);
+
   resource->name = g_strdup (name);
   server->featured_resources =
       g_list_append (server->featured_resources, resource);
@@ -670,6 +678,9 @@ GssProgram *
 gss_server_get_program_by_name (GssServer * server, const char *name)
 {
   GList *g;
+
+  g_return_val_if_fail (GSS_IS_SERVER (server), NULL);
+  g_return_val_if_fail (name != NULL, NULL);
 
   for (g = server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
@@ -709,7 +720,7 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
   }
 
   if (resource->flags & GSS_RESOURCE_UI) {
-    if (!server->enable_public_ui && soupserver == server->server) {
+    if (!server->enable_public_interface && soupserver == server->server) {
       gss_html_error_404 (server, msg);
       return;
     }
@@ -894,30 +905,12 @@ void
 gss_server_read_config (GssServer * server, const char *config_filename)
 {
   GKeyFile *kf;
-  char *s;
   GError *error;
 
   error = NULL;
   kf = g_key_file_new ();
   g_key_file_load_from_file (kf, config_filename,
       G_KEY_FILE_KEEP_COMMENTS, &error);
-  if (error) {
-    g_error_free (error);
-  }
-
-  error = NULL;
-  s = g_key_file_get_string (kf, "video", "eth0_name", &error);
-  if (s) {
-    g_free (server->server_name);
-    server->server_name = s;
-    g_free (server->base_url);
-    if (server->port == 80) {
-      server->base_url = g_strdup_printf ("http://%s", server->server_name);
-    } else {
-      server->base_url = g_strdup_printf ("http://%s:%d", server->server_name,
-          server->port);
-    }
-  }
   if (error) {
     g_error_free (error);
   }

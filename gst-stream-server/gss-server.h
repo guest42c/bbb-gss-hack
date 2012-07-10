@@ -59,12 +59,14 @@ struct _GssServer
   //char * config_filename;
   
   /* properties */
-  int port;
+  gboolean enable_public_interface;
+  int http_port;
   int https_port;
-  char * server_name;
+  char *server_hostname;
   char *title;
   int max_connections;
-  gint64 max_bitrate;
+  int max_rate;
+  char *admin_hosts_allow;
 
   GList *programs;
   GssMetrics *metrics;
@@ -75,8 +77,6 @@ struct _GssServer
   char *base_url;
   char *base_url_https;
   GHashTable *resources;
-
-  gboolean enable_public_ui;
 
   GstRTSPServer *rtsp_server;
 
@@ -103,7 +103,7 @@ struct _GssServerClass
 GType gss_server_get_type (void);
 
 GssServer * gss_server_new (void);
-void gss_server_set_server_name (GssServer *server, const char *hostname);
+void gss_server_set_server_hostname (GssServer *server, const char *hostname);
 void gss_server_read_config (GssServer *server, const char *config_filename);
 
 GssProgram * gss_server_add_program (GssServer *server, const char *program_name);

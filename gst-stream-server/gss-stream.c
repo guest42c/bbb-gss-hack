@@ -308,14 +308,15 @@ stream_resource (GssTransaction * t)
   }
 
   if (t->server->metrics->n_clients >= t->server->max_connections ||
-      t->server->metrics->bitrate + stream->bitrate >= t->server->max_bitrate) {
+      t->server->metrics->bitrate + stream->bitrate >=
+      t->server->max_rate * 8000) {
     if (verbose)
       g_print ("n_clients %d max_connections %d\n",
           t->server->metrics->n_clients, t->server->max_connections);
     if (verbose)
-      g_print ("current bitrate %" G_GINT64_FORMAT " bitrate %d max_bitrate %"
-          G_GINT64_FORMAT "\n", t->server->metrics->bitrate, stream->bitrate,
-          t->server->max_bitrate);
+      g_print ("current bitrate %" G_GINT64_FORMAT " bitrate %d max_bitrate %d"
+          "\n", t->server->metrics->bitrate, stream->bitrate,
+          t->server->max_rate * 8000);
     soup_message_set_status (t->msg, SOUP_STATUS_SERVICE_UNAVAILABLE);
     return;
   }
