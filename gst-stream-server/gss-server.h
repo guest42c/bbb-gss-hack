@@ -67,6 +67,11 @@ struct _GssServer
   int max_connections;
   int max_rate;
   char *admin_hosts_allow;
+  gboolean enable_html5_video;
+  gboolean enable_cortado;
+  gboolean enable_flash;
+  gboolean enable_rtsp;
+  gboolean enable_rtmp;
 
   GList *programs;
   GssMetrics *metrics;

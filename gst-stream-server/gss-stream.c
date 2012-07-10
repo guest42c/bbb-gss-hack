@@ -393,12 +393,14 @@ gss_stream_add_resources (GssStream * stream)
 {
   char *s;
 
-  if (enable_rtsp) {
+#ifdef ENABLE_RTSP
+  if (stream->program->server->enable_rtsp) {
     if (stream->type == GSS_STREAM_TYPE_OGG) {
       stream->rtsp_stream = gss_rtsp_stream_new (stream);
       gss_rtsp_stream_start (stream->rtsp_stream);
     }
   }
+#endif
 
   s = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s",
       GST_OBJECT_NAME (stream->program), stream->width, stream->height,

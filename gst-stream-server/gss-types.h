@@ -36,12 +36,6 @@ typedef struct _GssResource GssResource;
 typedef struct _GssTransaction GssTransaction;
 
 
-/* FIXME wrong place for this */
-#define enable_video_tag TRUE
-#define enable_flash TRUE
-#define enable_cortado FALSE
-#define enable_rtsp FALSE
-
 G_END_DECLS
 
 #endif

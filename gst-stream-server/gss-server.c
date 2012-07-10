@@ -25,7 +25,9 @@
 #include "gss-html.h"
 #include "gss-session.h"
 #include "gss-soup.h"
+#ifdef ENABLE_RTSP
 #include "gss-rtsp.h"
+#endif
 #include "gss-content.h"
 #include "gss-utils.h"
 #include "gss-vod.h"
@@ -47,6 +49,11 @@ enum
   PROP_MAX_CONNECTIONS,
   PROP_MAX_RATE,
   PROP_ADMIN_HOSTS_ALLOW,
+  PROP_ENABLE_HTML5_VIDEO,
+  PROP_ENABLE_CORTADO,
+  PROP_ENABLE_FLASH,
+  PROP_ENABLE_RTSP,
+  PROP_ENABLE_RTMP,
   PROP_ARCHIVE_DIR
 };
 
@@ -58,6 +65,11 @@ enum
 #define DEFAULT_MAX_CONNECTIONS 10000
 #define DEFAULT_MAX_RATE 100000
 #define DEFAULT_ADMIN_HOSTS_ALLOW "0.0.0.0/0"
+#define DEFAULT_ENABLE_HTML5_VIDEO TRUE
+#define DEFAULT_ENABLE_CORTADO FALSE
+#define DEFAULT_ENABLE_FLASH TRUE
+#define DEFAULT_ENABLE_RTSP FALSE
+#define DEFAULT_ENABLE_RTMP FALSE
 #ifdef USE_LOCAL
 #define DEFAULT_ARCHIVE_DIR "."
 #else
@@ -213,9 +225,10 @@ gss_server_init (GssServer * server)
   server->programs = NULL;
   server->archive_dir = g_strdup (DEFAULT_ARCHIVE_DIR);
 
-
-  if (enable_rtsp)
+#ifdef ENABLE_RTSP
+  if (server->enable_rtsp)
     gss_server_rtsp_init (server);
+#endif
 
   gss_server_setup_resources (server);
 
@@ -330,6 +343,41 @@ gss_server_class_init (GssServerClass * server_class)
       PROP_ARCHIVE_DIR, g_param_spec_string ("archive-dir", "Archive Directory",
           "Archive Directory", DEFAULT_ARCHIVE_DIR,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ENABLE_HTML5_VIDEO,
+      g_param_spec_boolean ("enable-html5-video", "Enable HTML5 Video",
+          "Enable HTML5 Video", DEFAULT_ENABLE_HTML5_VIDEO,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ENABLE_CORTADO,
+      g_param_spec_boolean ("enable-cortado", "Enable Cortado Java Applet",
+          "Enable Cortado Java Applet", DEFAULT_ENABLE_CORTADO,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ENABLE_FLASH,
+      g_param_spec_boolean ("enable-flash", "Enable Flash",
+          "Enable Flash", DEFAULT_ENABLE_FLASH,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+#ifdef ENABLE_RTSP
+#define RTSP_FLAGS G_PARAM_READWRITE
+#else
+#define RTSP_FLAGS G_PARAM_READABLE
+#endif
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ENABLE_RTSP,
+      g_param_spec_boolean ("enable-rtsp", "Enable RTSP",
+          "Enable RTSP", DEFAULT_ENABLE_RTSP,
+          (GParamFlags) (RTSP_FLAGS | G_PARAM_STATIC_STRINGS)));
+#ifdef ENABLE_RTMP
+#define RTMP_FLAGS G_PARAM_READWRITE
+#else
+#define RTMP_FLAGS G_PARAM_READABLE
+#endif
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ENABLE_RTMP,
+      g_param_spec_boolean ("enable-rtmp", "Enable RTMP",
+          "Enable RTMP", DEFAULT_ENABLE_RTMP,
+          (GParamFlags) (RTMP_FLAGS | G_PARAM_STATIC_STRINGS)));
 
   parent_class = g_type_class_peek_parent (server_class);
 }
@@ -373,6 +421,21 @@ gss_server_set_property (GObject * object, guint prop_id,
       g_free (server->archive_dir);
       server->archive_dir = g_value_dup_string (value);
       break;
+    case PROP_ENABLE_HTML5_VIDEO:
+      server->enable_html5_video = g_value_get_boolean (value);
+      break;
+    case PROP_ENABLE_CORTADO:
+      server->enable_cortado = g_value_get_boolean (value);
+      break;
+    case PROP_ENABLE_FLASH:
+      server->enable_flash = g_value_get_boolean (value);
+      break;
+    case PROP_ENABLE_RTSP:
+      server->enable_rtsp = g_value_get_boolean (value);
+      break;
+    case PROP_ENABLE_RTMP:
+      server->enable_rtmp = g_value_get_boolean (value);
+      break;
     default:
       g_assert_not_reached ();
       break;
@@ -414,6 +477,21 @@ gss_server_get_property (GObject * object, guint prop_id,
       break;
     case PROP_ARCHIVE_DIR:
       g_value_set_string (value, server->archive_dir);
+      break;
+    case PROP_ENABLE_HTML5_VIDEO:
+      g_value_set_boolean (value, server->enable_html5_video);
+      break;
+    case PROP_ENABLE_CORTADO:
+      g_value_set_boolean (value, server->enable_cortado);
+      break;
+    case PROP_ENABLE_FLASH:
+      g_value_set_boolean (value, server->enable_flash);
+      break;
+    case PROP_ENABLE_RTSP:
+      g_value_set_boolean (value, server->enable_rtsp);
+      break;
+    case PROP_ENABLE_RTMP:
+      g_value_set_boolean (value, server->enable_rtmp);
       break;
     default:
       g_assert_not_reached ();
@@ -502,12 +580,12 @@ gss_server_setup_resources (GssServer * server)
   gss_server_add_resource (server, "/meep", GSS_RESOURCE_UI, "text/html",
       gss_resource_unimplemented, NULL, NULL, NULL);
 
-  if (enable_cortado) {
+  if (server->enable_cortado) {
     gss_server_add_file_resource (server, "/cortado.jar", 0,
         "application/java-archive");
   }
 
-  if (enable_flash) {
+  if (server->enable_flash) {
     gss_server_add_file_resource (server, "/OSplayer.swf", 0,
         "application/x-shockwave-flash");
     gss_server_add_file_resource (server, "/AC_RunActiveContent.js", 0,

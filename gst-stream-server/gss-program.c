@@ -514,7 +514,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     width = max_width;
   }
 
-  if (enable_video_tag && !flash_only) {
+  if (program->server->enable_html5_video && !flash_only) {
     g_string_append_printf (s,
         "<video controls=\"controls\" autoplay=\"autoplay\" "
         "id=video width=\"%d\" height=\"%d\">\n", width, height);
@@ -550,7 +550,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 
   }
 
-  if (enable_cortado) {
+  if (program->server->enable_cortado) {
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_OGG) {
@@ -565,7 +565,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     }
   }
 
-  if (enable_flash) {
+  if (program->server->enable_flash) {
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_FLV) {
@@ -605,7 +605,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
     }
   }
 
-  if (enable_video_tag && !flash_only) {
+  if (program->server->enable_html5_video && !flash_only) {
     g_string_append (s, "</video>\n");
   }
 
