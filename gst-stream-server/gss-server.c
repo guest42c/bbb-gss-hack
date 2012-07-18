@@ -573,8 +573,6 @@ gss_server_setup_resources (GssServer * server)
       gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/dashboard", GSS_RESOURCE_UI, "text/html",
       gss_resource_unimplemented, NULL, NULL, NULL);
-  gss_server_add_resource (server, "/profile", GSS_RESOURCE_UI, "text/html",
-      gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/monitor", GSS_RESOURCE_UI, "text/html",
       gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/meep", GSS_RESOURCE_UI, "text/html",
