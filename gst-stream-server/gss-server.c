@@ -220,6 +220,11 @@ gss_server_init (GssServer * server)
   server->max_connections = DEFAULT_MAX_CONNECTIONS;
   server->max_rate = DEFAULT_MAX_RATE;
   server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_HOSTS_ALLOW);
+  server->enable_html5_video = DEFAULT_ENABLE_HTML5_VIDEO;
+  server->enable_cortado = DEFAULT_ENABLE_CORTADO;
+  server->enable_flash = DEFAULT_ENABLE_FLASH;
+  server->enable_rtsp = DEFAULT_ENABLE_RTSP;
+  server->enable_rtmp = DEFAULT_ENABLE_RTMP;
 
   server->programs = NULL;
   server->archive_dir = g_strdup (DEFAULT_ARCHIVE_DIR);
