@@ -251,9 +251,8 @@ gss_html_header (GssTransaction * t)
     g_string_append_printf (s,
         "              <li class='nav-header'>User</li>\n"
         "              <li><a href='/add_program%s'>Add Program</a></li>\n"
-        "              <li><a href='/dashboard%s'>Dashboard</a></li>\n"
-        "              <li><a href='/log%s'>Log</a></li>\n",
-        session_id, session_id, session_id);
+        "              <li><a href='/dashboard%s'>Dashboard</a></li>\n",
+        session_id, session_id);
   }
   if (t->session && t->session->is_admin) {
     GList *g;

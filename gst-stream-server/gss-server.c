@@ -79,7 +79,6 @@ enum
 /* Server Resources */
 static void gss_server_resource_main_page (GssTransaction * transaction);
 static void gss_server_resource_list (GssTransaction * transaction);
-static void gss_server_resource_log (GssTransaction * transaction);
 
 
 /* GssServer internals */
@@ -562,8 +561,6 @@ gss_server_setup_resources (GssServer * server)
       gss_server_resource_main_page, NULL, NULL, NULL);
   gss_server_add_resource (server, "/list", GSS_RESOURCE_UI, "text/plain",
       gss_server_resource_list, NULL, NULL, NULL);
-  gss_server_add_resource (server, "/log", GSS_RESOURCE_UI, "text/plain",
-      gss_server_resource_log, NULL, NULL, NULL);
 
   gss_server_add_resource (server, "/about", GSS_RESOURCE_UI, "text/html",
       gss_resource_unimplemented, NULL, NULL, NULL);
@@ -967,25 +964,6 @@ gss_server_resource_list (GssTransaction * t)
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
     g_string_append_printf (s, "%s\n", GST_OBJECT_NAME (program));
-  }
-}
-
-static void
-gss_server_resource_log (GssTransaction * t)
-{
-  GString *s = g_string_new ("");
-  GList *g;
-  char *time_string;
-
-  t->s = s;
-
-  time_string = gss_utils_get_time_string ();
-  g_string_append_printf (s, "Server time: %s\n", time_string);
-  g_free (time_string);
-  g_string_append_printf (s, "Recent log messages:\n");
-
-  for (g = g_list_first (t->server->messages); g; g = g_list_next (g)) {
-    g_string_append_printf (s, "%s\n", (char *) g->data);
   }
 }
 
