@@ -50,6 +50,7 @@ void __gss_session_deinit (void);
 
 GssSession * gss_session_new (const char *username);
 GssSession * gss_session_ref (GssSession *session);
+GList * gss_session_get_list (void);
 void gss_session_invalidate (GssSession *session);
 void gss_session_unref (GssSession *session);
 void gss_session_add_session_callbacks (struct _GssServer * server);

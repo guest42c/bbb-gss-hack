@@ -369,6 +369,12 @@ gss_session_is_valid (GssSession * session)
   return __gss_session_is_valid (session, time (NULL));
 }
 
+GList *
+gss_session_get_list (void)
+{
+  return sessions;
+}
+
 GssSession *
 gss_session_lookup (const char *session_id)
 {
