@@ -833,11 +833,16 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
   if (resource->etag) {
     const char *inm;
 
+    soup_message_headers_append (msg->response_headers, "Cache-Control",
+        "max-age=86400");
     inm = soup_message_headers_get_one (msg->request_headers, "If-None-Match");
     if (inm && !strcmp (inm, resource->etag)) {
       soup_message_set_status (msg, SOUP_STATUS_NOT_MODIFIED);
       return;
     }
+  } else {
+    soup_message_headers_append (msg->response_headers, "Cache-Control",
+        "must-revalidate");
   }
 
   transaction = g_new0 (GssTransaction, 1);

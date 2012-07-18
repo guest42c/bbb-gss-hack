@@ -78,6 +78,8 @@ gss_resource_file (GssTransaction * t)
       "timeout=5, max=100");
   soup_message_headers_append (t->msg->response_headers, "Etag",
       sr->resource.etag);
+  soup_message_headers_append (t->msg->response_headers, "Cache-Control",
+      "max-age=86400");
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
