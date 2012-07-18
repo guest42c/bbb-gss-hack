@@ -357,7 +357,7 @@ gss_session_create_id (void)
 static gboolean
 __gss_session_is_valid (GssSession * session, time_t now)
 {
-  if (session->last_time + SESSION_TIMEOUT < now) {
+  if (!session->permanent && session->last_time + SESSION_TIMEOUT < now) {
     return FALSE;
   }
   return session->valid;
@@ -722,7 +722,7 @@ gss_session_invalidate (GssSession * session)
 static void
 session_logout_resource (GssTransaction * t)
 {
-  if (t->session) {
+  if (t->session && !t->session->permanent) {
     gss_session_invalidate (t->session);
   }
 

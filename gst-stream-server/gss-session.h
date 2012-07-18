@@ -37,6 +37,7 @@ struct _GssSession {
   char *session_id;
   char *username;
   time_t last_time;
+  gboolean permanent;
   gboolean valid;
   gboolean is_admin;
   gpointer priv;
