@@ -41,6 +41,12 @@ void gss_html_append_image (GString *s, const char *url, int width, int height,
 void gss_html_append_image_printf (GString *s, const char *url,
     int width, int height, const char *alt_text, ...);
 void gss_html_bootstrap_doc (GssTransaction *t);
+char * gss_html_sanitize_attribute (const char *s);
+char * gss_html_sanitize_entity (const char *s);
+char * gss_html_sanitize_url (const char *s);
+gboolean gss_html_entity_is_sane (const char *s);
+gboolean gss_html_attribute_is_sane (const char *s);
+gboolean gss_html_url_is_sane (const char *s);
 
 G_END_DECLS
 

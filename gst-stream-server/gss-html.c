@@ -114,6 +114,7 @@ gss_html_header (GssTransaction * t)
   GString *s = t->s;
   gchar *session_id;
   GList *g;
+  char *safe_title;
 
   if (t->session) {
     session_id = g_strdup_printf ("?session_id=%s", t->session->session_id);
@@ -121,12 +122,12 @@ gss_html_header (GssTransaction * t)
     session_id = g_strdup ("");
   }
 
+  safe_title = gss_html_sanitize_entity (t->server->title);
   g_string_append_printf (s,
       "<!DOCTYPE html>\n"
       "<html lang='en'>\n"
       "  <head>\n"
-      "    <meta charset='utf-8'>\n"
-      "    <title>%s</title>\n", t->server->title);
+      "    <meta charset='utf-8'>\n" "    <title>%s</title>\n", safe_title);
 
   g_string_append_printf (s,
       "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n"
@@ -169,8 +170,8 @@ gss_html_header (GssTransaction * t)
       "            <span class='icon-bar'></span>\n"
       "          </a>\n"
       "          <a class='brand' href='/%s'>%s</a>\n"
-      "          <div class='btn-group pull-right'>\n",
-      session_id, t->server->title);
+      "          <div class='btn-group pull-right'>\n", session_id, safe_title);
+  g_free (safe_title);
 
   if (t->session) {
     g_string_append_printf (s,
@@ -293,6 +294,7 @@ gss_html_footer (GssTransaction * t)
 {
   GString *s = t->s;
   char *base_url;
+  char *safe_url;
 
   g_string_append (s,
       "        </div><!--/span-->\n" "      </div><!--/row-->\n");
@@ -311,6 +313,8 @@ gss_html_footer (GssTransaction * t)
       "    <script src='/bootstrap/js/bootstrap.js'></script>\n");
 
   base_url = gss_soup_get_base_url_https (t->server, t->msg);
+  safe_url = gss_html_sanitize_url (base_url);
+  g_free (base_url);
   g_string_append_printf (s,
       "<script type=\"text/javascript\">\n"
       "function gotAssertion(assertion) {\n"
@@ -324,8 +328,175 @@ gss_html_footer (GssTransaction * t)
       "ip.setAttribute('value', assertion);\n"
       "form.appendChild(ip);\n"
       "document.body.appendChild(form);\n" "form.submit();\n"
-      "}\n" "}\n" "</script>\n", base_url, t->path);
-  g_free (base_url);
+      "}\n" "}\n" "</script>\n", safe_url, t->path);
+  g_free (safe_url);
   g_string_append (s, "\n" "  </body>\n" "</html>\n");
+
+}
+
+
+static char hexchar[16] = "0123456789abcdef";
+
+char *
+gss_html_sanitize_attribute (const char *s)
+{
+  int escape_count;
+  char *out;
+  char *t;
+  int len;
+  int i;
+
+  len = strlen (s);
+  escape_count = 0;
+  for (i = 0; i < len; i++) {
+    if (!g_ascii_isalnum (s[i]))
+      escape_count++;
+  }
+
+  out = g_malloc (len + escape_count * 5 + 1);
+  t = out;
+  for (i = 0; i < len; i++) {
+    if (g_ascii_isalnum (s[i])) {
+      t[0] = s[i];
+      t++;
+    } else {
+      /* &#xHH; */
+      t[0] = '&';
+      t[1] = '#';
+      t[2] = 'x';
+      t[3] = hexchar[(s[i] >> 4) & 0xf];
+      t[4] = hexchar[s[i] & 0xf];
+      t[5] = ';';
+      t += 6;
+    }
+  }
+  t[0] = 0;
+
+  return out;
+}
+
+char *
+gss_html_sanitize_entity (const char *s)
+{
+  int escape_count;
+  char *out;
+  char *t;
+  int len;
+  int i;
+
+  len = strlen (s);
+  escape_count = 0;
+  for (i = 0; i < len; i++) {
+    if (s[i] == '&' || s[i] == '<' || s[i] == '>' || s[i] == '"' ||
+        s[i] == '\'' || s[i] == '/')
+      escape_count++;
+  }
+
+  out = g_malloc (len + escape_count * 5 + 1);
+  t = out;
+  for (i = 0; i < len; i++) {
+    if (s[i] == '&' || s[i] == '<' || s[i] == '>' || s[i] == '"' ||
+        s[i] == '\'' || s[i] == '/') {
+      /* &#xHH; */
+      t[0] = '&';
+      t[1] = '#';
+      t[2] = 'x';
+      t[3] = hexchar[(s[i] >> 4) & 0xf];
+      t[4] = hexchar[s[i] & 0xf];
+      t[5] = ';';
+      t += 6;
+    } else {
+      t[0] = s[i];
+      t++;
+    }
+  }
+  t[0] = 0;
+
+  return out;
+
+}
+
+
+char *
+gss_html_sanitize_url (const char *s)
+{
+  int escape_count;
+  char *out;
+  char *t;
+  int len;
+  int i;
+
+  len = strlen (s);
+  escape_count = 0;
+  for (i = 0; i < len; i++) {
+    if (!g_ascii_isalnum (s[i]))
+      escape_count++;
+  }
+
+  out = g_malloc (len + escape_count * 2 + 1);
+  t = out;
+  for (i = 0; i < len; i++) {
+    if (g_ascii_isalnum (s[i])) {
+      t[0] = s[i];
+      t++;
+    } else {
+      t[0] = '%';
+      t[1] = hexchar[(s[i] >> 4) & 0xf];
+      t[2] = hexchar[s[i] & 0xf];
+      t += 3;
+    }
+  }
+  t[0] = 0;
+
+  return out;
+}
+
+gboolean
+gss_html_entity_is_sane (const char *s)
+{
+  int i;
+  int len;
+
+  len = strlen (s);
+  for (i = 0; i < len; i++) {
+    if (!g_ascii_isalnum (s[i])) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+gboolean
+gss_html_attribute_is_sane (const char *s)
+{
+  int i;
+  int len;
+
+  len = strlen (s);
+  for (i = 0; i < len; i++) {
+    if (!g_ascii_isalnum (s[i])) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+
+}
+
+gboolean
+gss_html_url_is_sane (const char *s)
+{
+  int i;
+  int len;
+
+  len = strlen (s);
+  for (i = 0; i < len; i++) {
+    if (!g_ascii_isalnum (s[i])) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
 
 }
