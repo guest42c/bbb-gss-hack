@@ -455,7 +455,7 @@ struct _BrowserIDVerify
 };
 
 static void
-browserid_verify_done (SoupSession * session, SoupMessage * msg,
+persona_verify_done (SoupSession * session, SoupMessage * msg,
     gpointer user_data)
 {
   GssSession *login_session;
@@ -582,7 +582,7 @@ session_login_post_resource (GssTransaction * t)
 
       base_url = gss_transaction_get_base_url (t);
       s = g_strdup_printf
-          ("https://browserid.org/verify?assertion=%s&audience=%s",
+          ("https://persona.org/verify?assertion=%s&audience=%s",
           assertion, base_url);
       client_msg = soup_message_new ("POST", s);
       g_free (s);
@@ -591,7 +591,7 @@ session_login_post_resource (GssTransaction * t)
           "Content-Type", "application/x-www-form-urlencoded");
 
       soup_session_queue_message (ewserver->client_session, client_msg,
-          browserid_verify_done, v);
+          persona_verify_done, v);
 
       g_hash_table_unref (query_hash);
 

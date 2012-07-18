@@ -11,7 +11,7 @@ extern const char gss_data_footer_entropywave_png[];
 extern const char gss_data_glyphicons_halflings_white_png[];
 #define gss_data_glyphicons_halflings_png_len  13826
 extern const char gss_data_glyphicons_halflings_png[];
-#define gss_data_include_js_len  13142
+#define gss_data_include_js_len  13797
 extern const char gss_data_include_js[];
 #define gss_data_jquery_js_len  247823
 extern const char gss_data_jquery_js[];
