@@ -813,6 +813,13 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
 
   session = gss_session_get_session (query);
 
+  if (resource->flags & GSS_RESOURCE_USER) {
+    if (session == NULL) {
+      gss_html_error_404 (server, msg);
+      return;
+    }
+  }
+
   if (session && soupserver != server->ssl_server) {
     gss_session_invalidate (session);
     session = NULL;
