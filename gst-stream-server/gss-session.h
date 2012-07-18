@@ -39,7 +39,11 @@ struct _GssSession {
   time_t last_time;
   gboolean valid;
   gboolean is_admin;
+  gpointer priv;
 };
+
+typedef gpointer (*GssSessionAuthorizationFunc) (GssSession *session,
+    gpointer priv);
 
 void __gss_session_deinit (void);
 
@@ -62,6 +66,8 @@ void gss_session_logout_callback (SoupServer *server, SoupMessage *msg,
     const char *path, GHashTable *query, SoupClientContext *client,
     gpointer user_data);
 gboolean gss_session_is_valid (GssSession * session);
+void gss_session_set_authorization_function (GssSessionAuthorizationFunc func,
+    gpointer priv);
 
 
 G_END_DECLS
