@@ -150,7 +150,7 @@ gss_html_header (GssTransaction * t)
       "      <script src='http://html5shim.googlecode.com/svn/trunk/html5.js'></script>\n"
       "    <![endif]-->\n"
 #endif
-      "    <script src=\"include.js\" type=\"text/javascript\"></script>\n"
+      "    <script src=\"/include.js\" type=\"text/javascript\"></script>\n"
 #if 0
       "    <link rel='shortcut icon' href='/favicon.ico'>\n"
       "    <link rel='apple-touch-icon-precomposed' sizes='144x144' href='../assets/ico/apple-touch-icon-144-precomposed.png'>\n"
