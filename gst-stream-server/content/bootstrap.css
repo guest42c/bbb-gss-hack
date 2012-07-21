@@ -721,6 +721,16 @@ pre code {
   overflow-y: scroll;
 }
 
+.pre-table {
+  padding: 0px;
+  border: 0;
+  margin: 0 0 0;
+  background-color: inherit;
+  -webkit-border-radius: 0px;
+     -moz-border-radius: 0px;
+          border-radius: 0px;
+}
+
 form {
   margin: 0 0 18px;
 }
