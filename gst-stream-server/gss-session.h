@@ -25,13 +25,13 @@
 #include <glib.h>
 #include <libsoup/soup.h>
 
+#include "gss-types.h"
 
 
 G_BEGIN_DECLS
 
 struct _GssServer;
 
-typedef struct _GssSession GssSession;
 struct _GssSession {
   gint refcount;
   char *session_id;

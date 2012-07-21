@@ -33,6 +33,7 @@ typedef struct _GssHLSSegment GssHLSSegment;
 typedef struct _GssRtspStream GssRtspStream;
 typedef struct _GssMetrics GssMetrics;
 typedef struct _GssResource GssResource;
+typedef struct _GssSession GssSession;
 typedef struct _GssTransaction GssTransaction;
 
 
