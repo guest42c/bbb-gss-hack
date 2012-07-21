@@ -334,7 +334,7 @@ gss_server_class_init (GssServerClass * server_class)
           G_MAXINT, DEFAULT_MAX_CONNECTIONS,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
-      PROP_MAX_CONNECTIONS, g_param_spec_int ("max-rate",
+      PROP_MAX_RATE, g_param_spec_int ("max-rate",
           "Maximum bitrate (in kbytes/sec, 0 is unlimited)",
           "Maximum bitrate (in kbytes/sec)", 0, G_MAXINT, DEFAULT_MAX_RATE,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
