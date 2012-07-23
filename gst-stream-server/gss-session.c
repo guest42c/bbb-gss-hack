@@ -601,6 +601,15 @@ session_login_post_resource (GssTransaction * t)
         g_free (base_url);
       }
 
+      /* Redirect URLs must be local references, and must point to an
+       * existing resource.  Otherwise, just ignore it.  */
+      if (v->redirect_url[0] != '/' ||
+          g_hash_table_lookup (t->server->resources, v->redirect_url) == NULL) {
+        g_free (v->redirect_url);
+        v->redirect_url = g_strdup ("/");
+      }
+
+
       base_url = gss_transaction_get_base_url (t);
       s = g_strdup_printf
           ("https://persona.org/verify?assertion=%s&audience=%s",
@@ -658,8 +667,16 @@ session_login_post_resource (GssTransaction * t)
       } else {
         char *base_url;
         base_url = gss_soup_get_base_url_https (t->server, t->msg);
-        redirect_url = g_strdup_printf ("%s/", base_url);
+        redirect_url = g_strdup ("/");
         g_free (base_url);
+      }
+
+      /* Redirect URLs must be local references, and must point to an
+       * existing resource.  Otherwise, just ignore it.  */
+      if (redirect_url[0] != '/' ||
+          g_hash_table_lookup (t->server->resources, redirect_url) == NULL) {
+        g_free (redirect_url);
+        redirect_url = g_strdup ("/");
       }
 
       location = g_strdup_printf ("%s?session_id=%s",

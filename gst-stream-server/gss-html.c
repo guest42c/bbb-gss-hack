@@ -293,8 +293,6 @@ void
 gss_html_footer (GssTransaction * t)
 {
   GString *s = t->s;
-  char *base_url;
-  char *safe_url;
 
   g_string_append (s,
       "        </div><!--/span-->\n" "      </div><!--/row-->\n");
@@ -312,30 +310,26 @@ gss_html_footer (GssTransaction * t)
       "    <script src='/bootstrap/js/jquery.js'></script>\n"
       "    <script src='/bootstrap/js/bootstrap.js'></script>\n");
 
-  base_url = gss_soup_get_base_url_https (t->server, t->msg);
-  safe_url = gss_html_sanitize_url (base_url);
-  g_free (base_url);
   g_string_append_printf (s,
       "<script type=\"text/javascript\">\n"
       "function gotAssertion(assertion) {\n"
       "if(assertion!==null){\n"
       "var form = document.createElement(\"form\");\n"
       "form.setAttribute('method', 'POST');\n"
-      "form.setAttribute('action', '/login?redirect_url=%s%s');\n"
+      "form.setAttribute('action', '/login?redirect_url=%s');\n"
       "var ip = document.createElement(\"input\");\n"
       "ip.setAttribute('type', 'hidden');\n"
       "ip.setAttribute('name', 'assertion');\n"
       "ip.setAttribute('value', assertion);\n"
       "form.appendChild(ip);\n"
       "document.body.appendChild(form);\n" "form.submit();\n"
-      "}\n" "}\n" "</script>\n", safe_url, t->path);
-  g_free (safe_url);
+      "}\n" "}\n" "</script>\n", t->path ? t->path : "/");
   g_string_append (s, "\n" "  </body>\n" "</html>\n");
 
 }
 
 
-static char hexchar[16] = "0123456789abcdef";
+static const char hexchar[16] = "0123456789abcdef";
 
 char *
 gss_html_sanitize_attribute (const char *s)
