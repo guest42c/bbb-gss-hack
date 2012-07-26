@@ -43,9 +43,6 @@ gss_utils_get_time_string (void)
 #endif
   /* RFC 2822 */
   s = g_date_time_format (datetime, "%a, %d %b %Y %H:%M:%S %z");
-  /* Workaround for a glib bug that was fixed some time ago */
-  if (s[27] == '-')
-    s[27] = '0';
 #if 0
   /* RFC 3339, almost */
   strftime (thetime, 79, "%Y-%m-%d %H:%M:%S%z", tmp);
