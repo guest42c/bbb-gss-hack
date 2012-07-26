@@ -41,6 +41,7 @@ struct _GssTransaction {
   GssSession *session;
   gboolean done;
   GString *s;
+  GString *script;
 };
 
 

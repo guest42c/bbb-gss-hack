@@ -310,8 +310,8 @@ gss_html_footer (GssTransaction * t)
       "    <script src='/bootstrap/js/jquery.js'></script>\n"
       "    <script src='/bootstrap/js/bootstrap.js'></script>\n");
 
+  g_string_append (s, "<script type=\"text/javascript\">\n");
   g_string_append_printf (s,
-      "<script type=\"text/javascript\">\n"
       "function gotAssertion(assertion) {\n"
       "if(assertion!==null){\n"
       "var form = document.createElement(\"form\");\n"
@@ -323,7 +323,12 @@ gss_html_footer (GssTransaction * t)
       "ip.setAttribute('value', assertion);\n"
       "form.appendChild(ip);\n"
       "document.body.appendChild(form);\n" "form.submit();\n"
-      "}\n" "}\n" "</script>\n", t->path ? t->path : "/");
+      "}\n" "}\n", t->path ? t->path : "/");
+  if (t->script) {
+    g_string_append (s, t->script->str);
+    g_string_free (t->script, TRUE);
+  }
+  g_string_append (s, "</script>\n");
   g_string_append (s, "\n" "  </body>\n" "</html>\n");
 
 }
