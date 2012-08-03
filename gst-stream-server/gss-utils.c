@@ -27,6 +27,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
 
 
 char *
@@ -104,5 +106,60 @@ gss_utils_dump_hash (GHashTable * hash)
   g_hash_table_iter_init (&iter, hash);
   while (g_hash_table_iter_next (&iter, (gpointer) & key, (gpointer) & value)) {
     g_print ("%s=%s\n", key, value);
+  }
+}
+
+static int
+get_random_fd (void)
+{
+  static gsize init = 0;
+
+  if (g_once_init_enter (&init)) {
+    int fd = open ("/dev/random", O_RDONLY);
+
+    if (fd < 0) {
+      g_warning ("Could not open /dev/random, exiting");
+      exit (1);
+    }
+
+    g_once_init_leave (&init, fd);
+  }
+
+  return (int) init;
+}
+
+void
+gss_utils_get_random_bytes (guint8 * entropy, int n)
+{
+  int random_fd = get_random_fd ();
+  int i;
+
+  g_return_if_fail (entropy != NULL);
+  g_return_if_fail (n > 0);
+  g_return_if_fail (n <= 256);
+
+  i = 0;
+  while (i < n) {
+    fd_set readfds;
+    struct timeval timeout;
+    int ret;
+
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 100000;
+    FD_ZERO (&readfds);
+    FD_SET (random_fd, &readfds);
+    ret = select (random_fd + 1, &readfds, NULL, NULL, &timeout);
+    if (ret == 0) {
+      g_warning
+          ("Waited too long to read random bytes.  Please install haveged.");
+      exit (1);
+    }
+
+    n = read (random_fd, entropy + i, n - i);
+    if (n < 0) {
+      g_warning ("Error reading /dev/random");
+      exit (1);
+    }
+    i += n;
   }
 }

@@ -242,7 +242,6 @@ gss_server_init (GssServer * server)
 void
 gss_server_deinit (void)
 {
-  __gss_session_deinit ();
 
 }
 

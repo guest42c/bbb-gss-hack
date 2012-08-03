@@ -26,10 +26,9 @@
 #include "gss-form.h"
 #include "gss-html.h"
 #include "gss-soup.h"
+#include "gss-utils.h"
 
 #include <json-glib/json-glib.h>
-
-#include <fcntl.h>
 
 
 #define REALM "Entropy Wave E1000"
@@ -288,56 +287,14 @@ password_hash (const char *username, const char *password)
 
 #define RANDOM_BYTES 6
 
-static int random_fd = -1;
-
-void
-__gss_session_deinit (void)
-{
-  if (random_fd != -1) {
-    close (random_fd);
-  }
-}
-
 char *
 gss_session_create_id (void)
 {
   uint8_t entropy[RANDOM_BYTES];
-  int n;
   int i;
   char *base64;
 
-  if (random_fd == -1) {
-    random_fd = open ("/dev/random", O_RDONLY);
-    if (random_fd < 0) {
-      g_warning ("Could not open /dev/random, exiting");
-      exit (1);
-    }
-  }
-
-  i = 0;
-  while (i < RANDOM_BYTES) {
-    fd_set readfds;
-    struct timeval timeout;
-    int ret;
-
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 100000;
-    FD_ZERO (&readfds);
-    FD_SET (random_fd, &readfds);
-    ret = select (random_fd + 1, &readfds, NULL, NULL, &timeout);
-    if (ret == 0) {
-      g_warning
-          ("Waited too long to read random bytes.  Please install haveged.");
-      exit (1);
-    }
-
-    n = read (random_fd, entropy + i, RANDOM_BYTES - i);
-    if (n < 0) {
-      g_warning ("Error reading /dev/random");
-      exit (1);
-    }
-    i += n;
-  }
+  gss_utils_get_random_bytes (entropy, RANDOM_BYTES);
 
   base64 = g_base64_encode (entropy, RANDOM_BYTES);
 

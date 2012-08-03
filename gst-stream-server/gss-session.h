@@ -46,8 +46,6 @@ struct _GssSession {
 typedef gpointer (*GssSessionAuthorizationFunc) (GssSession *session,
     gpointer priv);
 
-void __gss_session_deinit (void);
-
 GssSession * gss_session_new (const char *username);
 GssSession * gss_session_ref (GssSession *session);
 GList * gss_session_get_list (void);
