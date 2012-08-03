@@ -392,15 +392,13 @@ gss_program_start (GssProgram * program)
 
 
 
-
-
 /* FIXME use the gss-stream.c function instead of this */
 static void
 client_removed (GstElement * e, int fd, int status, gpointer user_data)
 {
   GssStream *stream = user_data;
 
-  if (gss_stream_fd_table[fd]) {
+  if (gss_stream_fd_table[fd].priv) {
     if (stream) {
       gss_metrics_remove_client (stream->metrics, stream->bitrate);
       gss_metrics_remove_client (stream->program->metrics, stream->bitrate);
@@ -415,15 +413,18 @@ static void
 client_fd_removed (GstElement * e, int fd, gpointer user_data)
 {
   GssStream *stream = user_data;
-  SoupSocket *socket = gss_stream_fd_table[fd];
 
-  if (socket) {
-    soup_socket_disconnect (socket);
-    gss_stream_fd_table[fd] = NULL;
+  if (gss_stream_fd_table[fd].callback) {
+    gss_stream_fd_table[fd].callback (stream, fd, gss_stream_fd_table[fd].priv);
   } else {
-    stream->custom_client_fd_removed (stream, fd, stream->custom_user_data);
+    SoupSocket *sock = gss_stream_fd_table[fd].priv;
+    if (sock)
+      soup_socket_disconnect (sock);
   }
+  gss_stream_fd_table[fd].priv = NULL;
+  gss_stream_fd_table[fd].callback = NULL;
 }
+
 
 void
 gss_program_set_jpegsink (GssProgram * program, GstElement * jpegsink)
@@ -896,7 +897,8 @@ jpeg_wrote_headers (SoupMessage * msg, void *user_data)
     g_signal_emit_by_name (connection->program->jpegsink, "add", fd);
 
     g_assert (fd < GSS_STREAM_MAX_FDS);
-    gss_stream_fd_table[fd] = socket;
+    gss_stream_fd_table[fd].callback = NULL;
+    gss_stream_fd_table[fd].priv = socket;
   } else {
     soup_socket_disconnect (socket);
   }

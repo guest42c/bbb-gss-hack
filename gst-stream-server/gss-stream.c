@@ -45,7 +45,6 @@ enum
 
 static void msg_wrote_headers (SoupMessage * msg, void *user_data);
 
-void *gss_stream_fd_table[GSS_STREAM_MAX_FDS];
 
 static void gss_stream_finalize (GObject * object);
 static void gss_stream_set_property (GObject * object, guint prop_id,
@@ -271,7 +270,7 @@ client_removed (GstElement * e, int fd, int status, gpointer user_data)
 {
   GssStream *stream = user_data;
 
-  if (gss_stream_fd_table[fd]) {
+  if (gss_stream_fd_table[fd].callback == NULL) {
     if (stream) {
       gss_metrics_remove_client (stream->metrics, stream->bitrate);
       gss_metrics_remove_client (stream->program->metrics, stream->bitrate);
@@ -285,14 +284,16 @@ static void
 client_fd_removed (GstElement * e, int fd, gpointer user_data)
 {
   GssStream *stream = user_data;
-  SoupSocket *sock = gss_stream_fd_table[fd];
 
-  if (sock) {
-    soup_socket_disconnect (sock);
-    gss_stream_fd_table[fd] = NULL;
+  if (gss_stream_fd_table[fd].callback) {
+    gss_stream_fd_table[fd].callback (stream, fd, gss_stream_fd_table[fd].priv);
   } else {
-    stream->custom_client_fd_removed (stream, fd, stream->custom_user_data);
+    SoupSocket *sock = gss_stream_fd_table[fd].priv;
+    if (sock)
+      soup_socket_disconnect (sock);
   }
+  gss_stream_fd_table[fd].priv = NULL;
+  gss_stream_fd_table[fd].callback = NULL;
 }
 
 static void
@@ -337,6 +338,18 @@ stream_resource (GssTransaction * t)
       connection);
 }
 
+void
+gss_stream_add_fd (GssStream * stream, int fd,
+    void (*callback) (GssStream * stream, int fd, void *priv), void *priv)
+{
+  g_return_if_fail (fd < GSS_STREAM_MAX_FDS);
+
+  gss_stream_fd_table[fd].callback = callback;
+  gss_stream_fd_table[fd].priv = priv;
+
+  g_signal_emit_by_name (stream->sink, "add", fd);
+}
+
 static void
 msg_wrote_headers (SoupMessage * msg, void *user_data)
 {
@@ -350,10 +363,7 @@ msg_wrote_headers (SoupMessage * msg, void *user_data)
   if (connection->stream->sink) {
     GssStream *stream = connection->stream;
 
-    g_signal_emit_by_name (connection->stream->sink, "add", fd);
-
-    g_assert (fd < GSS_STREAM_MAX_FDS);
-    gss_stream_fd_table[fd] = sock;
+    gss_stream_add_fd (stream, fd, NULL, sock);
 
     gss_metrics_add_client (stream->metrics, stream->bitrate);
     gss_metrics_add_client (stream->program->metrics, stream->bitrate);
@@ -402,11 +412,13 @@ gss_stream_add_resources (GssStream * stream)
   }
 #endif
 
+#if 0
   s = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s",
       GST_OBJECT_NAME (stream->program), stream->width, stream->height,
       stream->bitrate / 1000, stream->mod, stream->ext);
   gst_object_set_name (GST_OBJECT (stream), s);
   g_free (s);
+#endif
   s = g_strdup_printf ("/%s", GST_OBJECT_NAME (stream));
   gss_server_add_resource (stream->program->server, s, GSS_RESOURCE_HTTP_ONLY,
       stream->content_type, stream_resource, NULL, NULL, stream);

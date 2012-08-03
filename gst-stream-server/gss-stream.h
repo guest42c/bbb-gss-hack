@@ -114,11 +114,6 @@ struct _GssStream {
 
   /* RTSP */
   GssRtspStream *rtsp_stream;
-
-  /* callbacks */
-  void (*custom_client_fd_removed) (GssStream *stream, int fd,
-      gpointer user_data);
-  gpointer custom_user_data;
 };
 
 typedef struct _GssStreamClass GssStreamClass;
@@ -135,8 +130,16 @@ struct _GssConnection {
 };
 
 
+/* internal */
 #define GSS_STREAM_MAX_FDS 65536
-extern void *gss_stream_fd_table[GSS_STREAM_MAX_FDS];
+typedef struct _FDInfo FDInfo;
+struct _FDInfo {
+  void (*callback) (GssStream *stream, int fd, void *priv);
+  void *priv;
+};
+FDInfo gss_stream_fd_table[GSS_STREAM_MAX_FDS];
+/* end internal */
+
 
 GType gss_stream_get_type (void);
 
@@ -154,6 +157,9 @@ void gss_stream_create_push_pipeline (GssStream * stream);
 void gss_stream_add_resources (GssStream *stream);
 
 void gss_stream_handle_m3u8 (GssTransaction * t);
+
+void gss_stream_add_fd (GssStream *stream, int fd,
+    void (*callback) (GssStream *stream, int fd, void *priv), void *priv);
 
 const char * gss_stream_type_get_name (GssStreamType type);
 
