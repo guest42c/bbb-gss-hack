@@ -49,11 +49,12 @@ G_BEGIN_DECLS
 
 typedef enum {
   GSS_STREAM_TYPE_UNKNOWN,
-  GSS_STREAM_TYPE_OGG,
+  GSS_STREAM_TYPE_OGG_THEORA_VORBIS,
   GSS_STREAM_TYPE_WEBM,
-  GSS_STREAM_TYPE_TS,
-  GSS_STREAM_TYPE_TS_MAIN,
-  GSS_STREAM_TYPE_FLV
+  GSS_STREAM_TYPE_M2TS_H264BASE_AAC,
+  GSS_STREAM_TYPE_M2TS_H264MAIN_AAC,
+  GSS_STREAM_TYPE_FLV_H264BASE_AAC,
+  GSS_STREAM_TYPE_OGG_THEORA_OPUS
 } GssStreamType;
 
 struct _GssHLSSegment {
@@ -67,7 +68,7 @@ struct _GssStream {
   GstObject object;
 
   /* properties */
-  int type;
+  GssStreamType type;
   int width;
   int height;
   int bitrate;
@@ -162,6 +163,8 @@ void gss_stream_add_fd (GssStream *stream, int fd,
     void (*callback) (GssStream *stream, int fd, void *priv), void *priv);
 
 const char * gss_stream_type_get_name (GssStreamType type);
+const char * gss_stream_type_get_id (GssStreamType type);
+GssStreamType gss_stream_type_from_id (const char *id);
 
 
 G_END_DECLS

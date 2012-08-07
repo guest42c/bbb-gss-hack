@@ -64,15 +64,19 @@ gss_stream_create_follow_pipeline (GssStream * stream)
   g_string_append_printf (pipe_desc,
       "souphttpsrc name=src do-timestamp=true ! ");
   switch (stream->type) {
-    case GSS_STREAM_TYPE_OGG:
+    case GSS_STREAM_TYPE_OGG_THEORA_VORBIS:
+    case GSS_STREAM_TYPE_OGG_THEORA_OPUS:
       g_string_append (pipe_desc, "oggparse name=parse ! ");
       break;
-    case GSS_STREAM_TYPE_TS:
-    case GSS_STREAM_TYPE_TS_MAIN:
+    case GSS_STREAM_TYPE_M2TS_H264BASE_AAC:
+    case GSS_STREAM_TYPE_M2TS_H264MAIN_AAC:
       g_string_append (pipe_desc, "mpegtsparse name=parse ! ");
       break;
     case GSS_STREAM_TYPE_WEBM:
       g_string_append (pipe_desc, "matroskaparse name=parse ! ");
+      break;
+    case GSS_STREAM_TYPE_FLV_H264BASE_AAC:
+      g_string_append (pipe_desc, "flvparse name=parse ! ");
       break;
     default:
       g_assert_not_reached ();
@@ -232,18 +236,7 @@ follow_callback (SoupSession * session, SoupMessage * message, gpointer ptr)
       if (n == 6) {
         char *full_url;
 
-        type = GSS_STREAM_TYPE_UNKNOWN;
-        if (strcmp (type_str, "ogg") == 0) {
-          type = GSS_STREAM_TYPE_OGG;
-        } else if (strcmp (type_str, "webm") == 0) {
-          type = GSS_STREAM_TYPE_WEBM;
-        } else if (strcmp (type_str, "mpeg-ts") == 0) {
-          type = GSS_STREAM_TYPE_TS;
-        } else if (strcmp (type_str, "mpeg-ts-main") == 0) {
-          type = GSS_STREAM_TYPE_TS_MAIN;
-        } else if (strcmp (type_str, "flv") == 0) {
-          type = GSS_STREAM_TYPE_FLV;
-        }
+        type = gss_stream_type_from_id (type_str);
 
         full_url = g_strdup_printf ("http://%s%s", program->follow_host, url);
         gss_program_add_stream_follow (program, type, width, height, bitrate,

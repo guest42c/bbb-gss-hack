@@ -376,8 +376,9 @@ gss_program_start (GssProgram * program)
         gss_program_follow_get_list (program);
         break;
       case GSS_PROGRAM_HTTP_FOLLOW:
-        gss_program_add_stream_follow (program, GSS_STREAM_TYPE_OGG, 640, 360,
-            700000, program->follow_uri);
+        gss_program_add_stream_follow (program,
+            GSS_STREAM_TYPE_OGG_THEORA_VORBIS, 640, 360, 700000,
+            program->follow_uri);
         break;
       case GSS_PROGRAM_MANUAL:
       case GSS_PROGRAM_ICECAST:
@@ -506,7 +507,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       width = stream->width;
     if (stream->height > height)
       height = stream->height;
-    if (stream->type != GSS_STREAM_TYPE_FLV) {
+    if (stream->type != GSS_STREAM_TYPE_FLV_H264BASE_AAC) {
       flash_only = FALSE;
     }
   }
@@ -531,7 +532,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 
     for (g = g_list_last (program->streams); g; g = g_list_previous (g)) {
       GssStream *stream = g->data;
-      if (stream->type == GSS_STREAM_TYPE_OGG) {
+      if (stream->type == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
         g_string_append_printf (s,
             "<source src=\"%s/%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
             base_url, GST_OBJECT_NAME (stream));
@@ -540,8 +541,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
 
     for (g = g_list_last (program->streams); g; g = g_list_previous (g)) {
       GssStream *stream = g->data;
-      if (stream->type == GSS_STREAM_TYPE_TS ||
-          stream->type == GSS_STREAM_TYPE_TS_MAIN) {
+      if (stream->type == GSS_STREAM_TYPE_M2TS_H264BASE_AAC ||
+          stream->type == GSS_STREAM_TYPE_M2TS_H264MAIN_AAC) {
         g_string_append_printf (s,
             "<source src=\"%s/%s.m3u8\" >\n", base_url,
             GST_OBJECT_NAME (program));
@@ -554,7 +555,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   if (program->server->enable_cortado) {
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
-      if (stream->type == GSS_STREAM_TYPE_OGG) {
+      if (stream->type == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
         g_string_append_printf (s,
             "<applet code=\"com.fluendo.player.Cortado.class\"\n"
             "  archive=\"%s/cortado.jar\" width=\"%d\" height=\"%d\">\n"
@@ -569,7 +570,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   if (program->server->enable_flash) {
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
-      if (stream->type == GSS_STREAM_TYPE_FLV) {
+      if (stream->type == GSS_STREAM_TYPE_FLV_H264BASE_AAC) {
         g_string_append_printf (s,
             " <object width='%d' height='%d' id='flvPlayer' "
             "type=\"application/x-shockwave-flash\" "
@@ -750,20 +751,20 @@ gss_program_put_resource (GssTransaction * t)
       "Content-Type");
   if (content_type) {
     if (strcmp (content_type, "application/ogg") == 0) {
-      program->push_media_type = GSS_STREAM_TYPE_OGG;
+      program->push_media_type = GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
     } else if (strcmp (content_type, "video/webm") == 0) {
       program->push_media_type = GSS_STREAM_TYPE_WEBM;
     } else if (strcmp (content_type, "video/mpeg-ts") == 0) {
-      program->push_media_type = GSS_STREAM_TYPE_TS;
+      program->push_media_type = GSS_STREAM_TYPE_M2TS_H264BASE_AAC;
     } else if (strcmp (content_type, "video/mp2t") == 0) {
-      program->push_media_type = GSS_STREAM_TYPE_TS;
+      program->push_media_type = GSS_STREAM_TYPE_M2TS_H264MAIN_AAC;
     } else if (strcmp (content_type, "video/x-flv") == 0) {
-      program->push_media_type = GSS_STREAM_TYPE_FLV;
+      program->push_media_type = GSS_STREAM_TYPE_FLV_H264BASE_AAC;
     } else {
-      program->push_media_type = GSS_STREAM_TYPE_OGG;
+      program->push_media_type = GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
     }
   } else {
-    program->push_media_type = GSS_STREAM_TYPE_OGG;
+    program->push_media_type = GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
   }
 
   if (program->push_client == NULL) {
@@ -819,38 +820,15 @@ gss_program_list_resource (GssTransaction * t)
   GssProgram *program = (GssProgram *) t->resource->priv;
   GString *s = g_string_new ("");
   GList *g;
-  const char *base_url = "";
   int i = 0;
 
   t->s = s;
 
   for (g = program->streams; g; g = g_list_next (g), i++) {
     GssStream *stream = g->data;
-    const char *typename = "unknown";
-    switch (stream->type) {
-      case GSS_STREAM_TYPE_OGG:
-        typename = "ogg";
-        break;
-      case GSS_STREAM_TYPE_WEBM:
-        typename = "webm";
-        break;
-      case GSS_STREAM_TYPE_TS:
-        typename = "mpeg-ts";
-        break;
-      case GSS_STREAM_TYPE_TS_MAIN:
-        typename = "mpeg-ts-main";
-        break;
-      case GSS_STREAM_TYPE_FLV:
-        typename = "flv";
-        break;
-      default:
-        g_assert_not_reached ();
-        break;
-    }
     g_string_append_printf (s,
-        "%d %s %d %d %d %s/%s\n", i, typename,
-        stream->width, stream->height, stream->bitrate, base_url,
-        GST_OBJECT_NAME (stream));
+        "%d %s %d %d %d %s\n", i, gss_stream_type_get_id (stream->type),
+        stream->width, stream->height, stream->bitrate, stream->location);
   }
 }
 

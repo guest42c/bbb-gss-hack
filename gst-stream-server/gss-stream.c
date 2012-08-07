@@ -63,12 +63,51 @@ gss_stream_init (GssStream * stream)
 
   stream->metrics = gss_metrics_new ();
 
+  stream->type = DEFAULT_TYPE;
+  gss_stream_set_type (stream, DEFAULT_TYPE);
+  stream->width = DEFAULT_WIDTH;
+  stream->height = DEFAULT_HEIGHT;
+  stream->bitrate = DEFAULT_BITRATE;
+}
+
+static GType
+gss_stream_type_get_type (void)
+{
+  static gsize id = 0;
+  static const GEnumValue values[] = {
+    {GSS_STREAM_TYPE_OGG_THEORA_VORBIS, "ogg-theora-vorbis",
+        "Ogg/Theora/Vorbis"},
+    {GSS_STREAM_TYPE_WEBM, "webm", "WebM (Matroska/VP8/Vorbis)"},
+    {GSS_STREAM_TYPE_M2TS_H264BASE_AAC, "m2ts-h264base-aac",
+        "MPEG-TS/H.264 Baseline/AAC"},
+    {GSS_STREAM_TYPE_M2TS_H264MAIN_AAC, "m2ts-h264main-aac",
+        "MPEG-TS/H.264 Main/AAC"},
+    {GSS_STREAM_TYPE_FLV_H264BASE_AAC, "flv-h264base-aac",
+        "Flash/H.264 Baseline/AAC"},
+    {GSS_STREAM_TYPE_OGG_THEORA_OPUS, "ogg-theora-opus", "Ogg/Theora/Opus"},
+    {0, NULL, NULL}
+  };
+
+  if (g_once_init_enter (&id)) {
+    GType tmp = g_enum_register_static ("GssStreamType", values);
+    g_once_init_leave (&id, tmp);
+  }
+
+G_DEFINE_TYPE (GssStream, gss_stream, GST_TYPE_OBJECT);
+
+static void
+gss_stream_init (GssStream * stream)
+{
+
+  stream->metrics = gss_metrics_new ();
+
   stream->width = 0;
   stream->height = 0;
   stream->bitrate = 0;
 
   gss_stream_set_type (stream, GSS_STREAM_TYPE_UNKNOWN);
 
+  return (GType) id;
 }
 
 static void
@@ -152,7 +191,7 @@ gss_stream_set_property (GObject * object, guint prop_id,
 
   switch (prop_id) {
     case PROP_TYPE:
-      gss_stream_set_type (stream, g_value_get_int (value));
+      gss_stream_set_type (stream, g_value_get_enum (value));
       break;
     case PROP_WIDTH:
       stream->width = g_value_get_int (value);
@@ -179,7 +218,7 @@ gss_stream_get_property (GObject * object, guint prop_id,
 
   switch (prop_id) {
     case PROP_TYPE:
-      g_value_set_int (value, stream->type);
+      g_value_set_enum (value, stream->type);
       break;
     case PROP_WIDTH:
       g_value_set_int (value, stream->width);
@@ -199,21 +238,56 @@ gss_stream_get_property (GObject * object, guint prop_id,
 const char *
 gss_stream_type_get_name (GssStreamType type)
 {
-  switch (type) {
-    case GSS_STREAM_TYPE_OGG:
-      return "Ogg/Theora";
-    case GSS_STREAM_TYPE_WEBM:
-      return "WebM";
-    case GSS_STREAM_TYPE_TS:
-      return "MPEG-TS";
-    case GSS_STREAM_TYPE_TS_MAIN:
-      return "MPEG-TS main";
-    case GSS_STREAM_TYPE_FLV:
-      return "FLV";
-    default:
-      return "unknown";
-  }
+  GEnumValue *value;
+
+  value =
+      g_enum_get_value (G_ENUM_CLASS (g_type_class_peek
+          (gss_stream_type_get_type ())), type);
+  g_return_val_if_fail (value != NULL, NULL);
+
+  return value->value_name;
 }
+
+const char *
+gss_stream_type_get_id (GssStreamType type)
+{
+  GEnumValue *value;
+
+  value =
+      g_enum_get_value (G_ENUM_CLASS (g_type_class_peek
+          (gss_stream_type_get_type ())), type);
+  g_return_val_if_fail (value != NULL, NULL);
+
+  return value->value_nick;
+}
+
+GssStreamType
+gss_stream_type_from_id (const char *id)
+{
+  GEnumValue *value;
+
+  value =
+      g_enum_get_value_by_nick (G_ENUM_CLASS (g_type_class_peek
+          (gss_stream_type_get_type ())), id);
+  if (value)
+    return value->value;
+
+  /* some legacy values */
+  if (strcmp (id, "ogg") == 0) {
+    return GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
+  } else if (strcmp (id, "webm") == 0) {
+    return GSS_STREAM_TYPE_WEBM;
+  } else if (strcmp (id, "mpeg-ts") == 0) {
+    return GSS_STREAM_TYPE_M2TS_H264BASE_AAC;
+  } else if (strcmp (id, "mpeg-ts-main") == 0) {
+    return GSS_STREAM_TYPE_M2TS_H264MAIN_AAC;
+  } else if (strcmp (id, "flv") == 0) {
+    return GSS_STREAM_TYPE_FLV_H264BASE_AAC;
+  }
+
+  return GSS_STREAM_TYPE_UNKNOWN;
+}
+
 
 void
 gss_stream_set_type (GssStream * stream, int type)
@@ -227,7 +301,8 @@ gss_stream_set_type (GssStream * stream, int type)
       stream->mod = "";
       stream->ext = "";
       break;
-    case GSS_STREAM_TYPE_OGG:
+    case GSS_STREAM_TYPE_OGG_THEORA_VORBIS:
+    case GSS_STREAM_TYPE_OGG_THEORA_OPUS:
       stream->content_type = "video/ogg";
       stream->mod = "";
       stream->ext = "ogv";
@@ -237,17 +312,17 @@ gss_stream_set_type (GssStream * stream, int type)
       stream->mod = "";
       stream->ext = "webm";
       break;
-    case GSS_STREAM_TYPE_TS:
+    case GSS_STREAM_TYPE_M2TS_H264BASE_AAC:
       stream->content_type = "video/mp2t";
       stream->mod = "";
       stream->ext = "ts";
       break;
-    case GSS_STREAM_TYPE_TS_MAIN:
+    case GSS_STREAM_TYPE_M2TS_H264MAIN_AAC:
       stream->content_type = "video/mp2t";
       stream->mod = "-main";
       stream->ext = "ts";
       break;
-    case GSS_STREAM_TYPE_FLV:
+    case GSS_STREAM_TYPE_FLV_H264BASE_AAC:
       stream->content_type = "video/x-flv";
       stream->mod = "";
       stream->ext = "flv";
@@ -450,8 +525,8 @@ gss_stream_set_sink (GssStream * stream, GstElement * sink)
         G_CALLBACK (client_removed), stream);
     g_signal_connect (stream->sink, "client-fd-removed",
         G_CALLBACK (client_fd_removed), stream);
-    if (stream->type == GSS_STREAM_TYPE_TS ||
-        stream->type == GSS_STREAM_TYPE_TS_MAIN) {
+    if (stream->type == GSS_STREAM_TYPE_M2TS_H264BASE_AAC ||
+        stream->type == GSS_STREAM_TYPE_M2TS_H264MAIN_AAC) {
       gss_stream_add_hls (stream);
     }
   }
