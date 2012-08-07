@@ -267,10 +267,9 @@ gss_program_remove_stream (GssProgram * program, GssStream * stream)
 
   program->streams = g_list_remove (program->streams, stream);
 
-  stream->program = NULL;
   gss_stream_remove_resources (stream);
-
   gst_object_set_parent (GST_OBJECT (stream), NULL);
+  stream->program = NULL;
 }
 
 void
