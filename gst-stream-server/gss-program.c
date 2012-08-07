@@ -260,6 +260,20 @@ gss_program_add_stream (GssProgram * program, GssStream * stream)
 }
 
 void
+gss_program_remove_stream (GssProgram * program, GssStream * stream)
+{
+  g_return_if_fail (GSS_IS_PROGRAM (program));
+  g_return_if_fail (GSS_IS_STREAM (stream));
+
+  program->streams = g_list_remove (program->streams, stream);
+
+  stream->program = NULL;
+  gss_stream_remove_resources (stream);
+
+  gst_object_set_parent (GST_OBJECT (stream), NULL);
+}
+
+void
 gss_program_enable_streaming (GssProgram * program)
 {
   program->enable_streaming = TRUE;
@@ -391,7 +405,25 @@ gss_program_start (GssProgram * program)
   }
 }
 
+int
+gss_program_get_stream_index (GssProgram * program, GssStream * stream)
+{
+  GList *g;
+  int index = 0;
+  for (g = program->streams; g; g = g->next) {
+    if (g->data == stream)
+      return index;
+    index++;
+  }
 
+  return -1;
+}
+
+int
+gss_program_get_n_streams (GssProgram * program)
+{
+  return g_list_length (program->streams);
+}
 
 /* FIXME use the gss-stream.c function instead of this */
 static void

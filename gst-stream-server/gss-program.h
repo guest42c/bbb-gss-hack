@@ -138,6 +138,7 @@ GssStream * gss_program_add_ogv_stream (GssProgram *program);
 GssStream * gss_program_add_webm_stream (GssProgram *program);
 GssStream * gss_program_add_hls_stream (GssProgram *program);
 void gss_program_add_stream (GssProgram *program, GssStream *stream);
+void gss_program_remove_stream (GssProgram *program, GssStream *stream);
 GssStream * gss_program_add_stream_full (GssProgram *program,
     int type, int width, int height, int bitrate, GstElement *sink);
 void gss_program_log (GssProgram *program, const char *message, ...);
@@ -145,7 +146,8 @@ void gss_program_enable_streaming (GssProgram *program);
 void gss_program_disable_streaming (GssProgram *program);
 void gss_program_set_enabled (GssProgram *program, gboolean enabled);
 void gss_program_set_state (GssProgram *program, GssProgramState state);
-
+int gss_program_get_stream_index (GssProgram *program, GssStream *stream);
+int gss_program_get_n_streams (GssProgram *program);
 
 void gss_program_add_jpeg_block (GssProgram * program, GString * s);
 void gss_program_add_video_block (GssProgram *program, GString *s, int max_width,
