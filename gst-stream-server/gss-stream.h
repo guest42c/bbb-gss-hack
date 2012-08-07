@@ -76,12 +76,12 @@ struct _GssStream {
   int level;
   int profile;
 
-
   GssProgram *program;
   GssMetrics *metrics;
 
   char *codecs;
-  char *playlist_name;
+  char *playlist_location;
+  char *location;
 
   /* cached info */
   const char *content_type;
@@ -102,6 +102,9 @@ struct _GssStream {
 
   /* for follow programs */
   char *follow_url;
+
+  GssResource *resource;
+  GssResource *playlist_resource;
 
   /* HLS */
   int n_chunks;
@@ -155,6 +158,7 @@ void gss_stream_resource (GssTransaction * transaction);
 void gss_stream_set_sink (GssStream * stream, GstElement * sink);
 void gss_stream_create_follow_pipeline (GssStream * stream);
 void gss_stream_create_push_pipeline (GssStream * stream);
+void gss_stream_remove_resources (GssStream *stream);
 void gss_stream_add_resources (GssStream *stream);
 
 void gss_stream_handle_m3u8 (GssTransaction * t);

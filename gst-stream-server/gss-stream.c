@@ -129,7 +129,8 @@ gss_stream_finalize (GObject * object)
   GssStream *stream = GSS_STREAM (object);
   int i;
 
-  g_free (stream->playlist_name);
+  g_free (stream->playlist_location);
+  g_free (stream->location);
   g_free (stream->codecs);
   g_free (stream->follow_url);
 
@@ -462,7 +463,6 @@ gss_program_add_stream_full (GssProgram * program,
 void
 gss_stream_add_resources (GssStream * stream)
 {
-  char *s;
 
 #ifdef ENABLE_RTSP
   if (stream->program->server->enable_rtsp) {
@@ -473,28 +473,40 @@ gss_stream_add_resources (GssStream * stream)
   }
 #endif
 
-#if 0
-  s = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s",
+  gss_stream_remove_resources (stream);
+
+  g_free (stream->location);
+  stream->location = g_strdup_printf ("/%s/streams/%s-%dx%d-%dkbps%s.%s",
+      GST_OBJECT_NAME (stream->program),
       GST_OBJECT_NAME (stream->program), stream->width, stream->height,
       stream->bitrate / 1000, stream->mod, stream->ext);
-  gst_object_set_name (GST_OBJECT (stream), s);
-  g_free (s);
-#endif
-  s = g_strdup_printf ("/%s", GST_OBJECT_NAME (stream));
-  gss_server_add_resource (stream->program->server, s, GSS_RESOURCE_HTTP_ONLY,
+  stream->resource = gss_server_add_resource (stream->program->server,
+      stream->location, GSS_RESOURCE_HTTP_ONLY,
       stream->content_type, stream_resource, NULL, NULL, stream);
-  g_free (s);
 
-  stream->playlist_name = g_strdup_printf ("%s-%dx%d-%dkbps%s-%s.m3u8",
-      GST_OBJECT_NAME (stream->program),
+  g_free (stream->playlist_location);
+  stream->playlist_location =
+      g_strdup_printf ("/%s/streams/%s-%dx%d-%dkbps%s-%s.m3u8",
+      GST_OBJECT_NAME (stream->program), GST_OBJECT_NAME (stream->program),
       stream->width, stream->height, stream->bitrate / 1000, stream->mod,
       stream->ext);
-  s = g_strdup_printf ("/%s", stream->playlist_name);
-  gss_server_add_resource (stream->program->server, s, 0,
-      "application/x-mpegurl", gss_stream_handle_m3u8, NULL, NULL, stream);
-  g_free (s);
+  stream->playlist_resource =
+      gss_server_add_resource (stream->program->server,
+      stream->playlist_location, 0, "application/x-mpegurl",
+      gss_stream_handle_m3u8, NULL, NULL, stream);
 
   return;
+}
+
+void
+gss_stream_remove_resources (GssStream * stream)
+{
+  if (stream->resource)
+    gss_server_remove_resource (stream->program->server,
+        stream->resource->location);
+  if (stream->playlist_resource)
+    gss_server_remove_resource (stream->program->server,
+        stream->playlist_resource->location);
 }
 
 void

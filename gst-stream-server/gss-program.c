@@ -510,8 +510,7 @@ gss_program_add_jpeg_block (GssProgram * program, GString * s)
 }
 
 void
-gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
-    const char *base_url)
+gss_program_add_video_block (GssProgram * program, GString * s, int max_width)
 {
   GList *g;
   int width = 0;
@@ -557,8 +556,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_WEBM) {
         g_string_append_printf (s,
-            "<source src=\"%s/%s\" type='video/webm; codecs=\"vp8, vorbis\"'>\n",
-            base_url, GST_OBJECT_NAME (stream));
+            "<source src=\"%s\" type='video/webm; codecs=\"vp8, vorbis\"'>\n",
+            stream->location);
       }
     }
 
@@ -566,8 +565,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
         g_string_append_printf (s,
-            "<source src=\"%s/%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
-            base_url, GST_OBJECT_NAME (stream));
+            "<source src=\"%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
+            stream->location);
       }
     }
 
@@ -576,8 +575,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       if (stream->type == GSS_STREAM_TYPE_M2TS_H264BASE_AAC ||
           stream->type == GSS_STREAM_TYPE_M2TS_H264MAIN_AAC) {
         g_string_append_printf (s,
-            "<source src=\"%s/%s.m3u8\" >\n", base_url,
-            GST_OBJECT_NAME (program));
+            "<source src=\"%s\" >\n", stream->playlist_location);
         break;
       }
     }
@@ -590,10 +588,9 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
       if (stream->type == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
         g_string_append_printf (s,
             "<applet code=\"com.fluendo.player.Cortado.class\"\n"
-            "  archive=\"%s/cortado.jar\" width=\"%d\" height=\"%d\">\n"
-            "    <param name=\"url\" value=\"%s/%s\"></param>\n"
-            "</applet>\n", base_url, width, height,
-            base_url, GST_OBJECT_NAME (stream));
+            "  archive=\"/cortado.jar\" width=\"%d\" height=\"%d\">\n"
+            "    <param name=\"url\" value=\"%s\"></param>\n"
+            "</applet>\n", width, height, stream->location);
         break;
       }
     }
@@ -611,7 +608,7 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
             "  <param name=\"allowScriptAccess\" value=\"always\"> \n"
             "  <param name=\"movie\" value=\"OSplayer.swf\"> \n"
             "  <param name=\"flashvars\" value=\""
-            "movie=%s/%s"
+            "movie=%s"
             "&btncolor=0x333333"
             "&accentcolor=0x31b8e9"
             "&txtcolor=0xdddddd"
@@ -619,12 +616,11 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
             "&autoload=on"
             "&autoplay=off"
             "&vTitle=TITLE"
-            "&showTitle=yes\">\n", width, height + 24,
-            base_url, GST_OBJECT_NAME (stream));
+            "&showTitle=yes\">\n", width, height + 24, stream->location);
         if (program->enable_snapshot) {
           gss_html_append_image_printf (s,
-              "%s/%s-snapshot.png", 0, 0, "snapshot image",
-              base_url, GST_OBJECT_NAME (program));
+              "/%s-snapshot.png", 0, 0, "snapshot image",
+              GST_OBJECT_NAME (program));
         }
         g_string_append_printf (s, " </object>\n");
         break;
@@ -634,8 +630,8 @@ gss_program_add_video_block (GssProgram * program, GString * s, int max_width,
   } else {
     if (program->enable_snapshot) {
       gss_html_append_image_printf (s,
-          "%s/%s-snapshot.png", 0, 0, "snapshot image",
-          base_url, GST_OBJECT_NAME (program));
+          "/%s-snapshot.png", 0, 0, "snapshot image",
+          GST_OBJECT_NAME (program));
     }
   }
 
@@ -657,7 +653,7 @@ gss_program_frag_resource (GssTransaction * t)
   }
 
   t->s = s = g_string_new ("");
-  gss_program_add_video_block (program, s, 0, program->server->base_url);
+  gss_program_add_video_block (program, s, 0);
 }
 
 static void
@@ -672,7 +668,7 @@ gss_program_get_resource (GssTransaction * t)
 
   g_string_append_printf (s, "<h1>%s</h1>\n", GST_OBJECT_NAME (program));
 
-  gss_program_add_video_block (program, s, 0, "");
+  gss_program_add_video_block (program, s, 0);
 
   gss_html_append_break (s);
 
@@ -685,26 +681,6 @@ void
 gss_program_add_stream_table (GssProgram * program, GString * s)
 {
   GList *g;
-#if 0
-  int i = 0;
-
-  for (g = program->streams; g; g = g_list_next (g), i++) {
-    GssStream *stream = g->data;
-
-    gss_html_append_break (s);
-    g_string_append_printf (s,
-        "%d: %s %dx%d %d kbps <a href=\"/%s\">stream</a> "
-        "<a href=\"/%s\">playlist</a>\n", i,
-        gss_stream_type_get_name (stream->type),
-        stream->width, stream->height, stream->bitrate / 1000,
-        GST_OBJECT_NAME (stream), stream->playlist_name);
-  }
-  if (program->enable_hls) {
-    gss_html_append_break (s);
-    g_string_append_printf (s,
-        "<a href=\"/%s.m3u8\">HLS</a>\n", GST_OBJECT_NAME (program));
-  }
-#endif
 
   g_string_append (s, "<table class='table table-striped table-bordered "
       "table-condensed'>\n");
@@ -725,10 +701,10 @@ gss_program_add_stream_table (GssProgram * program, GString * s)
     g_string_append_printf (s, "<td>%dx%d</td>\n", stream->width,
         stream->height);
     g_string_append_printf (s, "<td>%d kbps</td>\n", stream->bitrate / 1000);
-    g_string_append_printf (s, "<td><a href=\"/%s\">stream</a></td>\n",
-        GST_OBJECT_NAME (stream));
-    g_string_append_printf (s, "<td><a href=\"/%s\">playlist</a></td>\n",
-        stream->playlist_name);
+    g_string_append_printf (s, "<td><a href=\"%s\">stream</a></td>\n",
+        stream->location);
+    g_string_append_printf (s, "<td><a href=\"%s\">playlist</a></td>\n",
+        stream->playlist_location);
     g_string_append (s, "</tr>\n");
   }
   g_string_append (s, "<tr>\n");
