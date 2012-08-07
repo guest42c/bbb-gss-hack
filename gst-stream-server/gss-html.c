@@ -345,6 +345,8 @@ gss_html_sanitize_attribute (const char *s)
   int len;
   int i;
 
+  g_return_val_if_fail (s != NULL, NULL);
+
   len = strlen (s);
   escape_count = 0;
   for (i = 0; i < len; i++) {
