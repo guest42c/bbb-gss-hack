@@ -35,10 +35,10 @@ enum
   PROP_BITRATE
 };
 
-#define DEFAULT_TYPE GSS_STREAM_TYPE_UNKNOWN
-#define DEFAULT_WIDTH 0
-#define DEFAULT_HEIGHT 0
-#define DEFAULT_BITRATE 0
+#define DEFAULT_TYPE GSS_STREAM_TYPE_WEBM
+#define DEFAULT_WIDTH 640
+#define DEFAULT_HEIGHT 360
+#define DEFAULT_BITRATE 600000
 
 
 #define verbose FALSE
@@ -93,20 +93,6 @@ gss_stream_type_get_type (void)
     g_once_init_leave (&id, tmp);
   }
 
-G_DEFINE_TYPE (GssStream, gss_stream, GST_TYPE_OBJECT);
-
-static void
-gss_stream_init (GssStream * stream)
-{
-
-  stream->metrics = gss_metrics_new ();
-
-  stream->width = 0;
-  stream->height = 0;
-  stream->bitrate = 0;
-
-  gss_stream_set_type (stream, GSS_STREAM_TYPE_UNKNOWN);
-
   return (GType) id;
 }
 
@@ -118,20 +104,20 @@ gss_stream_class_init (GssStreamClass * stream_class)
   G_OBJECT_CLASS (stream_class)->finalize = gss_stream_finalize;
 
   g_object_class_install_property (G_OBJECT_CLASS (stream_class),
-      PROP_TYPE, g_param_spec_int ("type", "type",
-          "type", 0, GSS_STREAM_TYPE_FLV, DEFAULT_TYPE,
+      PROP_TYPE, g_param_spec_enum ("type", "Stream Format",
+          "Stream Format", gss_stream_type_get_type (), DEFAULT_TYPE,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (stream_class),
       PROP_WIDTH, g_param_spec_int ("width", "Width",
           "Width", 0, 3840, DEFAULT_WIDTH,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (stream_class),
-      PROP_HEIGHT, g_param_spec_int ("height", "height",
-          "height", 0, 2160, DEFAULT_HEIGHT,
+      PROP_HEIGHT, g_param_spec_int ("height", "Height",
+          "Height", 0, 2160, DEFAULT_HEIGHT,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (stream_class),
       PROP_BITRATE, g_param_spec_int ("bitrate", "Bit Rate",
-          "Bit Rate", 0, G_MAXINT, DEFAULT_BITRATE,
+          "[bits/sec] Bit Rate", 0, G_MAXINT, DEFAULT_BITRATE,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   parent_class = g_type_class_peek_parent (stream_class);
