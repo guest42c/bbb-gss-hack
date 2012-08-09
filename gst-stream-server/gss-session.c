@@ -483,7 +483,9 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
 
   login_session = gss_session_new (s);
 
-  location = g_strdup_printf ("%s?session_id=%s", v->redirect_url,
+  /* FIXME this can return session_id in HTTP */
+  location = g_strdup_printf ("%s%s?session_id=%s",
+      gss_soup_get_base_url_https (v->ewserver, v->msg), v->redirect_url,
       login_session->session_id);
 
   soup_message_headers_append (v->msg->response_headers, "Location", location);
@@ -584,6 +586,13 @@ session_login_post_resource (GssTransaction * t)
 
       return;
     }
+  }
+
+  if (t->soupserver == t->server->server) {
+    /* No password logins over HTTP */
+    /* FIXME */
+    gss_html_error_404 (t->server, t->msg);
+    return;
   }
 
   if (query_hash) {
