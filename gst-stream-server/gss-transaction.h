@@ -42,6 +42,7 @@ struct _GssTransaction {
   gboolean done;
   GString *s;
   GString *script;
+  int id;
 };
 
 
