@@ -572,7 +572,7 @@ session_login_post_resource (GssTransaction * t)
       base_url = gss_transaction_get_base_url (t);
       s = g_strdup_printf
           ("https://persona.org/verify?assertion=%s&audience=%s",
-          assertion, base_url);
+          assertion, ewserver->server_hostname);
       client_msg = soup_message_new ("POST", s);
       g_free (s);
       g_free (base_url);

@@ -151,7 +151,6 @@ gss_html_header (GssTransaction * t)
       "      <script src='http://html5shim.googlecode.com/svn/trunk/html5.js'></script>\n"
       "    <![endif]-->\n"
 #endif
-      "    <script src=\"/include.js\" type=\"text/javascript\"></script>\n"
 #if 0
       "    <link rel='shortcut icon' href='/favicon.ico'>\n"
       "    <link rel='apple-touch-icon-precomposed' sizes='144x144' href='../assets/ico/apple-touch-icon-144-precomposed.png'>\n"
@@ -308,7 +307,9 @@ gss_html_footer (GssTransaction * t)
   g_string_append (s,
       "    </div><!--/.fluid-container-->\n"
       "    <script src='/bootstrap/js/jquery.js'></script>\n"
-      "    <script src='/bootstrap/js/bootstrap.js'></script>\n");
+      "    <script src='/bootstrap/js/bootstrap.js'></script>\n"
+      //"    <script src=\"/include.js\" type=\"text/javascript\"></script>\n"
+      "    <script src=\"https://login.persona.org/include.js\" type=\"text/javascript\"></script>\n");
 
   g_string_append (s, "<script type=\"text/javascript\">\n");
   g_string_append_printf (s,
@@ -316,14 +317,15 @@ gss_html_footer (GssTransaction * t)
       "if(assertion!==null){\n"
       "var form = document.createElement(\"form\");\n"
       "form.setAttribute('method', 'POST');\n"
-      "form.setAttribute('action', '/login?redirect_url=%s');\n"
+      "form.setAttribute('action', '%s/login?redirect_url=%s');\n"
       "var ip = document.createElement(\"input\");\n"
       "ip.setAttribute('type', 'hidden');\n"
       "ip.setAttribute('name', 'assertion');\n"
       "ip.setAttribute('value', assertion);\n"
       "form.appendChild(ip);\n"
       "document.body.appendChild(form);\n" "form.submit();\n"
-      "}\n" "}\n", t->path ? t->path : "/");
+      "}\n" "}\n",
+      gss_soup_get_base_url_https (t->server, t->msg), t->path ? t->path : "/");
   if (t->script) {
     g_string_append (s, t->script->str);
     g_string_free (t->script, TRUE);
