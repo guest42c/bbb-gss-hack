@@ -625,6 +625,9 @@ gss_server_setup_resources (GssServer * server)
   gss_server_add_static_resource (server,
       "/offline.png", 0, "image/png",
       gss_data_offline_png, gss_data_offline_png_len);
+  gss_server_add_static_resource (server,
+      "/sign_in_blue.png", 0, "image/png",
+      gss_data_sign_in_blue_png, gss_data_sign_in_blue_png_len);
 
   gss_vod_setup (server);
 }

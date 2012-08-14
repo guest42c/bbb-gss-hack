@@ -187,7 +187,7 @@ gss_html_header (GssTransaction * t)
 #endif
     g_string_append_printf (s,
         "<a href='#' id='browserid' title='Sign-in with Persona'>\n"
-        "<img src='/images/sign_in_blue.png' alt='Sign in' onclick='navigator.id.get(gotAssertion);'>\n"
+        "<img src='/sign_in_blue.png' alt='Sign in' onclick='navigator.id.get(gotAssertion);'>\n"
         "</a>\n");
   }
 
