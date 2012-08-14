@@ -925,7 +925,7 @@ gss_server_resource_main_page (GssTransaction * t)
         GST_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
-    gss_program_add_jpeg_block (program, s);
+    gss_program_add_jpeg_block (program, t);
     g_string_append_printf (s, "</a>\n");
     g_string_append_printf (s, "<h5>%s</h5>\n", GST_OBJECT_NAME (program));
     g_string_append_printf (s, "</div>\n");
@@ -949,7 +949,7 @@ gss_server_resource_main_page (GssTransaction * t)
         GST_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
-    gss_program_add_jpeg_block (program, s);
+    gss_program_add_jpeg_block (program, t);
     g_string_append_printf (s, "</a>\n");
     g_string_append_printf (s, "<h5>%s</h5>\n", GST_OBJECT_NAME (program));
     g_string_append_printf (s, "</div>\n");

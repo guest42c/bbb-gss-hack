@@ -149,7 +149,8 @@ void gss_program_set_state (GssProgram *program, GssProgramState state);
 int gss_program_get_stream_index (GssProgram *program, GssStream *stream);
 int gss_program_get_n_streams (GssProgram *program);
 
-void gss_program_add_jpeg_block (GssProgram * program, GString * s);
+void gss_program_add_jpeg_block (GssProgram * program,
+    GssTransaction *t);
 void gss_program_add_video_block (GssProgram *program, GString *s,
     int max_width);
 void gss_program_add_stream_table (GssProgram *program, GString *s);

@@ -233,9 +233,8 @@ gss_program_add_server_resources (GssProgram * program)
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.jpeg", GST_OBJECT_NAME (program));
-  gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
-      "multipart/x-mixed-replace;boundary=myboundary",
-      gss_program_jpeg_resource, NULL, NULL, program);
+  gss_server_add_resource (program->server, s, 0,
+      "image/jpeg", gss_program_jpeg_resource, NULL, NULL, program);
   g_free (s);
 }
 
@@ -424,52 +423,12 @@ gss_program_get_n_streams (GssProgram * program)
   return g_list_length (program->streams);
 }
 
-/* FIXME use the gss-stream.c function instead of this */
-static void
-client_removed (GstElement * e, int fd, int status, gpointer user_data)
-{
-  GssStream *stream = user_data;
-
-  if (gss_stream_fd_table[fd].priv) {
-    if (stream) {
-      gss_metrics_remove_client (stream->metrics, stream->bitrate);
-      gss_metrics_remove_client (stream->program->metrics, stream->bitrate);
-      gss_metrics_remove_client (stream->program->server->metrics,
-          stream->bitrate);
-    }
-  }
-}
-
-/* FIXME use the gss-stream.c function instead of this */
-static void
-client_fd_removed (GstElement * e, int fd, gpointer user_data)
-{
-  GssStream *stream = user_data;
-
-  if (gss_stream_fd_table[fd].callback) {
-    gss_stream_fd_table[fd].callback (stream, fd, gss_stream_fd_table[fd].priv);
-  } else {
-    SoupSocket *sock = gss_stream_fd_table[fd].priv;
-    if (sock)
-      soup_socket_disconnect (sock);
-  }
-  gss_stream_fd_table[fd].priv = NULL;
-  gss_stream_fd_table[fd].callback = NULL;
-}
-
-
 void
 gss_program_set_jpegsink (GssProgram * program, GstElement * jpegsink)
 {
   gst_object_replace ((GstObject **) & program->jpegsink,
       GST_OBJECT (jpegsink));
 
-  if (jpegsink) {
-    g_signal_connect (jpegsink, "client-removed",
-        G_CALLBACK (client_removed), NULL);
-    g_signal_connect (jpegsink, "client-fd-removed",
-        G_CALLBACK (client_fd_removed), NULL);
-  }
 }
 
 void
@@ -493,13 +452,27 @@ gss_program_log (GssProgram * program, const char *message, ...)
 }
 
 void
-gss_program_add_jpeg_block (GssProgram * program, GString * s)
+gss_program_add_jpeg_block (GssProgram * program, GssTransaction * t)
 {
+  GString *s = t->s;
+
   if (program->state == GSS_PROGRAM_STATE_RUNNING) {
     if (program->jpegsink) {
-      gss_html_append_image_printf (s,
-          "/%s-snapshot.jpeg", 0, 0, "snapshot image",
-          GST_OBJECT_NAME (program));
+      g_string_append_printf (s, "<img id='id%d' src='/%s-snapshot.jpeg' />",
+          t->id, GST_OBJECT_NAME (program));
+      if (t->script == NULL)
+        t->script = g_string_new ("");
+      g_string_append_printf (t->script,
+          "$(document).ready(function() {\n"
+          "document.getElementById('id%d').src="
+          "'/%s-snapshot.jpeg?_=' + new Date().getTime();\n"
+          "var refreshId = setInterval(function() {\n"
+          "document.getElementById('id%d').src="
+          "'/%s-snapshot.jpeg?_=' + new Date().getTime();\n"
+          " }, 1000);\n"
+          "});\n",
+          t->id, GST_OBJECT_NAME (program), t->id, GST_OBJECT_NAME (program));
+      t->id++;
     } else {
       g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
     }
@@ -868,52 +841,29 @@ gss_program_png_resource (GssTransaction * t)
 }
 
 static void
-jpeg_wrote_headers (SoupMessage * msg, void *user_data)
-{
-  GssConnection *connection = user_data;
-  SoupSocket *socket;
-  int fd;
-
-  socket = soup_client_context_get_socket (connection->client);
-  fd = soup_socket_get_fd (socket);
-
-  if (connection->program->jpegsink &&
-      connection->program->state == GSS_PROGRAM_STATE_RUNNING) {
-    g_signal_emit_by_name (connection->program->jpegsink, "add", fd);
-
-    g_assert (fd < GSS_STREAM_MAX_FDS);
-    gss_stream_fd_table[fd].callback = NULL;
-    gss_stream_fd_table[fd].priv = socket;
-  } else {
-    soup_socket_disconnect (socket);
-  }
-
-  g_free (connection);
-}
-
-static void
 gss_program_jpeg_resource (GssTransaction * t)
 {
   GssProgram *program = (GssProgram *) t->resource->priv;
-  GssConnection *connection;
+  GstBuffer *buffer = NULL;
 
-  if (!program->enable_streaming || program->jpegsink == NULL) {
+  if (!program->enable_streaming || program->state != GSS_PROGRAM_STATE_RUNNING) {
     soup_message_set_status (t->msg, SOUP_STATUS_NO_CONTENT);
     return;
   }
 
-  connection = g_malloc0 (sizeof (GssConnection));
-  connection->msg = t->msg;
-  connection->client = t->client;
-  connection->program = program;
+  if (program->jpegsink) {
+    g_object_get (program->jpegsink, "last-buffer", &buffer, NULL);
+  }
 
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
+  if (buffer) {
+    soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
-  soup_message_headers_set_encoding (t->msg->response_headers,
-      SOUP_ENCODING_EOF);
-  soup_message_headers_replace (t->msg->response_headers, "Content-Type",
-      "multipart/x-mixed-replace;boundary=myboundary");
+    soup_message_set_response (t->msg, "image/jpeg", SOUP_MEMORY_COPY,
+        (void *) GST_BUFFER_DATA (buffer), GST_BUFFER_SIZE (buffer));
 
-  g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (jpeg_wrote_headers),
-      connection);
+    gst_buffer_unref (buffer);
+  } else {
+    gss_html_error_404 (t->server, t->msg);
+  }
+
 }
