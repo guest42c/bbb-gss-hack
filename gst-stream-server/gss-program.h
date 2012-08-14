@@ -66,6 +66,7 @@ struct _GssProgram {
   GstObject object;
 
   GssServer *server;
+  GssResource *resource;
 
   /* properties */
   GssProgramState state;

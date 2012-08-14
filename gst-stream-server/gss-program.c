@@ -213,7 +213,8 @@ gss_program_add_server_resources (GssProgram * program)
   char *s;
 
   s = g_strdup_printf ("/%s", GST_OBJECT_NAME (program));
-  gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/html",
+  program->resource =
+      gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/html",
       gss_program_get_resource, gss_program_put_resource, NULL, program);
   g_free (s);
 

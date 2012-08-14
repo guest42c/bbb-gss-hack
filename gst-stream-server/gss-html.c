@@ -221,7 +221,8 @@ gss_html_header (GssTransaction * t)
     for (g = t->server->featured_resources; g; g = g_list_next (g)) {
       GssResource *resource = g->data;
       g_string_append_printf (s,
-          "              <li><a href='%s%s'>%s</a></li>\n",
+          "              <li %s><a href='%s%s'>%s</a></li>\n",
+          (resource == t->resource) ? "class='active'" : "",
           resource->location, session_id, resource->name);
     };
   }
@@ -232,8 +233,9 @@ gss_html_header (GssTransaction * t)
     if (program->is_archive)
       continue;
     g_string_append_printf (s,
-        "              <li><a href='/%s%s'>%s</a></li>\n",
-        GST_OBJECT_NAME (program), session_id, GST_OBJECT_NAME (program));
+        "              <li %s><a href='%s%s'>%s</a></li>\n",
+        (program->resource == t->resource) ? "class='active'" : "",
+        program->resource->location, session_id, GST_OBJECT_NAME (program));
   };
 
   g_string_append_printf (s,
@@ -243,8 +245,9 @@ gss_html_header (GssTransaction * t)
     if (!program->is_archive)
       continue;
     g_string_append_printf (s,
-        "              <li><a href='/%s%s'>%s</a></li>\n",
-        GST_OBJECT_NAME (program), session_id, GST_OBJECT_NAME (program));
+        "              <li %s><a href='%s%s'>%s</a></li>\n",
+        (program->resource == t->resource) ? "class='active'" : "",
+        program->resource->location, session_id, GST_OBJECT_NAME (program));
   };
 
   if (t->session) {
@@ -263,7 +266,8 @@ gss_html_header (GssTransaction * t)
     for (g = t->server->admin_resources; g; g = g_list_next (g)) {
       GssResource *r = (GssResource *) g->data;
       g_string_append_printf (s,
-          "              <li><a href='%s%s'>%s</a></li>\n",
+          "              <li %s><a href='%s%s'>%s</a></li>\n",
+          (r == t->resource) ? "class='active'" : "",
           r->location, session_id, r->name);
     }
   }
