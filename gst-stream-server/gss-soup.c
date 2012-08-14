@@ -95,3 +95,9 @@ gss_transaction_get_base_url (GssTransaction * t)
     return gss_soup_get_base_url_https (t->server, t->msg);
   }
 }
+
+gboolean
+gss_transaction_is_secure (GssTransaction * t)
+{
+  return (t->soupserver == t->server->ssl_server);
+}
