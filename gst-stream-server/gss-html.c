@@ -277,6 +277,10 @@ gss_html_header (GssTransaction * t)
       "        </div><!--/span-->\n" "        <div class='span9'>\n");
 
   g_free (session_id);
+
+  if (t->server->add_warnings) {
+    t->server->add_warnings (t, t->server->add_warnings_priv);
+  }
 }
 
 void

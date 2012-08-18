@@ -96,6 +96,9 @@ struct _GssServer
   GList *admin_resources;
   GList *featured_resources;
   char *archive_dir;
+
+  void (*add_warnings) (GssTransaction *t, void *priv);
+  void *add_warnings_priv;
 };
 
 struct _GssServerClass
@@ -154,6 +157,10 @@ void gss_server_add_featured_resource (GssServer * server, GssResource *resource
 void gss_server_add_resource_simple (GssServer * server, GssResource * r);
 void gss_server_add_program_simple (GssServer * server, GssProgram * program);
 
+void gss_server_disable_programs (GssServer *server);
+
+void gss_server_add_warnings_callback (GssServer *server, void (*add_warnings_func)(GssTransaction *t, void *priv),
+    void *priv);
 
 
 

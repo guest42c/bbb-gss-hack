@@ -527,6 +527,20 @@ gss_server_new (void)
   return server;
 }
 
+void
+gss_server_disable_programs (GssServer * server)
+{
+  server->enable_programs = FALSE;
+}
+
+void
+gss_server_add_warnings_callback (GssServer * server,
+    void (*add_warnings_func) (GssTransaction * t, void *priv), void *priv)
+{
+  server->add_warnings = add_warnings_func;
+  server->add_warnings_priv = priv;
+}
+
 GssResource *
 gss_server_add_resource (GssServer * server, const char *location,
     GssResourceFlags flags, const char *content_type,
