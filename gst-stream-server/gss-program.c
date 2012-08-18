@@ -294,12 +294,14 @@ static gboolean
 idle_state_enable (gpointer ptr)
 {
   GssProgram *program = GSS_PROGRAM (ptr);
+  gboolean enabled;
 
   program->state_idle = 0;
 
-  if (program->state == GSS_PROGRAM_STATE_STOPPED && program->enabled) {
+  enabled = (program->enabled && program->server->enable_programs);
+  if (program->state == GSS_PROGRAM_STATE_STOPPED && enabled) {
     gss_program_start (program);
-  } else if (program->state == GSS_PROGRAM_STATE_RUNNING && !program->enabled) {
+  } else if (program->state == GSS_PROGRAM_STATE_RUNNING && !enabled) {
     gss_program_stop (program);
   }
 
@@ -309,9 +311,12 @@ idle_state_enable (gpointer ptr)
 void
 gss_program_set_state (GssProgram * program, GssProgramState state)
 {
+  gboolean enabled;
+
+  enabled = (program->enabled && program->server->enable_programs);
   program->state = state;
-  if ((program->state == GSS_PROGRAM_STATE_STOPPED && program->enabled) ||
-      (program->state == GSS_PROGRAM_STATE_RUNNING && !program->enabled)) {
+  if ((program->state == GSS_PROGRAM_STATE_STOPPED && enabled) ||
+      (program->state == GSS_PROGRAM_STATE_RUNNING && !enabled)) {
     if (!program->state_idle) {
       program->state_idle = g_idle_add (idle_state_enable, program);
     }
@@ -375,6 +380,9 @@ gss_program_start (GssProgram * program)
   if (program->state == GSS_PROGRAM_STATE_STARTING ||
       program->state == GSS_PROGRAM_STATE_RUNNING ||
       program->state == GSS_PROGRAM_STATE_STOPPING) {
+    return;
+  }
+  if (!program->server->enable_programs) {
     return;
   }
   gss_program_log (program, "start");

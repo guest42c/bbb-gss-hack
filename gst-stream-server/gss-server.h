@@ -73,6 +73,7 @@ struct _GssServer
   gboolean enable_rtsp;
   gboolean enable_rtmp;
 
+  gboolean enable_programs;
   GList *programs;
   GssMetrics *metrics;
 
