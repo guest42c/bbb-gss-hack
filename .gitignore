@@ -57,5 +57,6 @@ doc/tmpl/
 doc/version.entities
 doc/xml/
 gst-stream-server/gss-content.c
+gst-stream-server/gss-content.h
 
 
