@@ -152,6 +152,9 @@ gss_program_finalize (GObject * object)
   gss_metrics_free (program->metrics);
   g_free (program->follow_uri);
   g_free (program->follow_host);
+  g_free (program->description);
+
+  parent_class->finalize (object);
 }
 
 static void

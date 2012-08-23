@@ -166,6 +166,8 @@ gss_stream_finalize (GObject * object)
   if (stream->adapter)
     g_object_unref (stream->adapter);
   gss_metrics_free (stream->metrics);
+
+  parent_class->finalize (object);
 }
 
 static void
@@ -324,7 +326,13 @@ gss_stream_set_type (GssStream * stream, int type)
 void
 gss_stream_get_stats (GssStream * stream, guint64 * in, guint64 * out)
 {
-  g_object_get (stream->sink, "bytes-to-serve", in, "bytes-served", out, NULL);
+  if (stream->sink) {
+    g_object_get (stream->sink, "bytes-to-serve", in, "bytes-served", out,
+        NULL);
+  } else {
+    *in = 0;
+    *out = 0;
+  }
 }
 
 static void
