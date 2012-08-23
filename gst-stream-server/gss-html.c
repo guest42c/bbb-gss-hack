@@ -300,6 +300,7 @@ void
 gss_html_footer (GssTransaction * t)
 {
   GString *s = t->s;
+  char *base_https;
 
   g_string_append (s,
       "        </div><!--/span-->\n" "      </div><!--/row-->\n");
@@ -320,6 +321,7 @@ gss_html_footer (GssTransaction * t)
       "    <script src=\"https://login.persona.org/include.js\" type=\"text/javascript\"></script>\n");
 
   g_string_append (s, "<script type=\"text/javascript\">\n");
+  base_https = gss_soup_get_base_url_https (t->server, t->msg);
   g_string_append_printf (s,
       "function gotAssertion(assertion) {\n"
       "if(assertion!==null){\n"
@@ -332,8 +334,8 @@ gss_html_footer (GssTransaction * t)
       "ip.setAttribute('value', assertion);\n"
       "form.appendChild(ip);\n"
       "document.body.appendChild(form);\n" "form.submit();\n"
-      "}\n" "}\n",
-      gss_soup_get_base_url_https (t->server, t->msg), t->path ? t->path : "/");
+      "}\n" "}\n", base_https, t->path ? t->path : "/");
+  g_free (base_https);
   if (t->script) {
     g_string_append (s, t->script->str);
     g_string_free (t->script, TRUE);
