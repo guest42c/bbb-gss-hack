@@ -375,6 +375,7 @@ void
 gss_program_start (GssProgram * program)
 {
   GssProgramClass *program_class;
+  GList *g;
 
   program->enabled = TRUE;
   if (program->state == GSS_PROGRAM_STATE_STARTING ||
@@ -387,6 +388,11 @@ gss_program_start (GssProgram * program)
   }
   gss_program_log (program, "start");
   gss_program_set_state (program, GSS_PROGRAM_STATE_STARTING);
+
+  for (g = program->streams; g; g = g_list_next (g)) {
+    GssStream *stream = GSS_STREAM (g->data);
+    gss_stream_add_resources (stream);
+  }
 
   program_class = GSS_PROGRAM_GET_CLASS (program);
   if (program_class->start) {
