@@ -476,9 +476,10 @@ gss_stream_add_resources (GssStream * stream)
   gss_stream_remove_resources (stream);
 
   g_free (stream->location);
-  stream->location = g_strdup_printf ("/%s/streams/%s-%dx%d-%dkbps%s.%s",
+  stream->location = g_strdup_printf ("/%s/streams/stream%d-%dx%d-%dkbps%s.%s",
       GST_OBJECT_NAME (stream->program),
-      GST_OBJECT_NAME (stream->program), stream->width, stream->height,
+      gss_program_get_stream_index (stream->program, stream),
+      stream->width, stream->height,
       stream->bitrate / 1000, stream->mod, stream->ext);
   stream->resource = gss_server_add_resource (stream->program->server,
       stream->location, GSS_RESOURCE_HTTP_ONLY,
@@ -486,8 +487,9 @@ gss_stream_add_resources (GssStream * stream)
 
   g_free (stream->playlist_location);
   stream->playlist_location =
-      g_strdup_printf ("/%s/streams/%s-%dx%d-%dkbps%s-%s.m3u8",
-      GST_OBJECT_NAME (stream->program), GST_OBJECT_NAME (stream->program),
+      g_strdup_printf ("/%s/streams/stream%d-%dx%d-%dkbps%s-%s.m3u8",
+      GST_OBJECT_NAME (stream->program),
+      gss_program_get_stream_index (stream->program, stream),
       stream->width, stream->height, stream->bitrate / 1000, stream->mod,
       stream->ext);
   stream->playlist_resource =
