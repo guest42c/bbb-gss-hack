@@ -421,6 +421,12 @@ gss_program_start (GssProgram * program)
   }
 }
 
+GssStream *
+gss_program_get_stream (GssProgram * program, int index)
+{
+  return (GssStream *) g_list_nth_data (program->streams, index);
+}
+
 int
 gss_program_get_stream_index (GssProgram * program, GssStream * stream)
 {
