@@ -49,6 +49,7 @@ enum
   PROP_MAX_CONNECTIONS,
   PROP_MAX_RATE,
   PROP_ADMIN_HOSTS_ALLOW,
+  PROP_ADMIN_TOKEN,
   PROP_ENABLE_HTML5_VIDEO,
   PROP_ENABLE_CORTADO,
   PROP_ENABLE_FLASH,
@@ -65,6 +66,7 @@ enum
 #define DEFAULT_MAX_CONNECTIONS 10000
 #define DEFAULT_MAX_RATE 100000
 #define DEFAULT_ADMIN_HOSTS_ALLOW "0.0.0.0/0"
+#define DEFAULT_ADMIN_TOKEN ""
 #define DEFAULT_ENABLE_HTML5_VIDEO TRUE
 #define DEFAULT_ENABLE_CORTADO FALSE
 #define DEFAULT_ENABLE_FLASH TRUE
@@ -220,6 +222,7 @@ gss_server_init (GssServer * server)
   server->max_connections = DEFAULT_MAX_CONNECTIONS;
   server->max_rate = DEFAULT_MAX_RATE;
   server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_HOSTS_ALLOW);
+  server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_TOKEN);
   server->enable_html5_video = DEFAULT_ENABLE_HTML5_VIDEO;
   server->enable_cortado = DEFAULT_ENABLE_CORTADO;
   server->enable_flash = DEFAULT_ENABLE_FLASH;
@@ -293,6 +296,7 @@ gss_server_finalize (GObject * object)
   g_free (server->server_hostname);
   g_free (server->title);
   g_free (server->admin_hosts_allow);
+  g_free (server->admin_token);
   g_free (server->archive_dir);
   g_object_unref (server->client_session);
 
@@ -345,22 +349,27 @@ gss_server_class_init (GssServerClass * server_class)
           DEFAULT_ADMIN_HOSTS_ALLOW,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ADMIN_TOKEN, g_param_spec_string ("admin-token",
+          "Admin Token", "Admin Token",
+          DEFAULT_ADMIN_TOKEN,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (1 <<
+                  29))));
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_ARCHIVE_DIR, g_param_spec_string ("archive-dir", "Archive Directory",
           "Archive Directory", DEFAULT_ARCHIVE_DIR,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
-      PROP_ENABLE_HTML5_VIDEO,
-      g_param_spec_boolean ("enable-html5-video", "Enable HTML5 Video",
-          "Enable HTML5 Video", DEFAULT_ENABLE_HTML5_VIDEO,
+      PROP_ENABLE_HTML5_VIDEO, g_param_spec_boolean ("enable-html5-video",
+          "Enable HTML5 Video", "Enable HTML5 Video",
+          DEFAULT_ENABLE_HTML5_VIDEO,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
-      PROP_ENABLE_CORTADO,
-      g_param_spec_boolean ("enable-cortado", "Enable Cortado Java Applet",
-          "Enable Cortado Java Applet", DEFAULT_ENABLE_CORTADO,
+      PROP_ENABLE_CORTADO, g_param_spec_boolean ("enable-cortado",
+          "Enable Cortado Java Applet", "Enable Cortado Java Applet",
+          DEFAULT_ENABLE_CORTADO,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
-      PROP_ENABLE_FLASH,
-      g_param_spec_boolean ("enable-flash", "Enable Flash",
+      PROP_ENABLE_FLASH, g_param_spec_boolean ("enable-flash", "Enable Flash",
           "Enable Flash", DEFAULT_ENABLE_FLASH,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 #ifdef ENABLE_RTSP
@@ -422,6 +431,10 @@ gss_server_set_property (GObject * object, guint prop_id,
       g_free (server->admin_hosts_allow);
       server->admin_hosts_allow = g_value_dup_string (value);
       break;
+    case PROP_ADMIN_TOKEN:
+      g_free (server->admin_token);
+      server->admin_token = g_value_dup_string (value);
+      break;
     case PROP_ARCHIVE_DIR:
       g_free (server->archive_dir);
       server->archive_dir = g_value_dup_string (value);
@@ -479,6 +492,9 @@ gss_server_get_property (GObject * object, guint prop_id,
       break;
     case PROP_ADMIN_HOSTS_ALLOW:
       g_value_set_string (value, server->admin_hosts_allow);
+      break;
+    case PROP_ADMIN_TOKEN:
+      g_value_set_string (value, server->admin_token);
       break;
     case PROP_ARCHIVE_DIR:
       g_value_set_string (value, server->archive_dir);

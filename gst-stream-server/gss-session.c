@@ -611,7 +611,7 @@ session_login_post_resource (GssTransaction * t)
 #endif
     hash = soup_auth_domain_digest_encode_password (username, REALM, password);
     valid = (strcmp (username, "admin") == 0) &&
-        gss_config_value_is_equal (ewserver->config, "admin_token", hash);
+        (strcmp (hash, ewserver->admin_token) == 0);
     g_free (hash);
 
     if (valid) {

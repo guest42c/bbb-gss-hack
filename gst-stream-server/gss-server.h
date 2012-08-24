@@ -76,6 +76,7 @@ struct _GssServer
   gboolean enable_programs;
   GList *programs;
   GssMetrics *metrics;
+  char *admin_token;
 
   SoupServer *server;
   SoupServer *ssl_server;
