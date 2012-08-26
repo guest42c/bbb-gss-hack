@@ -488,6 +488,8 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
       gss_soup_get_base_url_https (v->ewserver, v->msg), v->redirect_url,
       login_session->session_id);
 
+  GST_INFO ("new session for user %s", s);
+
   soup_message_headers_append (v->msg->response_headers, "Location", location);
   g_free (location);
   soup_message_set_response (v->msg, "text/plain", SOUP_MEMORY_STATIC, "", 0);
