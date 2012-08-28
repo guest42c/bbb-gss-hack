@@ -1,8 +1,8 @@
 pcfiles = \
-	gst-stream-server-@GST_MAJORMINOR@.pc
+	gst-streaming-server-@GST_MAJORMINOR@.pc
 
 pcfiles_uninstalled = \
-	gst-stream-server-@GST_MAJORMINOR@-uninstalled.pc
+	gst-streaming-server-@GST_MAJORMINOR@-uninstalled.pc
 
 all-local: $(pcfiles) $(pcfiles_uninstalled)
 
@@ -16,7 +16,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = $(pcfiles)
 
 EXTRA_DIST = \
-	gst-stream-server.pc.in \
-	gst-stream-server.pc.in
+	gst-streaming-server.pc.in \
+	gst-streaming-server.pc.in
 CLEANFILES = $(pcfiles) $(pcfiles_uninstalled)
 
