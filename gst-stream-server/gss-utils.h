@@ -32,7 +32,6 @@ char * gss_utils_gethostname (void);
 void gss_utils_dump_hash (GHashTable *hash);
 void gss_utils_get_random_bytes (guint8 *entropy, int n);
   
-
 G_END_DECLS
 
 #endif

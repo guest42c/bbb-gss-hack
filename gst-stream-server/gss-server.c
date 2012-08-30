@@ -32,6 +32,7 @@
 #include "gss-utils.h"
 #include "gss-vod.h"
 
+#define GST_CAT_DEFAULT gss_debug
 
 
 #define BASE "/"
@@ -96,6 +97,8 @@ static void gss_server_setup_resources (GssServer * server);
 
 static gboolean periodic_timer (gpointer data);
 
+
+GST_DEBUG_CATEGORY (gss_debug);
 
 
 G_DEFINE_TYPE (GssServer, gss_server, GST_TYPE_OBJECT);
@@ -306,6 +309,8 @@ gss_server_finalize (GObject * object)
 static void
 gss_server_class_init (GssServerClass * server_class)
 {
+  GST_DEBUG_CATEGORY_INIT (gss_debug, "gss", 0, "Streaming Server");
+
   soup_method_source = g_intern_static_string ("SOURCE");
 
   G_OBJECT_CLASS (server_class)->set_property = gss_server_set_property;

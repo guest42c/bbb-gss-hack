@@ -30,6 +30,7 @@
 
 #include <json-glib/json-glib.h>
 
+#define GST_CAT_DEFAULT gss_debug
 
 #define REALM "Entropy Wave E1000"
 #define BASE "/"
@@ -438,7 +439,7 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
 {
   GssSession *login_session;
   BrowserIDVerify *v = (BrowserIDVerify *) user_data;
-  JsonParser *jp;
+  JsonParser *jp = NULL;
   JsonNode *node;
   JsonNode *node2;
   JsonObject *object;
@@ -446,6 +447,12 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
   const char *s;
   gboolean ret;
   char *location;
+
+  if (msg->status_code != SOUP_STATUS_OK) {
+    GST_INFO ("BrowserID verify failed: %s",
+        soup_status_get_phrase (msg->status_code));
+    goto err_no_msg;
+  }
 
   jp = json_parser_new ();
   ret = json_parser_load_from_data (jp, msg->response_body->data,
@@ -469,7 +476,8 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
   }
   s = json_node_get_string (node2);
   if (!s || strcmp (s, "okay") != 0) {
-    goto err;
+    GST_INFO ("BrowserID verify failed: status=%s", s);
+    goto err_no_msg;
   }
 
   node2 = json_object_get_member (object, "email");
@@ -502,7 +510,10 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
   g_free (v);
   return;
 err:
-  g_object_unref (jp);
+  GST_INFO ("BrowserID verify failed: bad json response");
+err_no_msg:
+  if (jp)
+    g_object_unref (jp);
   soup_message_set_status (v->msg, SOUP_STATUS_UNAUTHORIZED);
   soup_server_unpause_message (v->server, v->msg);
   g_free (v->redirect_url);

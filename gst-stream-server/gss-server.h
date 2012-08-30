@@ -109,6 +109,8 @@ struct _GssServerClass
 
 };
 
+GST_DEBUG_CATEGORY_EXTERN (gss_debug);
+
 
 GType gss_server_get_type (void);
 
