@@ -29,7 +29,8 @@ libgss_la_SOURCES = \
 	gss-program-follow.c \
 	gss-program-push.c \
 	gss-stream.c \
-	gss-utils.c
+	gss-utils.c \
+	gss-websocket.c
 
 if ENABLE_RTSP
 libgss_la_SOURCES += \
@@ -54,7 +55,8 @@ gss_include_HEADERS = \
 	gss-transaction.h \
 	gss-types.h \
 	gss-utils.h \
-	gss-vod.h
+	gss-vod.h \
+	gss-websocket.h
 
 content_files= \
 	content/bootstrap-responsive.css \
