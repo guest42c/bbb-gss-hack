@@ -20,7 +20,6 @@ libgss_la_SOURCES = \
 	gss-form.c \
 	gss-html.c \
 	gss-soup.c \
-	gss-rtsp.c \
 	gss-metrics.c \
 	gss-content.c \
 	gss-content.h \
@@ -32,6 +31,10 @@ libgss_la_SOURCES = \
 	gss-stream.c \
 	gss-utils.c
 
+if ENABLE_RTSP
+libgss_la_SOURCES += \
+	gss-rtsp.c
+endif
 
 libgss_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS) $(JSON_GLIB_CFLAGS)
 libgss_la_LIBS = $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS) $(JSON_GLIB_LIBS)

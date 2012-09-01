@@ -95,10 +95,14 @@ AC_SUBST(GST_LIBS)
 
 PKG_CHECK_MODULES(GST_RTSP_SERVER, gst-rtsp-server-0.10 >= 0.10.1,
     HAVE_GST_RTSP_SERVER=yes, HAVE_GST_RTSP_SERVER=no)
-if test "$HAVE_GST_RTSP_SERVER" != yes ; then
-  echo gst-rtsp-server is needed to build
-  exit 1
+if test "$HAVE_GST_RTSP_SERVER" = yes ; then
+  AC_DEFINE(ENABLE_RTSP, 1, [Enable RTSP])
+else
+  #echo gst-rtsp-server is needed to build
+  #exit 1
+  :
 fi
+AM_CONDITIONAL(ENABLE_RTSP, [test "$HAVE_GST_RTSP_SERVER" = yes])
 AC_SUBST(GST_RTSP_SERVER_CFLAGS)
 AC_SUBST(GST_RTSP_SERVER_LIBS)
 

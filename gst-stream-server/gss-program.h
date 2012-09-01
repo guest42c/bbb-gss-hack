@@ -24,7 +24,6 @@
 
 #include <gst/gst.h>
 #include <gst/base/gstadapter.h>
-#include <gst/rtsp-server/rtsp-server.h>
 #include <libsoup/soup.h>
 #include "gss-config.h"
 #include "gss-types.h"

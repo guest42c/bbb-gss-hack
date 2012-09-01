@@ -24,7 +24,9 @@
 
 #include <gst/gst.h>
 #include <gst/base/gstadapter.h>
+#ifdef ENABLE_RTSP
 #include <gst/rtsp-server/rtsp-server.h>
+#endif
 #include <libsoup/soup.h>
 #include "gss-config.h"
 #include "gss-types.h"
@@ -108,7 +110,11 @@ struct _GssStream {
   } hls;
 
   /* RTSP */
+#ifdef ENABLE_RTSP
   GssRtspStream *rtsp_stream;
+#else
+  void *rtsp_stream;
+#endif
 };
 
 typedef struct _GssStreamClass GssStreamClass;

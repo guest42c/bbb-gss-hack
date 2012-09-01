@@ -24,7 +24,6 @@
 #include "gss-html.h"
 #include "gss-session.h"
 #include "gss-soup.h"
-#include "gss-rtsp.h"
 #include "gss-content.h"
 #include "gss-utils.h"
 

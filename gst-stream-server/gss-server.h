@@ -24,7 +24,9 @@
 
 #include <gst/gst.h>
 #include <gst/base/gstadapter.h>
+#ifdef ENABLE_RTSP
 #include <gst/rtsp-server/rtsp-server.h>
+#endif
 #include <libsoup/soup.h>
 #include "gss-config.h"
 #include "gss-types.h"
@@ -85,7 +87,11 @@ struct _GssServer
   char *base_url_https;
   GHashTable *resources;
 
+#ifdef ENABLE_RTSP
   GstRTSPServer *rtsp_server;
+#else
+  void *rtsp_server;
+#endif
 
   //time_t config_timestamp;
 
