@@ -284,44 +284,75 @@ gss_stream_set_type (GssStream * stream, int type)
   g_return_if_fail (GSS_IS_STREAM (stream));
 
   stream->type = type;
+}
+
+const char *
+gss_stream_type_get_ext (int type)
+{
   switch (type) {
     case GSS_STREAM_TYPE_UNKNOWN:
-      stream->content_type = "unknown/unknown";
-      stream->mod = "";
-      stream->ext = "";
-      break;
+      return "";
     case GSS_STREAM_TYPE_OGG_THEORA_VORBIS:
     case GSS_STREAM_TYPE_OGG_THEORA_OPUS:
-      stream->content_type = "video/ogg";
-      stream->mod = "";
-      stream->ext = "ogv";
-      break;
+      return "ogv";
     case GSS_STREAM_TYPE_WEBM:
-      stream->content_type = "video/webm";
-      stream->mod = "";
-      stream->ext = "webm";
-      break;
+      return "webm";
     case GSS_STREAM_TYPE_M2TS_H264BASE_AAC:
-      stream->content_type = "video/mp2t";
-      stream->mod = "";
-      stream->ext = "ts";
-      break;
     case GSS_STREAM_TYPE_M2TS_H264MAIN_AAC:
-      stream->content_type = "video/mp2t";
-      stream->mod = "-main";
-      stream->ext = "ts";
-      break;
+      return "ts";
     case GSS_STREAM_TYPE_FLV_H264BASE_AAC:
-      stream->content_type = "video/x-flv";
-      stream->mod = "";
-      stream->ext = "flv";
+      return "flv";
+    default:
+      g_assert_not_reached ();
       break;
+  }
+
+
+  return "";
+}
+
+const char *
+gss_stream_type_get_mod (int type)
+{
+  switch (type) {
+    case GSS_STREAM_TYPE_UNKNOWN:
+    case GSS_STREAM_TYPE_OGG_THEORA_VORBIS:
+    case GSS_STREAM_TYPE_OGG_THEORA_OPUS:
+    case GSS_STREAM_TYPE_WEBM:
+    case GSS_STREAM_TYPE_M2TS_H264BASE_AAC:
+    case GSS_STREAM_TYPE_FLV_H264BASE_AAC:
+      return "";
+    case GSS_STREAM_TYPE_M2TS_H264MAIN_AAC:
+      return "-main";
     default:
       g_assert_not_reached ();
       break;
   }
 }
 
+const char *
+gss_stream_type_get_content_type (int type)
+{
+  switch (type) {
+    case GSS_STREAM_TYPE_UNKNOWN:
+      return "unknown/unknown";
+    case GSS_STREAM_TYPE_OGG_THEORA_VORBIS:
+    case GSS_STREAM_TYPE_OGG_THEORA_OPUS:
+      return "video/ogg";
+    case GSS_STREAM_TYPE_WEBM:
+      return "video/webm";
+    case GSS_STREAM_TYPE_M2TS_H264BASE_AAC:
+    case GSS_STREAM_TYPE_M2TS_H264MAIN_AAC:
+      return "video/mp2t";
+    case GSS_STREAM_TYPE_FLV_H264BASE_AAC:
+      return "video/x-flv";
+    default:
+      g_assert_not_reached ();
+      break;
+  }
+
+  return "";
+}
 
 void
 gss_stream_get_stats (GssStream * stream, guint64 * in, guint64 * out)
@@ -402,7 +433,7 @@ stream_resource (GssTransaction * t)
   soup_message_headers_set_encoding (t->msg->response_headers,
       SOUP_ENCODING_EOF);
   soup_message_headers_replace (t->msg->response_headers, "Content-Type",
-      stream->content_type);
+      gss_stream_type_get_content_type (stream->type));
 
   g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (msg_wrote_headers),
       connection);
@@ -488,18 +519,22 @@ gss_stream_add_resources (GssStream * stream)
       GST_OBJECT_NAME (stream->program),
       gss_program_get_stream_index (stream->program, stream),
       stream->width, stream->height,
-      stream->bitrate / 1000, stream->mod, stream->ext);
+      stream->bitrate / 1000,
+      gss_stream_type_get_mod (stream->type),
+      gss_stream_type_get_ext (stream->type));
   stream->resource = gss_server_add_resource (stream->program->server,
       stream->location, GSS_RESOURCE_HTTP_ONLY,
-      stream->content_type, stream_resource, NULL, NULL, stream);
+      gss_stream_type_get_content_type (stream->type),
+      stream_resource, NULL, NULL, stream);
 
   g_free (stream->playlist_location);
   stream->playlist_location =
       g_strdup_printf ("/%s/streams/stream%d-%dx%d-%dkbps%s-%s.m3u8",
       GST_OBJECT_NAME (stream->program),
       gss_program_get_stream_index (stream->program, stream),
-      stream->width, stream->height, stream->bitrate / 1000, stream->mod,
-      stream->ext);
+      stream->width, stream->height, stream->bitrate / 1000,
+      gss_stream_type_get_mod (stream->type),
+      gss_stream_type_get_ext (stream->type));
   stream->playlist_resource =
       gss_server_add_resource (stream->program->server,
       stream->playlist_location, 0, "application/x-mpegurl",

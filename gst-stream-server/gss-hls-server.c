@@ -108,7 +108,8 @@ gss_stream_add_hls (GssStream * stream)
   stream->adapter = gst_adapter_new ();
 
   s = g_strdup_printf ("/%s-%dx%d-%dkbps%s.m3u8", GST_OBJECT_NAME (program),
-      stream->width, stream->height, stream->bitrate / 1000, stream->mod);
+      stream->width, stream->height, stream->bitrate / 1000,
+      gss_stream_type_get_mod (stream->type));
   gss_server_add_resource (program->server, s, 0,
       "video/x-mpegurl", gss_hls_handle_stream_m3u8, NULL, NULL, stream);
   g_free (s);
@@ -192,7 +193,8 @@ gss_program_add_hls_chunk (GssStream * stream, SoupBuffer * buf)
   segment->buffer = buf;
   segment->location = g_strdup_printf ("/%s-%dx%d-%dkbps%s-%05d.ts",
       GST_OBJECT_NAME (stream->program), stream->width, stream->height,
-      stream->bitrate / 1000, stream->mod, stream->n_chunks);
+      stream->bitrate / 1000, gss_stream_type_get_mod (stream->type),
+      stream->n_chunks);
   segment->duration = stream->program->hls.target_duration;
 
   stream->hls.need_index_update = TRUE;
@@ -290,7 +292,8 @@ gss_hls_update_variant (GssProgram * program)
     g_string_append_printf (s, "%s/%s-%dx%d-%dkbps%s.m3u8\n",
         program->server->base_url,
         GST_OBJECT_NAME (program),
-        stream->width, stream->height, stream->bitrate / 1000, stream->mod);
+        stream->width, stream->height, stream->bitrate / 1000,
+        gss_stream_type_get_mod (stream->type));
   }
   if (program->hls.variant_buffer) {
     soup_buffer_free (program->hls.variant_buffer);

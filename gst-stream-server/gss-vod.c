@@ -148,14 +148,16 @@ gss_vod_setup (GssServer * server)
         gss_program_add_stream (program, stream);
 
         s = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s", GST_OBJECT_NAME (program),
-            stream->width, stream->height, stream->bitrate / 1000, stream->mod,
-            stream->ext);
+            stream->width, stream->height, stream->bitrate / 1000,
+            gss_stream_type_get_mod (stream->type),
+            gss_stream_type_get_ext (stream->type));
         gst_object_set_name (GST_OBJECT (stream), s);
         g_free (s);
 
         s = g_strdup_printf ("/%s", GST_OBJECT_NAME (stream));
         gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
-            stream->content_type, vod_resource_chunked, NULL, NULL, program);
+            gss_stream_type_get_content_type (stream->type),
+            vod_resource_chunked, NULL, NULL, program);
         g_free (s);
       }
       name = g_dir_read_name (dir);

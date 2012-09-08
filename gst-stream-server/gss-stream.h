@@ -73,9 +73,6 @@ struct _GssStream {
   int height;
   int bitrate;
 
-  int level;
-  int profile;
-
   GssProgram *program;
   GssMetrics *metrics;
 
@@ -83,17 +80,11 @@ struct _GssStream {
   char *playlist_location;
   char *location;
 
-  /* cached info */
-  const char *content_type;
-  const char *ext; /* filaname extension */
-  const char *mod; /* stream modifier ('-main') */
-
   /* GStreamer */
   GstElement *pipeline;
   GstElement *src;
   GstElement *sink;
   int program_id;
-  int bandwidth;
   gboolean is_hls;
 
   /* For push programs */
@@ -154,6 +145,9 @@ GssStream * gss_stream_new (int type, int width, int height, int bitrate);
 void gss_stream_get_stats (GssStream *stream, guint64 *n_bytes_in,
     guint64 *n_bytes_out);
 void gss_stream_resource (GssTransaction * transaction);
+const char * gss_stream_type_get_mod (int type);
+const char * gss_stream_type_get_ext (int type);
+const char * gss_stream_type_get_content_type (int type);
 
 void gss_stream_set_sink (GssStream * stream, GstElement * sink);
 void gss_stream_create_follow_pipeline (GssStream * stream);
