@@ -2,6 +2,8 @@
 lib_LTLIBRARIES = libgss-@GST_MAJORMINOR@.la
 noinst_LTLIBRARIES = libgss.la
 
+BUILT_SOURCES = gss-content.c gss-content.h
+
 gss_includedir = $(includedir)/gstreamer-@GST_MAJORMINOR@/gss
 
 libgss_@GST_MAJORMINOR@_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS) $(JSON_GLIB_CFLAGS)
