@@ -505,7 +505,7 @@ gss_stream_add_resources (GssStream * stream)
 
 #ifdef ENABLE_RTSP
   if (stream->program->server->enable_rtsp) {
-    if (stream->type == GSS_STREAM_TYPE_OGG) {
+    if (stream->type == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
       stream->rtsp_stream = gss_rtsp_stream_new (stream);
       gss_rtsp_stream_start (stream->rtsp_stream);
     }
