@@ -225,7 +225,7 @@ gss_server_init (GssServer * server)
   server->max_connections = DEFAULT_MAX_CONNECTIONS;
   server->max_rate = DEFAULT_MAX_RATE;
   server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_HOSTS_ALLOW);
-  server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_TOKEN);
+  server->admin_token = g_strdup (DEFAULT_ADMIN_TOKEN);
   server->enable_html5_video = DEFAULT_ENABLE_HTML5_VIDEO;
   server->enable_cortado = DEFAULT_ENABLE_CORTADO;
   server->enable_flash = DEFAULT_ENABLE_FLASH;
@@ -290,6 +290,8 @@ gss_server_finalize (GObject * object)
 
   g_list_foreach (server->messages, (GFunc) g_free, NULL);
   g_list_free (server->messages);
+  g_list_free (server->featured_resources);
+  g_list_free (server->admin_resources);
 
   g_hash_table_unref (server->resources);
   gss_metrics_free (server->metrics);
