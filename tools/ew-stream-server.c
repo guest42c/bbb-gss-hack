@@ -157,6 +157,24 @@ main (int argc, char *argv[])
   gss_server_set_title (server, "Entropy Wave Streaming Server");
   gss_server_set_footer_html (server, footer_html, NULL);
 
+#ifdef ENABLE_DEBUG
+#define REALM "Entropy Wave E1000"
+  {
+    GssSession *session;
+    char *s;
+
+    s = soup_auth_domain_digest_encode_password ("admin", REALM, "admin");
+    g_object_set (server, "admin-token", s, NULL);
+    g_free (s);
+
+    session = gss_session_new ("permanent");
+    g_free (session->session_id);
+    session->session_id = g_strdup ("00000000");
+    session->permanent = TRUE;
+    session->is_admin = TRUE;
+  }
+#endif
+
   ew_stream_server_add_admin_callbacks (server);
 
   gss_server_read_config (server, CONFIG_FILENAME);
