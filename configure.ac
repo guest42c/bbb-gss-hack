@@ -84,7 +84,7 @@ if test "$HAVE_GLIB" != yes ; then
   exit 1
 fi
 
-PKG_CHECK_MODULES(GST, gstreamer-0.10 gstreamer-base-0.10 gstreamer-video-0.10 gstreamer-audio-0.10,
+PKG_CHECK_MODULES(GST, gstreamer-$GST_MAJORMINOR gstreamer-base-$GST_MAJORMINOR gstreamer-video-$GST_MAJORMINOR gstreamer-audio-$GST_MAJORMINOR,
     HAVE_GST=yes, HAVE_GST=no)
 if test "$HAVE_GST" != yes ; then
   echo GStreamer and gst-plugns-base are needed to build
@@ -93,7 +93,7 @@ fi
 AC_SUBST(GST_CFLAGS)
 AC_SUBST(GST_LIBS)
 
-PKG_CHECK_MODULES(GST_RTSP_SERVER, gst-rtsp-server-0.10 >= 0.10.1,
+PKG_CHECK_MODULES(GST_RTSP_SERVER, gst-rtsp-server-$GST_MAJORMINOR >= 0.10.1,
     HAVE_GST_RTSP_SERVER=yes, HAVE_GST_RTSP_SERVER=no)
 if test "$HAVE_GST_RTSP_SERVER" = yes ; then
   AC_DEFINE(ENABLE_RTSP, 1, [Enable RTSP])
