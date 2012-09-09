@@ -21,7 +21,7 @@
 #ifndef _EW_STREAM_SERVER_H_
 #define _EW_STREAM_SERVER_H_
 
-#include <gst-stream-server/gss-server.h>
+#include <gst-streaming-server/gss-server.h>
 
 G_BEGIN_DECLS
 

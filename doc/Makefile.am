@@ -9,7 +9,7 @@ AUTOMAKE_OPTIONS = 1.6
 # of using the various options.
 
 # The name of the module, e.g. 'glib'.
-DOC_MODULE=gst-stream-server
+DOC_MODULE=gst-streaming-server
 
 # Uncomment for versioned docs and specify the version of the module, e.g. '2'.
 #DOC_MODULE_VERSION=2
@@ -22,7 +22,7 @@ DOC_MAIN_SGML_FILE=$(DOC_MODULE)-docs.sgml
 # gtk-doc will search all .c & .h files beneath here for inline comments
 # documenting the functions and macros.
 # e.g. DOC_SOURCE_DIR=../../../gtk
-DOC_SOURCE_DIR=../gst-stream-server
+DOC_SOURCE_DIR=../gst-streaming-server
 
 # Extra options to pass to gtkdoc-scangobj. Not normally needed.
 SCANGOBJ_OPTIONS=
@@ -49,8 +49,8 @@ FIXXREF_OPTIONS=
 # Used for dependencies. The docs will be rebuilt if any of these change.
 # e.g. HFILE_GLOB=$(top_srcdir)/gtk/*.h
 # e.g. CFILE_GLOB=$(top_srcdir)/gtk/*.c
-HFILE_GLOB=$(top_srcdir)/gst-stream-server/*.h
-CFILE_GLOB=$(top_srcdir)/gst-stream-server/*.c
+HFILE_GLOB=$(top_srcdir)/gst-streaming-server/*.h
+CFILE_GLOB=$(top_srcdir)/gst-streaming-server/*.c
 
 # Extra header to include when scanning, which are not under DOC_SOURCE_DIR
 # e.g. EXTRA_HFILES=$(top_srcdir}/contrib/extra.h
@@ -79,7 +79,7 @@ expand_content_files=
 # e.g. GTKDOC_CFLAGS=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
 GTKDOC_CFLAGS=$(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS)
-GTKDOC_LIBS=$(top_builddir)/gst-stream-server/libgss-@GST_MAJORMINOR@.la $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS) $(JSON_GLIB_LIBS)
+GTKDOC_LIBS=$(top_builddir)/gst-streaming-server/libgss-@GST_MAJORMINOR@.la $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS) $(JSON_GLIB_LIBS)
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
@@ -102,5 +102,5 @@ endif
 -include $(top_srcdir)/git.mk
 
 update-www:
-	rsync -a html/* cooker.entropywave.com:/srv/code.entropywave.com/www/documentation/gst-stream-server
+	rsync -a html/* cooker.entropywave.com:/srv/code.entropywave.com/www/documentation/gst-streaming-server
 

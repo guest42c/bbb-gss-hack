@@ -21,11 +21,11 @@
 
 #include "config.h"
 
-#include <gst-stream-server/gss-server.h>
-#include <gst-stream-server/gss-config.h>
-#include <gst-stream-server/gss-form.h>
-#include <gst-stream-server/gss-html.h>
-#include <gst-stream-server/gss-soup.h>
+#include <gst-streaming-server/gss-server.h>
+#include <gst-streaming-server/gss-config.h>
+#include <gst-streaming-server/gss-form.h>
+#include <gst-streaming-server/gss-html.h>
+#include <gst-streaming-server/gss-soup.h>
 
 #include <glib/gstdio.h>
 #include <glib-object.h>

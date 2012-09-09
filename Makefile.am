@@ -1,7 +1,7 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = gst-stream-server tools pkgconfig doc
+SUBDIRS = gst-streaming-server tools pkgconfig doc
 
 EXTRA_DIST = autogen.sh gtk-doc.mak HACKING TODO BUGS README
 

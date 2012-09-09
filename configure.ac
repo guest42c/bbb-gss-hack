@@ -1,6 +1,6 @@
 AC_PREREQ([2.58])
 dnl PLEASE remove the nano when doing a release
-AC_INIT(gst-stream-server,0.10.0.1)
+AC_INIT(gst-streaming-server,0.10.0.1)
 
 AS_NANO([GSS_UNRELEASED=no],[GSS_UNRELEASED=yes])
 
@@ -31,7 +31,7 @@ LT_PATH_NM
 dnl allow for different autotools
 AS_AUTOTOOLS_ALTERNATE
 
-AC_CONFIG_SRCDIR([gst-stream-server/gss-server.c])
+AC_CONFIG_SRCDIR([gst-streaming-server/gss-server.c])
 
 AC_CONFIG_MACRO_DIR([m4])
 ACLOCAL_AMFLAGS="-I m4 $ACLOCAL_AMFLAGS"
@@ -133,7 +133,7 @@ AM_CONDITIONAL(HAVE_FALSE, false)
 GSS_CFLAGS="$GSS_CFLAGS -I\$(top_srcdir)"
 AC_SUBST(GSS_CFLAGS)
 
-GSS_LIBS="\$(top_builddir)/gst-stream-server/libgss-$GST_MAJORMINOR.la"
+GSS_LIBS="\$(top_builddir)/gst-streaming-server/libgss-$GST_MAJORMINOR.la"
 AC_SUBST(GSS_LIBS)
 
 
@@ -142,10 +142,10 @@ AS_HOST_DEFINES()
 AC_CONFIG_FILES([
 Makefile 
 doc/Makefile
-gst-stream-server/Makefile
+gst-streaming-server/Makefile
 pkgconfig/Makefile
-pkgconfig/gst-stream-server-uninstalled.pc
-pkgconfig/gst-stream-server.pc
+pkgconfig/gst-streaming-server-uninstalled.pc
+pkgconfig/gst-streaming-server.pc
 tools/Makefile
 doc/version.entities
 ])
