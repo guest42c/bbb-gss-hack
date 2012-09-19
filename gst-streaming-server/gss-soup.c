@@ -35,7 +35,7 @@ gss_soup_get_request_host (SoupMessage * msg)
   char *colon;
   const char *s;
 
-  s = soup_message_headers_get (msg->request_headers, "Host");
+  s = soup_message_headers_get_one (msg->request_headers, "Host");
   if (s == NULL)
     return NULL;
   host = strdup (s);
