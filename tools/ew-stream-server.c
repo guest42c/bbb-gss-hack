@@ -64,7 +64,7 @@ static GOptionEntry entries[] = {
 GssServer *server;
 GMainLoop *main_loop;
 
-static void
+static void G_GNUC_NORETURN
 do_quit (int signal)
 {
   LOG ("caught signal %d", signal);
