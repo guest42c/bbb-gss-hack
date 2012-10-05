@@ -726,6 +726,27 @@ session_login_get_resource (GssTransaction * t)
   char *redirect_url;
   char *location;
 
+  if (t->soupserver == ewserver->server) {
+    char *base_url;
+    char *location;
+    char *s2;
+
+    base_url = gss_soup_get_base_url_https (t->server, t->msg);
+    location = g_strdup_printf ("%s/login", base_url);
+
+    soup_message_headers_append (t->msg->response_headers, "Location",
+        location);
+    s2 = g_strdup_printf ("<html><body>Oops, you were supposed to "
+        "be redirected <a href='%s'>here</a>.</body></html>\n", location);
+    soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE, s2,
+        strlen (s2));
+    soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
+
+    g_free (location);
+    g_free (base_url);
+    return;
+  }
+
   t->s = s = g_string_new ("");
 
   gss_html_header (t);
