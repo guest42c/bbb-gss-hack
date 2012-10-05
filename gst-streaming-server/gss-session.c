@@ -447,6 +447,7 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
   const char *s;
   gboolean ret;
   char *location;
+  char *s2;
 
   if (msg->status_code != SOUP_STATUS_OK) {
     GST_INFO ("BrowserID verify failed: %s",
@@ -499,8 +500,11 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
   GST_INFO ("new session for user %s", s);
 
   soup_message_headers_append (v->msg->response_headers, "Location", location);
+  s2 = g_strdup_printf ("<html><body>Oops, you were supposed to "
+      "be redirected <a href='%s'>here</a>.</body></html>\n", location);
   g_free (location);
-  soup_message_set_response (v->msg, "text/plain", SOUP_MEMORY_STATIC, "", 0);
+  soup_message_set_response (v->msg, "text/html", SOUP_MEMORY_TAKE, s2,
+      strlen (s2));
   soup_message_set_status (v->msg, SOUP_STATUS_SEE_OTHER);
 
   soup_server_unpause_message (v->server, v->msg);
@@ -514,6 +518,19 @@ err:
 err_no_msg:
   if (jp)
     g_object_unref (jp);
+
+  s2 = g_strdup_printf ("<html>\n"
+      "<head>\n"
+      "<title>Authorization Failed</title>\n"
+      "</head>\n"
+      "<body>\n"
+      "<h1>Authorization Failed</h1>\n"
+      "<p>Please go back and try again.</p>\n"
+      "<br>\n"
+      "<p>Response:</p>\n"
+      "<pre>%s</pre>\n" "</body>\n" "</html>\n", msg->response_body->data);
+  soup_message_set_response (v->msg, "text/html", SOUP_MEMORY_TAKE,
+      s2, strlen (s2));
   soup_message_set_status (v->msg, SOUP_STATUS_UNAUTHORIZED);
   soup_server_unpause_message (v->server, v->msg);
   g_free (v->redirect_url);
@@ -529,6 +546,7 @@ session_login_post_resource (GssTransaction * t)
   const char *username = NULL;
   const char *password = NULL;
   const char *content_type;
+  char *s;
 
   content_type = soup_message_headers_get_one (t->msg->request_headers,
       "Content-Type");
@@ -664,8 +682,10 @@ session_login_post_resource (GssTransaction * t)
 
       soup_message_headers_append (t->msg->response_headers, "Location",
           location);
-      soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_STATIC, "",
-          0);
+      s = g_strdup_printf ("<html><body>Oops, you were supposed to "
+          "be redirected <a href='%s'>here</a>.</body></html>\n", location);
+      soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE, s,
+          strlen (s));
       soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
       g_free (location);
 
@@ -679,7 +699,16 @@ session_login_post_resource (GssTransaction * t)
     g_hash_table_unref (query_hash);
   }
 
-  gss_html_error_404 (t->server, t->msg);
+  s = g_strdup_printf ("<html>\n"
+      "<head>\n"
+      "<title>Authorization Failed</title>\n"
+      "</head>\n"
+      "<body>\n"
+      "<h1>Authorization Failed</h1>\n"
+      "<p>Please go back and try again.</p>\n" "</body>\n" "</html>\n");
+  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
+      s, strlen (s));
+  soup_message_set_status (t->msg, SOUP_STATUS_UNAUTHORIZED);
 }
 
 static void
