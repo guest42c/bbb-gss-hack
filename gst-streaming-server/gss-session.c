@@ -572,7 +572,7 @@ session_login_post_resource (GssTransaction * t)
       SoupMessage *client_msg;
       BrowserIDVerify *v;
       char *s;
-      char *base_url;
+      char *request_host;
 
       soup_server_pause_message (t->soupserver, t->msg);
 
@@ -600,13 +600,20 @@ session_login_post_resource (GssTransaction * t)
       }
 
 
-      base_url = gss_transaction_get_base_url (t);
-      s = g_strdup_printf
-          ("https://persona.org/verify?assertion=%s&audience=%s",
-          assertion, ewserver->server_hostname);
+      request_host = gss_soup_get_request_host (t->msg);
+      if (request_host && ewserver->alt_hostname &&
+          strcmp (request_host, ewserver->alt_hostname) == 0) {
+        s = g_strdup_printf
+            ("https://persona.org/verify?assertion=%s&audience=%s",
+            assertion, ewserver->alt_hostname);
+      } else {
+        s = g_strdup_printf
+            ("https://persona.org/verify?assertion=%s&audience=%s",
+            assertion, ewserver->server_hostname);
+      }
       client_msg = soup_message_new ("POST", s);
       g_free (s);
-      g_free (base_url);
+      g_free (request_host);
       soup_message_headers_replace (client_msg->request_headers,
           "Content-Type", "application/x-www-form-urlencoded");
 

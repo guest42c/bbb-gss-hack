@@ -75,6 +75,7 @@ struct _GssServer
   gboolean enable_rtsp;
   gboolean enable_rtmp;
 
+  char *alt_hostname;
   gboolean enable_programs;
   GList *programs;
   GssMetrics *metrics;
