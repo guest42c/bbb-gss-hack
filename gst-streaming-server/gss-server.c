@@ -912,6 +912,8 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
     }
   }
 
+  soup_message_set_status (msg, SOUP_STATUS_OK);
+
   if (msg->method == SOUP_METHOD_GET && resource->get_callback) {
     resource->get_callback (transaction);
   } else if (msg->method == SOUP_METHOD_PUT && resource->put_callback) {
@@ -932,7 +934,6 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
     content = g_string_free (transaction->s, FALSE);
     soup_message_body_append (msg->response_body, SOUP_MEMORY_TAKE,
         content, len);
-    soup_message_set_status (msg, SOUP_STATUS_OK);
   }
 
   g_free (transaction);
