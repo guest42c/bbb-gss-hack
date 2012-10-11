@@ -505,8 +505,10 @@ gss_program_add_jpeg_block (GssProgram * program, GssTransaction * t)
 }
 
 void
-gss_program_add_video_block (GssProgram * program, GString * s, int max_width)
+gss_program_add_video_block (GssProgram * program, GssTransaction * t,
+    int max_width)
 {
+  GString *s = t->s;
   GList *g;
   int width = 0;
   int height = 0;
@@ -648,7 +650,7 @@ gss_program_frag_resource (GssTransaction * t)
   }
 
   t->s = s = g_string_new ("");
-  gss_program_add_video_block (program, s, 0);
+  gss_program_add_video_block (program, t, 0);
 }
 
 static void
@@ -663,7 +665,7 @@ gss_program_get_resource (GssTransaction * t)
 
   g_string_append_printf (s, "<h1>%s</h1>\n", GST_OBJECT_NAME (program));
 
-  gss_program_add_video_block (program, s, 0);
+  gss_program_add_video_block (program, t, 0);
 
   gss_html_append_break (s);
 
