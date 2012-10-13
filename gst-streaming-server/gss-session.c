@@ -79,7 +79,7 @@ gss_session_add_session_callbacks (GssServer * server)
 void
 gss_session_notify_hosts_allow (const char *key, void *priv)
 {
-  GssServer *ewserver = (GssServer *) priv;
+  GssServer *server = (GssServer *) priv;
   char **chunks;
   char *end;
   const char *s;
@@ -89,7 +89,7 @@ gss_session_notify_hosts_allow (const char *key, void *priv)
   g_free (hosts_allow);
   n_hosts_allow = 0;
 
-  s = gss_config_get (ewserver->config, "hosts_allow");
+  s = gss_config_get (server->config, "hosts_allow");
   chunks = g_strsplit (s, " ", 0);
   n = g_strv_length (chunks);
 
@@ -427,8 +427,8 @@ gss_session_set_authorization_function (GssSessionAuthorizationFunc func,
 typedef struct _BrowserIDVerify BrowserIDVerify;
 struct _BrowserIDVerify
 {
-  GssServer *ewserver;
-  SoupServer *server;
+  GssServer *server;
+  SoupServer *soupserver;
   SoupMessage *msg;
   gchar *redirect_url;
 };
@@ -494,7 +494,7 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
 
   /* FIXME this can return session_id in HTTP */
   location = g_strdup_printf ("%s%s?session_id=%s",
-      gss_soup_get_base_url_https (v->ewserver, v->msg), v->redirect_url,
+      gss_soup_get_base_url_https (v->server, v->msg), v->redirect_url,
       login_session->session_id);
 
   GST_INFO ("new session for user %s", s);
@@ -507,7 +507,7 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
       strlen (s2));
   soup_message_set_status (v->msg, SOUP_STATUS_SEE_OTHER);
 
-  soup_server_unpause_message (v->server, v->msg);
+  soup_server_unpause_message (v->soupserver, v->msg);
 
   g_object_unref (jp);
   g_free (v->redirect_url);
@@ -532,7 +532,7 @@ err_no_msg:
   soup_message_set_response (v->msg, "text/html", SOUP_MEMORY_TAKE,
       s2, strlen (s2));
   soup_message_set_status (v->msg, SOUP_STATUS_UNAUTHORIZED);
-  soup_server_unpause_message (v->server, v->msg);
+  soup_server_unpause_message (v->soupserver, v->msg);
   g_free (v->redirect_url);
   g_free (v);
 }
@@ -540,7 +540,7 @@ err_no_msg:
 static void
 session_login_post_resource (GssTransaction * t)
 {
-  GssServer *ewserver = (GssServer *) t->server;
+  GssServer *server = (GssServer *) t->server;
   char *hash;
   GHashTable *query_hash;
   const char *username = NULL;
@@ -577,8 +577,8 @@ session_login_post_resource (GssTransaction * t)
       soup_server_pause_message (t->soupserver, t->msg);
 
       v = g_malloc0 (sizeof (BrowserIDVerify));
-      v->ewserver = ewserver;
-      v->server = t->soupserver;
+      v->server = server;
+      v->soupserver = t->soupserver;
       v->msg = t->msg;
 
       s = g_hash_table_lookup (t->query, "redirect_url");
@@ -601,15 +601,15 @@ session_login_post_resource (GssTransaction * t)
 
 
       request_host = gss_soup_get_request_host (t->msg);
-      if (request_host && ewserver->alt_hostname &&
-          strcmp (request_host, ewserver->alt_hostname) == 0) {
+      if (request_host && server->alt_hostname &&
+          strcmp (request_host, server->alt_hostname) == 0) {
         s = g_strdup_printf
             ("https://persona.org/verify?assertion=%s&audience=%s",
-            assertion, ewserver->alt_hostname);
+            assertion, server->alt_hostname);
       } else {
         s = g_strdup_printf
             ("https://persona.org/verify?assertion=%s&audience=%s",
-            assertion, ewserver->server_hostname);
+            assertion, server->server_hostname);
       }
       client_msg = soup_message_new ("POST", s);
       g_free (s);
@@ -617,7 +617,7 @@ session_login_post_resource (GssTransaction * t)
       soup_message_headers_replace (client_msg->request_headers,
           "Content-Type", "application/x-www-form-urlencoded");
 
-      soup_session_queue_message (ewserver->client_session, client_msg,
+      soup_session_queue_message (server->client_session, client_msg,
           persona_verify_done, v);
 
       g_hash_table_unref (query_hash);
@@ -644,12 +644,12 @@ session_login_post_resource (GssTransaction * t)
 #if 0
     hash = password_hash (username, password);
     valid = (strcmp (username, "admin") == 0) &&
-        gss_config_value_is_equal (ewserver->config, "admin_hash", hash);
+        gss_config_value_is_equal (server->config, "admin_hash", hash);
     g_free (hash);
 #endif
     hash = soup_auth_domain_digest_encode_password (username, REALM, password);
     valid = (strcmp (username, "admin") == 0) &&
-        (strcmp (hash, ewserver->admin_token) == 0);
+        (strcmp (hash, server->admin_token) == 0);
     g_free (hash);
 
     if (valid) {
@@ -721,12 +721,12 @@ session_login_post_resource (GssTransaction * t)
 static void
 session_login_get_resource (GssTransaction * t)
 {
-  GssServer *ewserver = (GssServer *) t->server;
+  GssServer *server = (GssServer *) t->server;
   GString *s;
   char *redirect_url;
   char *location;
 
-  if (t->soupserver == ewserver->server) {
+  if (t->soupserver == server->server) {
     char *base_url;
     char *location;
     char *s2;
@@ -764,7 +764,7 @@ session_login_get_resource (GssTransaction * t)
     location = g_strdup ("/login");
   }
 
-  gss_config_form_add_form (ewserver, s, location, "Login", login_fields, NULL);
+  gss_config_form_add_form (server, s, location, "Login", login_fields, NULL);
   g_free (location);
 
   gss_html_footer (t);
