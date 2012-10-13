@@ -60,7 +60,7 @@ vod_wrote_chunk (SoupMessage * msg, GssVOD * vod)
   chunk = g_malloc (SIZE);
   len = read (vod->fd, chunk, 65536);
   if (len < 0) {
-    g_print ("read error\n");
+    GST_ERROR ("read error");
   }
   if (len == 0) {
     soup_message_body_complete (msg->response_body);
@@ -95,7 +95,7 @@ vod_resource_chunked (GssTransaction * t)
       GST_OBJECT_NAME (program));
   vod->fd = open (s, O_RDONLY);
   if (vod->fd < 0) {
-    g_print ("file not found %s\n", s);
+    GST_WARNING_OBJECT (program, "file not found %s", s);
     g_free (s);
     g_free (vod);
     soup_message_set_status (t->msg, SOUP_STATUS_NOT_FOUND);
@@ -111,7 +111,7 @@ vod_resource_chunked (GssTransaction * t)
   chunk = g_malloc (SIZE);
   len = read (vod->fd, chunk, 65536);
   if (len < 0) {
-    g_print ("read error\n");
+    GST_ERROR_OBJECT (program, "read error");
   }
 
   soup_message_body_append (t->msg->response_body, SOUP_MEMORY_TAKE, chunk,

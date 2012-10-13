@@ -22,6 +22,8 @@
 
 #include "gss-utils.h"
 
+#include <gst/gst.h>
+
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <string.h>
@@ -105,7 +107,7 @@ gss_utils_dump_hash (GHashTable * hash)
 
   g_hash_table_iter_init (&iter, hash);
   while (g_hash_table_iter_next (&iter, (gpointer) & key, (gpointer) & value)) {
-    g_print ("%s=%s\n", key, value);
+    GST_DEBUG ("%s=%s", key, value);
   }
 }
 
