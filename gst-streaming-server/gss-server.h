@@ -75,6 +75,8 @@ struct _GssServer
   gboolean enable_rtsp;
   gboolean enable_rtmp;
 
+  gboolean enable_osplayer;
+  gboolean enable_flowplayer;
   char *alt_hostname;
   gboolean enable_programs;
   GList *programs;

@@ -319,6 +319,11 @@ gss_html_footer (GssTransaction * t)
       "    <script src='/bootstrap/js/bootstrap.js'></script>\n"
       //"    <script src=\"/include.js\" type=\"text/javascript\"></script>\n"
       "    <script src=\"https://login.persona.org/include.js\" type=\"text/javascript\"></script>\n");
+  if (t->server->enable_flowplayer) {
+    g_string_append (s,
+        "<script type='text/javascript' src=\"/flowplayer-3.2.11.min.js\"></script>\n"
+        "<script>flowplayer('player', '/flowplayer-3.2.15.swf');</script>\n");
+  }
 
   g_string_append (s, "<script type=\"text/javascript\">\n");
   base_https = gss_soup_get_base_url_https (t->server, t->msg);

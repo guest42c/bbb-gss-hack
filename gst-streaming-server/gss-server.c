@@ -623,10 +623,19 @@ gss_server_setup_resources (GssServer * server)
         "application/java-archive");
   }
 
-  if (server->enable_flash) {
+  if (server->enable_osplayer) {
     gss_server_add_file_resource (server, "/OSplayer.swf", 0,
         "application/x-shockwave-flash");
     gss_server_add_file_resource (server, "/AC_RunActiveContent.js", 0,
+        "application/javascript");
+  }
+
+  if (server->enable_flowplayer) {
+    gss_server_add_file_resource (server, "/flowplayer-3.2.15.swf", 0,
+        "application/x-shockwave-flash");
+    gss_server_add_file_resource (server, "/flowplayer.controls-3.2.14.swf", 0,
+        "application/x-shockwave-flash");
+    gss_server_add_file_resource (server, "/flowplayer-3.2.11.min.js", 0,
         "application/javascript");
   }
 

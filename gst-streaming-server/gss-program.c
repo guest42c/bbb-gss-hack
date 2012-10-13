@@ -597,29 +597,35 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_FLV_H264BASE_AAC) {
-        g_string_append_printf (s,
-            " <object width='%d' height='%d' id='flvPlayer' "
-            "type=\"application/x-shockwave-flash\" "
-            "data=\"OSplayer.swf\">\n"
-            "  <param name='allowFullScreen' value='true'>\n"
-            "  <param name=\"allowScriptAccess\" value=\"always\"> \n"
-            "  <param name=\"movie\" value=\"OSplayer.swf\"> \n"
-            "  <param name=\"flashvars\" value=\""
-            "movie=%s"
-            "&btncolor=0x333333"
-            "&accentcolor=0x31b8e9"
-            "&txtcolor=0xdddddd"
-            "&volume=30"
-            "&autoload=on"
-            "&autoplay=off"
-            "&vTitle=TITLE"
-            "&showTitle=yes\">\n", width, height + 24, stream->location);
-        if (program->enable_snapshot) {
-          gss_html_append_image_printf (s,
-              "/%s-snapshot.png", 0, 0, "snapshot image",
-              GST_OBJECT_NAME (program));
+        if (t->server->enable_osplayer) {
+          g_string_append_printf (s,
+              " <object width='%d' height='%d' id='flvPlayer' "
+              "type=\"application/x-shockwave-flash\" "
+              "data=\"OSplayer.swf\">\n"
+              "  <param name='allowFullScreen' value='true'>\n"
+              "  <param name=\"allowScriptAccess\" value=\"always\"> \n"
+              "  <param name=\"movie\" value=\"OSplayer.swf\"> \n"
+              "  <param name=\"flashvars\" value=\""
+              "movie=%s"
+              "&btncolor=0x333333"
+              "&accentcolor=0x31b8e9"
+              "&txtcolor=0xdddddd"
+              "&volume=30"
+              "&autoload=on"
+              "&autoplay=off"
+              "&vTitle=TITLE"
+              "&showTitle=yes\">\n", width, height + 24, stream->location);
+          if (program->enable_snapshot) {
+            gss_html_append_image_printf (s,
+                "/%s-snapshot.png", 0, 0, "snapshot image",
+                GST_OBJECT_NAME (program));
+          }
+          g_string_append_printf (s, " </object>\n");
+        } else if (t->server->enable_flowplayer) {
+          g_string_append_printf (s,
+              "<a href='%s' style='display:block;width:%dpx;height:%dpx' id='player'>_</a>\n",
+              stream->location, width, height);
         }
-        g_string_append_printf (s, " </object>\n");
         break;
       }
 
