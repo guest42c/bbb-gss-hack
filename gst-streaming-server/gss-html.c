@@ -41,7 +41,7 @@ gss_html_error_404 (GssServer * server, SoupMessage * msg)
   t.server = server;
   t.msg = msg;
   gss_html_header (&t);
-  g_string_append (s, "<h1>Error 404: Page not found</h1>\n");
+  GSS_A ("<h1>Error 404: Page not found</h1>\n");
   gss_html_footer (&t);
 
   content = g_string_free (s, FALSE);
@@ -56,9 +56,9 @@ void
 gss_html_append_break (GString * s)
 {
 #ifdef USE_XHTML
-  g_string_append (s, "<br />");
+  GSS_A ("<br />");
 #else
-  g_string_append (s, "<br>");
+  GSS_A ("<br>");
 #endif
 }
 
@@ -69,24 +69,23 @@ gss_html_append_image (GString * s, const char *url, int width, int height,
   if (alt_text == NULL)
     alt_text = "";
 
-  g_string_append_printf (s, "<img src='%s' alt='%s' ", url,
-      alt_text ? alt_text : "");
+  GSS_P ("<img src='%s' alt='%s' ", url, alt_text ? alt_text : "");
   if (width > 0 && height > 0) {
-    g_string_append_printf (s, "width='%d' height='%d' ", width, height);
+    GSS_P ("width='%d' height='%d' ", width, height);
   }
 #ifdef USE_HTML5
   /* border is in CSS */
 #else
-  g_string_append (s, "border='0' ");
+  GSS_A ("border='0' ");
 #endif
 
 #ifdef USE_XHTML
-  g_string_append (s, "/>");
+  GSS_A ("/>");
 #else
 #ifdef USE_HTML5
-  g_string_append (s, "/>");
+  GSS_A ("/>");
 #else
-  g_string_append (s, ">");
+  GSS_A (">");
 #endif
 #endif
 }
@@ -123,158 +122,137 @@ gss_html_header (GssTransaction * t)
   }
 
   safe_title = gss_html_sanitize_entity (t->server->title);
-  g_string_append_printf (s,
-      "<!DOCTYPE html>\n"
+  GSS_P ("<!DOCTYPE html>\n"
       "<html lang='en'>\n"
-      "  <head>\n"
-      "    <meta charset='utf-8'>\n" "    <title>%s</title>\n", safe_title);
+      "<head>\n" "<meta charset='utf-8'>\n" "<title>%s</title>\n", safe_title);
+  GSS_A
+      ("<meta name='viewport' content='width=device-width, initial-scale=1.0'>\n");
+#if 0
+  GSS_A ("<meta name='description' content=''>\n"
+      "<meta name='author' content=''>\n");
+#endif
+  GSS_A ("<link href='/bootstrap/css/bootstrap.css' rel='stylesheet'>\n");
+  GSS_A ("<style type='text/css'>\n"
+      "body {\n"
+      "padding-top: 60px;\n"
+      "padding-bottom: 40px;\n"
+      "}\n" ".sidebar-nav {\n" "padding: 9px 0;\n" "}\n" "</style>\n");
+  GSS_A
+      ("<link href='/bootstrap/css/bootstrap-responsive.css' rel='stylesheet'>\n");
+#if 0
+  GSS_A ("<!--[if lt IE 9]>\n"
+      "<script src='http://html5shim.googlecode.com/svn/trunk/html5.js'></script>\n"
+      "<![endif]-->\n");
+#endif
+#if 0
+  GSS_A ("<link rel='shortcut icon' href='/favicon.ico'>\n");
+  GSS_A
+      ("<link rel='apple-touch-icon-precomposed' sizes='144x144' href='../assets/ico/apple-touch-icon-144-precomposed.png'>\n"
+      "<link rel='apple-touch-icon-precomposed' sizes='114x114' href='../assets/ico/apple-touch-icon-114-precomposed.png'>\n"
+      "<link rel='apple-touch-icon-precomposed' sizes='72x72' href='../assets/ico/apple-touch-icon-72-precomposed.png'>\n"
+      "<link rel='apple-touch-icon-precomposed' href='../assets/ico/apple-touch-icon-57-precomposed.png'>\n");
+#endif
+  GSS_A ("</head>\n" "<body>\n");
 
-  g_string_append_printf (s,
-      "    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n"
-#if 0
-      "    <meta name='description' content=''>\n"
-      "    <meta name='author' content=''>\n"
-#endif
-      "    <link href='/bootstrap/css/bootstrap.css' rel='stylesheet'>\n"
-      "    <style type='text/css'>\n"
-      "      body {\n"
-      "        padding-top: 60px;\n"
-      "        padding-bottom: 40px;\n"
-      "      }\n"
-      "      .sidebar-nav {\n"
-      "        padding: 9px 0;\n"
-      "      }\n"
-      "    </style>\n"
-      "    <link href='/bootstrap/css/bootstrap-responsive.css' rel='stylesheet'>\n"
-#if 0
-      "    <!--[if lt IE 9]>\n"
-      "      <script src='http://html5shim.googlecode.com/svn/trunk/html5.js'></script>\n"
-      "    <![endif]-->\n"
-#endif
-#if 0
-      "    <link rel='shortcut icon' href='/favicon.ico'>\n"
-      "    <link rel='apple-touch-icon-precomposed' sizes='144x144' href='../assets/ico/apple-touch-icon-144-precomposed.png'>\n"
-      "    <link rel='apple-touch-icon-precomposed' sizes='114x114' href='../assets/ico/apple-touch-icon-114-precomposed.png'>\n"
-      "    <link rel='apple-touch-icon-precomposed' sizes='72x72' href='../assets/ico/apple-touch-icon-72-precomposed.png'>\n"
-      "    <link rel='apple-touch-icon-precomposed' href='../assets/ico/apple-touch-icon-57-precomposed.png'>\n"
-#endif
-      "  </head>\n"
-      "  <body>\n"
-      "    <div class='navbar navbar-fixed-top'>\n"
-      "      <div class='navbar-inner'>\n"
-      "        <div class='container-fluid'>\n"
-      "          <a class='btn btn-navbar' data-toggle='collapse' data-target='.nav-collapse'>\n"
-      "            <span class='icon-bar'></span>\n"
-      "            <span class='icon-bar'></span>\n"
-      "            <span class='icon-bar'></span>\n"
-      "          </a>\n"
-      "          <a class='brand' href='/%s'>%s</a>\n"
-      "          <div class='btn-group pull-right'>\n", session_id, safe_title);
+  GSS_A ("<div class='navbar navbar-fixed-top'>\n"
+      "<div class='navbar-inner'>\n"
+      "<div class='container-fluid'>\n"
+      "<a class='btn btn-navbar' data-toggle='collapse' data-target='.nav-collapse'>\n"
+      "<span class='icon-bar'></span>\n"
+      "<span class='icon-bar'></span>\n"
+      "<span class='icon-bar'></span>\n" "</a>\n");
+  GSS_P ("<a class='brand' href='/%s'>%s</a>\n"
+      "<div class='btn-group pull-right'>\n", session_id, safe_title);
   g_free (safe_title);
 
   if (t->session) {
-    g_string_append_printf (s,
-        "            <a class='btn dropdown-toggle' data-toggle='dropdown' data-target='#'>\n"
-        "              <i class='icon-user'></i> %s\n"
-        "              <span class='caret'></span>\n", t->session->username);
+    GSS_P
+        ("<a class='btn dropdown-toggle' data-toggle='dropdown' data-target='#'>\n"
+        "<i class='icon-user'></i> %s\n"
+        "<span class='caret'></span>\n", t->session->username);
   } else {
 #if 0
     char *base_url = gss_soup_get_base_url_https (t->server, t->msg);
-    g_string_append_printf (s,
-        "<a href='%s/login' title='Administrative Interface'>Admin</a>\n",
-        base_url);
+    GSS_P ("<a href='%s/login' title='Login'>Login</a>\n", base_url);
     g_free (base_url);
 #endif
-    g_string_append_printf (s,
-        "<a href='#' id='browserid' title='Sign-in with Persona'>\n"
+    GSS_P ("<a href='#' id='browserid' title='Sign-in with Persona'>\n"
         "<img src='/sign_in_blue.png' alt='Sign in' onclick='navigator.id.get(gotAssertion);'>\n"
         "</a>\n");
   }
 
-  g_string_append_printf (s,
-      "            </a>\n"
-      "            <ul class='dropdown-menu'>\n"
-      "              <li><a href='/profile%s'>Profile</a></li>\n"
-      "              <li class='divider'></li>\n"
-      "              <li><a href='/logout%s'>Sign Out</a></li>\n"
-      "            </ul>\n"
-      "          </div>\n"
-      "          <div class='nav-collapse'>\n"
-      "            <ul class='nav'>\n"
-      "              <li class='active'><a href='/%s'>Home</a></li>\n"
-      "              <li><a href='/about%s'>About</a></li>\n"
-      "              <li><a href='/contact%s'>Contact</a></li>\n"
-      "            </ul>\n"
-      "          </div><!--/.nav-collapse -->\n"
-      "        </div>\n"
-      "      </div>\n"
-      "    </div>\n"
-      "    <div class='container-fluid'>\n"
-      "      <div class='row-fluid'>\n"
-      "        <div class='span3'>\n"
-      "          <div class='well sidebar-nav'>\n",
+  GSS_P ("</a>\n"
+      "<ul class='dropdown-menu'>\n"
+      "<li><a href='/profile%s'>Profile</a></li>\n"
+      "<li class='divider'></li>\n"
+      "<li><a href='/logout%s'>Sign Out</a></li>\n"
+      "</ul>\n"
+      "</div>\n"
+      "<div class='nav-collapse'>\n"
+      "<ul class='nav'>\n"
+      "<li class='active'><a href='/%s'>Home</a></li>\n"
+      "<li><a href='/about%s'>About</a></li>\n"
+      "<li><a href='/contact%s'>Contact</a></li>\n"
+      "</ul>\n"
+      "</div><!--/.nav-collapse -->\n"
+      "</div>\n"
+      "</div>\n"
+      "</div>\n"
+      "<div class='container-fluid'>\n"
+      "<div class='row-fluid'>\n"
+      "<div class='span3'>\n"
+      "<div class='well sidebar-nav'>\n",
       session_id, session_id, session_id, session_id, session_id);
-  g_string_append_printf (s, "            <ul class='nav nav-list'>\n");
+  GSS_A ("<ul class='nav nav-list'>\n");
   if (t->server->featured_resources) {
-    g_string_append_printf (s,
-        "              <li class='nav-header'>Featured Pages</li>\n");
+    GSS_A ("<li class='nav-header'>Featured Pages</li>\n");
     for (g = t->server->featured_resources; g; g = g_list_next (g)) {
       GssResource *resource = g->data;
-      g_string_append_printf (s,
-          "              <li %s><a href='%s%s'>%s</a></li>\n",
+      GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
           (resource == t->resource) ? "class='active'" : "",
           resource->location, session_id, resource->name);
     };
   }
-  g_string_append_printf (s,
-      "              <li class='nav-header'>Programs</li>\n");
+  GSS_A ("<li class='nav-header'>Programs</li>\n");
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
     if (program->is_archive)
       continue;
-    g_string_append_printf (s,
-        "              <li %s><a href='%s%s'>%s</a></li>\n",
+    GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
         (program->resource == t->resource) ? "class='active'" : "",
         program->resource->location, session_id, GST_OBJECT_NAME (program));
   };
 
-  g_string_append_printf (s,
-      "              <li class='nav-header'>Archive</li>\n");
+  GSS_A ("<li class='nav-header'>Archive</li>\n");
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
     if (!program->is_archive)
       continue;
-    g_string_append_printf (s,
-        "              <li %s><a href='%s%s'>%s</a></li>\n",
+    GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
         (program->resource == t->resource) ? "class='active'" : "",
         program->resource->location, session_id, GST_OBJECT_NAME (program));
   };
 
   if (t->session) {
-    g_string_append_printf (s,
-        "              <li class='nav-header'>User</li>\n"
-        "              <li><a href='/add_program%s'>Add Program</a></li>\n"
-        "              <li><a href='/dashboard%s'>Dashboard</a></li>\n",
+    GSS_P ("<li class='nav-header'>User</li>\n"
+        "<li><a href='/add_program%s'>Add Program</a></li>\n"
+        "<li><a href='/dashboard%s'>Dashboard</a></li>\n",
         session_id, session_id);
   }
   if (t->session && t->session->is_admin) {
     GList *g;
 
-    g_string_append (s,
-        "              <li class='nav-header'>Administration</li>\n");
+    GSS_A ("<li class='nav-header'>Administration</li>\n");
 
     for (g = t->server->admin_resources; g; g = g_list_next (g)) {
       GssResource *r = (GssResource *) g->data;
-      g_string_append_printf (s,
-          "              <li %s><a href='%s%s'>%s</a></li>\n",
+      GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
           (r == t->resource) ? "class='active'" : "",
           r->location, session_id, r->name);
     }
   }
-  g_string_append (s,
-      "            </ul>\n"
-      "          </div><!--/.well -->\n"
-      "        </div><!--/span-->\n" "        <div class='span9'>\n");
+  GSS_A ("</ul>\n"
+      "</div><!--/.well -->\n" "</div><!--/span-->\n" "<div class='span9'>\n");
 
   g_free (session_id);
 
@@ -288,12 +266,12 @@ gss_html_bootstrap_doc (GssTransaction * t)
 {
   GString *s = t->s;
 
-  g_string_append (s,
-      "          <div class='hero-unit'>\n"
-      "              <img src='/offline.png'>\n"
-      "            <p>Content #1.</p>\n"
-      "            <p><a class='btn btn-primary btn-large'>Learn more &raquo;</a></p>\n"
-      "          </div>\n");
+  GSS_A ("<div class='hero-unit'>\n");
+  GSS_A ("<img src='/offline.png'>\n");
+  GSS_A ("<p>Content #1.</p>\n");
+  GSS_A
+      ("<p><a class='btn btn-primary btn-large'>Learn more &raquo;</a></p>\n");
+  GSS_A ("</div>\n");
 }
 
 void
@@ -302,33 +280,33 @@ gss_html_footer (GssTransaction * t)
   GString *s = t->s;
   char *base_https;
 
-  g_string_append (s,
-      "        </div><!--/span-->\n" "      </div><!--/row-->\n");
+  GSS_A ("</div><!--/span-->\n" "</div><!--/row-->\n");
 
   if (t->server->footer_html) {
     t->server->footer_html (t->server, s, t->server->footer_html_priv);
   } else {
-    g_string_append (s,
-        "        <div class='span4'>\n"
-        "          <p>&copy; Entropy Wave Inc 2012</p>\n" "        </div>\n");
+    GSS_A ("<div class='span4'>\n"
+        "<p>&copy; Entropy Wave Inc 2012</p>\n" "</div>\n");
   }
 
-  g_string_append (s,
-      "    </div><!--/.fluid-container-->\n"
-      "    <script src='/bootstrap/js/jquery.js'></script>\n"
-      "    <script src='/bootstrap/js/bootstrap.js'></script>\n"
-      //"    <script src=\"/include.js\" type=\"text/javascript\"></script>\n"
-      "    <script src=\"https://login.persona.org/include.js\" type=\"text/javascript\"></script>\n");
+  GSS_A ("</div><!--/.fluid-container-->\n"
+      "<script src='/bootstrap/js/jquery.js'></script>\n"
+      "<script src='/bootstrap/js/bootstrap.js'></script>\n");
+#ifdef use_internal_include_js
+  GSS_A ("<script src=\"/include.js\" type=\"text/javascript\"></script>\n");
+#else
+  GSS_A
+      ("<script src=\"https://login.persona.org/include.js\" type=\"text/javascript\"></script>\n");
+#endif
   if (t->server->enable_flowplayer) {
-    g_string_append (s,
-        "<script type='text/javascript' src=\"/flowplayer-3.2.11.min.js\"></script>\n"
+    GSS_A
+        ("<script type='text/javascript' src=\"/flowplayer-3.2.11.min.js\"></script>\n"
         "<script>flowplayer('player', '/flowplayer-3.2.15.swf');</script>\n");
   }
 
-  g_string_append (s, "<script type=\"text/javascript\">\n");
+  GSS_A ("<script type=\"text/javascript\">\n");
   base_https = gss_soup_get_base_url_https (t->server, t->msg);
-  g_string_append_printf (s,
-      "function gotAssertion(assertion) {\n"
+  GSS_P ("function gotAssertion(assertion) {\n"
       "if(assertion!==null){\n"
       "var form = document.createElement(\"form\");\n"
       "form.setAttribute('method', 'POST');\n"
@@ -342,11 +320,11 @@ gss_html_footer (GssTransaction * t)
       "}\n" "}\n", base_https, t->path ? t->path : "/");
   g_free (base_https);
   if (t->script) {
-    g_string_append (s, t->script->str);
+    GSS_A (t->script->str);
     g_string_free (t->script, TRUE);
   }
-  g_string_append (s, "</script>\n");
-  g_string_append (s, "\n" "  </body>\n" "</html>\n");
+  GSS_A ("</script>\n");
+  GSS_A ("\n" "</body>\n" "</html>\n");
 
 }
 

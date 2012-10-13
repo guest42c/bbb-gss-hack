@@ -461,7 +461,7 @@ gss_program_add_jpeg_block (GssProgram * program, GssTransaction * t)
 
   if (program->state == GSS_PROGRAM_STATE_RUNNING) {
     if (program->jpegsink) {
-      g_string_append_printf (s, "<img id='id%d' src='/%s-snapshot.jpeg' />",
+      GSS_P ("<img id='id%d' src='/%s-snapshot.jpeg' />",
           t->id, GST_OBJECT_NAME (program));
       if (t->script == NULL)
         t->script = g_string_new ("");
@@ -477,10 +477,10 @@ gss_program_add_jpeg_block (GssProgram * program, GssTransaction * t)
           t->id, GST_OBJECT_NAME (program), t->id, GST_OBJECT_NAME (program));
       t->id++;
     } else {
-      g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
+      GSS_P ("<img src='/no-snapshot.png'>\n");
     }
   } else {
-    g_string_append_printf (s, "<img src='/offline.png'>\n");
+    GSS_P ("<img src='/offline.png'>\n");
   }
 }
 
@@ -495,7 +495,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
   int flash_only = TRUE;
 
   if (program->state != GSS_PROGRAM_STATE_RUNNING) {
-    g_string_append_printf (s, "<img src='/offline.png'>\n");
+    GSS_P ("<img src='/offline.png'>\n");
     return;
   }
 
@@ -505,7 +505,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
           "/%s-snapshot.jpeg", 0, 0, "snapshot image",
           GST_OBJECT_NAME (program));
     } else {
-      g_string_append_printf (s, "<img src='/no-snapshot.png'>\n");
+      GSS_P ("<img src='/no-snapshot.png'>\n");
     }
   }
 
@@ -525,15 +525,14 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
   }
 
   if (program->server->enable_html5_video && !flash_only) {
-    g_string_append_printf (s,
-        "<video controls=\"controls\" autoplay=\"autoplay\" "
+    GSS_P ("<video controls=\"controls\" autoplay=\"autoplay\" "
         "id=video width=\"%d\" height=\"%d\">\n", width, height);
 
     for (g = g_list_last (program->streams); g; g = g_list_previous (g)) {
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_WEBM) {
-        g_string_append_printf (s,
-            "<source src=\"%s\" type='video/webm; codecs=\"vp8, vorbis\"'>\n",
+        GSS_P
+            ("<source src=\"%s\" type='video/webm; codecs=\"vp8, vorbis\"'>\n",
             stream->location);
       }
     }
@@ -541,8 +540,8 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
     for (g = g_list_last (program->streams); g; g = g_list_previous (g)) {
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
-        g_string_append_printf (s,
-            "<source src=\"%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
+        GSS_P
+            ("<source src=\"%s\" type='video/ogg; codecs=\"theora, vorbis\"'>\n",
             stream->location);
       }
     }
@@ -551,8 +550,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_M2TS_H264BASE_AAC ||
           stream->type == GSS_STREAM_TYPE_M2TS_H264MAIN_AAC) {
-        g_string_append_printf (s,
-            "<source src=\"%s\" >\n", stream->playlist_location);
+        GSS_P ("<source src=\"%s\" >\n", stream->playlist_location);
         break;
       }
     }
@@ -563,8 +561,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
-        g_string_append_printf (s,
-            "<applet code=\"com.fluendo.player.Cortado.class\"\n"
+        GSS_P ("<applet code=\"com.fluendo.player.Cortado.class\"\n"
             "  archive=\"/cortado.jar\" width=\"%d\" height=\"%d\">\n"
             "    <param name=\"url\" value=\"%s\"></param>\n"
             "</applet>\n", width, height, stream->location);
@@ -578,8 +575,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_FLV_H264BASE_AAC) {
         if (t->server->enable_osplayer) {
-          g_string_append_printf (s,
-              " <object width='%d' height='%d' id='flvPlayer' "
+          GSS_P (" <object width='%d' height='%d' id='flvPlayer' "
               "type=\"application/x-shockwave-flash\" "
               "data=\"OSplayer.swf\">\n"
               "  <param name='allowFullScreen' value='true'>\n"
@@ -600,10 +596,10 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
                 "/%s-snapshot.png", 0, 0, "snapshot image",
                 GST_OBJECT_NAME (program));
           }
-          g_string_append_printf (s, " </object>\n");
+          GSS_P (" </object>\n");
         } else if (t->server->enable_flowplayer) {
-          g_string_append_printf (s,
-              "<a href='%s' style='display:block;width:%dpx;height:%dpx' id='player'>_</a>\n",
+          GSS_P
+              ("<a href='%s' style='display:block;width:%dpx;height:%dpx' id='player'>_</a>\n",
               stream->location, width, height);
         }
         break;
@@ -619,7 +615,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
   }
 
   if (program->server->enable_html5_video && !flash_only) {
-    g_string_append (s, "</video>\n");
+    GSS_A ("</video>\n");
   }
 
 }
@@ -649,7 +645,7 @@ gss_program_get_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  g_string_append_printf (s, "<h1>%s</h1>\n", GST_OBJECT_NAME (program));
+  GSS_P ("<h1>%s</h1>\n", GST_OBJECT_NAME (program));
 
   gss_program_add_video_block (program, t, 0);
 
@@ -665,38 +661,33 @@ gss_program_add_stream_table (GssProgram * program, GString * s)
 {
   GList *g;
 
-  g_string_append (s, "<table class='table table-striped table-bordered "
+  GSS_A ("<table class='table table-striped table-bordered "
       "table-condensed'>\n");
-  g_string_append (s, "<thead>\n");
-  g_string_append (s, "<tr>\n");
-  g_string_append (s, "<th>Type</th>\n");
-  g_string_append (s, "<th>Size</th>\n");
-  g_string_append (s, "<th>Bitrate</th>\n");
-  g_string_append (s, "</tr>\n");
-  g_string_append (s, "</thead>\n");
-  g_string_append (s, "<tbody>\n");
+  GSS_A ("<thead>\n");
+  GSS_A ("<tr>\n");
+  GSS_A ("<th>Type</th>\n");
+  GSS_A ("<th>Size</th>\n");
+  GSS_A ("<th>Bitrate</th>\n");
+  GSS_A ("</tr>\n");
+  GSS_A ("</thead>\n");
+  GSS_A ("<tbody>\n");
   for (g = program->streams; g; g = g_list_next (g)) {
     GssStream *stream = g->data;
 
-    g_string_append (s, "<tr>\n");
-    g_string_append_printf (s, "<td>%s</td>\n",
-        gss_stream_type_get_name (stream->type));
-    g_string_append_printf (s, "<td>%dx%d</td>\n", stream->width,
-        stream->height);
-    g_string_append_printf (s, "<td>%d kbps</td>\n", stream->bitrate / 1000);
-    g_string_append_printf (s, "<td><a href=\"%s\">stream</a></td>\n",
-        stream->location);
-    g_string_append_printf (s, "<td><a href=\"%s\">playlist</a></td>\n",
-        stream->playlist_location);
-    g_string_append (s, "</tr>\n");
+    GSS_A ("<tr>\n");
+    GSS_P ("<td>%s</td>\n", gss_stream_type_get_name (stream->type));
+    GSS_P ("<td>%dx%d</td>\n", stream->width, stream->height);
+    GSS_P ("<td>%d kbps</td>\n", stream->bitrate / 1000);
+    GSS_P ("<td><a href=\"%s\">stream</a></td>\n", stream->location);
+    GSS_P ("<td><a href=\"%s\">playlist</a></td>\n", stream->playlist_location);
+    GSS_A ("</tr>\n");
   }
-  g_string_append (s, "<tr>\n");
-  g_string_append_printf (s,
-      "<td colspan='7'><a class='btn btn-mini' href='/'>"
+  GSS_A ("<tr>\n");
+  GSS_P ("<td colspan='7'><a class='btn btn-mini' href='/'>"
       "<i class='icon-plus'></i>Add</a></td>\n");
-  g_string_append (s, "</tr>\n");
-  g_string_append (s, "</tbody>\n");
-  g_string_append (s, "</table>\n");
+  GSS_A ("</tr>\n");
+  GSS_A ("</tbody>\n");
+  GSS_A ("</table>\n");
 
 }
 
@@ -817,8 +808,7 @@ gss_program_list_resource (GssTransaction * t)
 
   for (g = program->streams; g; g = g_list_next (g), i++) {
     GssStream *stream = g->data;
-    g_string_append_printf (s,
-        "%d %s %d %d %d %s\n", i, gss_stream_type_get_id (stream->type),
+    GSS_P ("%d %s %d %d %d %s\n", i, gss_stream_type_get_id (stream->type),
         stream->width, stream->height, stream->bitrate, stream->location);
   }
 }

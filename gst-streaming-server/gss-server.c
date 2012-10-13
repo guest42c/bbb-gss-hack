@@ -936,53 +936,51 @@ gss_server_resource_main_page (GssTransaction * t)
 
   gss_html_header (t);
 
-  g_string_append_printf (s, "<h2>Input Media</h2>\n");
+  GSS_P ("<h2>Input Media</h2>\n");
 
-  g_string_append_printf (s, "<ul class='thumbnails'>\n");
+  GSS_P ("<ul class='thumbnails'>\n");
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
 
     if (program->is_archive)
       continue;
 
-    g_string_append_printf (s, "<li class='span4'>\n");
-    g_string_append_printf (s, "<div class='thumbnail'>\n");
-    g_string_append_printf (s,
-        "<a href=\"/%s%s%s\">",
+    GSS_P ("<li class='span4'>\n");
+    GSS_P ("<div class='thumbnail'>\n");
+    GSS_P ("<a href=\"/%s%s%s\">",
         GST_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
     gss_program_add_jpeg_block (program, t);
-    g_string_append_printf (s, "</a>\n");
-    g_string_append_printf (s, "<h5>%s</h5>\n", GST_OBJECT_NAME (program));
-    g_string_append_printf (s, "</div>\n");
-    g_string_append_printf (s, "</li>\n");
+    GSS_P ("</a>\n");
+    GSS_P ("<h5>%s</h5>\n", GST_OBJECT_NAME (program));
+    GSS_P ("</div>\n");
+    GSS_P ("</li>\n");
   }
-  g_string_append_printf (s, "</ul>\n");
+  GSS_P ("</ul>\n");
 
-  g_string_append_printf (s, "<h2>Archived Media</h2>\n");
+  GSS_P ("<h2>Archived Media</h2>\n");
 
-  g_string_append_printf (s, "<ul class='thumbnails'>\n");
+  GSS_P ("<ul class='thumbnails'>\n");
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
 
     if (!program->is_archive)
       continue;
 
-    g_string_append_printf (s, "<li class='span4'>\n");
-    g_string_append_printf (s, "<div class='thumbnail'>\n");
-    g_string_append_printf (s,
-        "<a href=\"/%s%s%s\">",
+    GSS_P ("<li class='span4'>\n");
+    GSS_P ("<div class='thumbnail'>\n");
+    GSS_P ("<a href=\"/%s%s%s\">",
         GST_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
     gss_program_add_jpeg_block (program, t);
-    g_string_append_printf (s, "</a>\n");
-    g_string_append_printf (s, "<h5>%s</h5>\n", GST_OBJECT_NAME (program));
-    g_string_append_printf (s, "</div>\n");
-    g_string_append_printf (s, "</li>\n");
+    GSS_P ("</a>\n");
+    GSS_P ("<h5>%s</h5>\n", GST_OBJECT_NAME (program));
+    GSS_P ("</div>\n");
+    GSS_P ("</li>\n");
   }
-  g_string_append_printf (s, "</ul>\n");
+  GSS_P ("</ul>\n");
 
   gss_html_footer (t);
 }
@@ -997,7 +995,7 @@ gss_server_resource_list (GssTransaction * t)
 
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
-    g_string_append_printf (s, "%s\n", GST_OBJECT_NAME (program));
+    GSS_P ("%s\n", GST_OBJECT_NAME (program));
   }
 }
 

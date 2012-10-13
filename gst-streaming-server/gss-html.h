@@ -48,6 +48,9 @@ gboolean gss_html_entity_is_sane (const char *s);
 gboolean gss_html_attribute_is_sane (const char *s);
 gboolean gss_html_url_is_sane (const char *s);
 
+#define GSS_A(a) g_string_append (s, a)
+#define GSS_P(...) g_string_append_printf (s, __VA_ARGS__)
+
 G_END_DECLS
 
 #endif
