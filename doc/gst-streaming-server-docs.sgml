@@ -6,24 +6,35 @@
 ]>
 <book id="index">
   <bookinfo>
-    <title>gst-stream-server Reference Manual</title>
+    <title>gst-streaming-server Reference Manual</title>
     <releaseinfo>
-      for gst-stream-server [VERSION].
+      for gst-streaming-server &GSS_VERSION;.
       The latest version of this documentation can be found on-line at
-      <ulink role="online-location" url="http://[SERVER]/gst-stream-server/index.html">http://[SERVER]/gst-stream-server/</ulink>.
+      <ulink role="online-location" url="http://gstreamer.net/gst-streaming-server/index.html">http://gstreamer.net/gst-streaming-server/</ulink>.
     </releaseinfo>
   </bookinfo>
 
   <chapter>
-    <title>[Insert title here]</title>
-        <xi:include href="xml/gss-config.xml"/>
+    <title>GSS Standalone Server</title>
+  </chapter>
+  <chapter>
+    <title>GSS Library Reference</title>
+    <xi:include href="xml/gss-config.xml"/>
     <xi:include href="xml/gss-form.xml"/>
-    <xi:include href="xml/gss-hls-server.xml"/>
     <xi:include href="xml/gss-html.xml"/>
+    <xi:include href="xml/gss-metrics.xml"/>
+    <xi:include href="xml/gss-program.xml"/>
+    <xi:include href="xml/gss-resource.xml"/>
     <xi:include href="xml/gss-rtsp.xml"/>
     <xi:include href="xml/gss-server.xml"/>
     <xi:include href="xml/gss-session.xml"/>
     <xi:include href="xml/gss-soup.xml"/>
+    <xi:include href="xml/gss-stream.xml"/>
+    <xi:include href="xml/gss-transaction.xml"/>
+    <xi:include href="xml/gss-types.xml"/>
+    <xi:include href="xml/gss-utils.xml"/>
+    <xi:include href="xml/gss-vod.xml"/>
+    <xi:include href="xml/gss-websocket.xml"/>
 
   </chapter>
   <chapter id="object-tree">

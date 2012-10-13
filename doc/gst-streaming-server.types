@@ -1,0 +1,4 @@
+gss_program_get_type
+gss_server_get_type
+gss_stream_get_type
+gss_websocket_get_type
