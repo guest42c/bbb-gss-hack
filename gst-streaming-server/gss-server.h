@@ -98,9 +98,6 @@ struct _GssServer
 
   //time_t config_timestamp;
 
-  GList *messages;
-  int n_messages;
-
   GssFooterHtml *footer_html;
   void *footer_html_priv;
 
@@ -140,8 +137,6 @@ void gss_server_deinit (void);
 
 void gss_server_add_admin_callbacks (GssServer *server, SoupServer *soupserver);
 GssProgram * gss_server_get_program_by_name (GssServer *server, const char *name);
-
-void gss_server_log (GssServer *server, char *message);
 
 void gss_server_add_static_file (SoupServer *soupserver, const char *filename,
     const char *content_type);

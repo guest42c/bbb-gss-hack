@@ -137,7 +137,7 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
           && message->src == GST_OBJECT (stream->pipeline)) {
         char *s;
         s = g_strdup_printf ("stream %s started", GST_OBJECT_NAME (stream));
-        gss_program_log (program, s);
+        GST_DEBUG_OBJECT (program, s);
         g_free (s);
         gss_program_set_state (program, GSS_PROGRAM_STATE_RUNNING);
       }
@@ -164,7 +164,7 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
 
       s = g_strdup_printf ("Internal Error: %s (%s) from %s\n",
           error->message, debug, GST_MESSAGE_SRC_NAME (message));
-      gss_program_log (program, s);
+      GST_DEBUG_OBJECT (program, s);
       g_free (s);
 
       program->restart_delay = 5;
@@ -172,7 +172,7 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
     }
       break;
     case GST_MESSAGE_EOS:
-      gss_program_log (program, "end of stream");
+      GST_DEBUG_OBJECT (program, "end of stream");
       gss_program_stop (program);
       switch (program->program_type) {
         case GSS_PROGRAM_EW_FOLLOW:

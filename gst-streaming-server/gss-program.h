@@ -141,7 +141,6 @@ void gss_program_add_stream (GssProgram *program, GssStream *stream);
 void gss_program_remove_stream (GssProgram *program, GssStream *stream);
 GssStream * gss_program_add_stream_full (GssProgram *program,
     int type, int width, int height, int bitrate, GstElement *sink);
-void gss_program_log (GssProgram *program, const char *message, ...);
 void gss_program_enable_streaming (GssProgram *program);
 void gss_program_disable_streaming (GssProgram *program);
 void gss_program_set_enabled (GssProgram *program, gboolean enabled);

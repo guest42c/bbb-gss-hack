@@ -250,23 +250,6 @@ gss_server_deinit (void)
 
 }
 
-void
-gss_server_log (GssServer * server, char *message)
-{
-  g_return_if_fail (server);
-  g_return_if_fail (message);
-
-  GST_DEBUG ("%s", message);
-  server->messages = g_list_append (server->messages, message);
-  server->n_messages++;
-  while (server->n_messages > 50) {
-    g_free (server->messages->data);
-    server->messages = g_list_delete_link (server->messages, server->messages);
-    server->n_messages--;
-  }
-
-}
-
 static void
 gss_server_finalize (GObject * object)
 {
@@ -285,8 +268,6 @@ gss_server_finalize (GObject * object)
   if (server->ssl_server)
     g_object_unref (server->ssl_server);
 
-  g_list_foreach (server->messages, (GFunc) g_free, NULL);
-  g_list_free (server->messages);
   g_list_free (server->featured_resources);
   g_list_free (server->admin_resources);
 

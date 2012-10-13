@@ -312,12 +312,10 @@ admin_log_resource_get (GssTransaction * t)
     g_string_append_printf (s, "</pre>\n");
   }
   {
-    GList *g;
     g_string_append_printf (s, "<h2>Log</h2>\n");
     g_string_append_printf (s, "<pre>\n");
-    for (g = t->server->messages; g; g = g_list_next (g)) {
-      g_string_append_printf (s, "%s\n", (char *) g->data);
-    }
+    /* FIXME this used to contain the interal logging done by GssServer,
+     * which was removed. */
     g_string_append_printf (s, "</pre>\n");
   }
 

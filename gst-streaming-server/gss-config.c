@@ -325,8 +325,7 @@ gss_config_handle_post (GssConfig * config, SoupMessage * msg)
       ret = g_file_set_contents ("logo.png", buffer->data, buffer->length,
           &error);
       if (!ret) {
-        /* FIXME */
-        //gss_server_log (server, "failed to write logo.png file");
+        GST_WARNING ("failed to write logo.png file");
       }
       soup_buffer_free (buffer);
     }

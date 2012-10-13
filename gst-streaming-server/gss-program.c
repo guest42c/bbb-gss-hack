@@ -345,7 +345,7 @@ gss_program_stop (GssProgram * program)
       program->state == GSS_PROGRAM_STATE_STOPPING) {
     return;
   }
-  gss_program_log (program, "stop");
+  GST_DEBUG_OBJECT (program, "stop");
   gss_program_set_state (program, GSS_PROGRAM_STATE_STOPPING);
 
   program_class = GSS_PROGRAM_GET_CLASS (program);
@@ -388,7 +388,7 @@ gss_program_start (GssProgram * program)
   if (!program->server->enable_programs) {
     return;
   }
-  gss_program_log (program, "start");
+  GST_DEBUG_OBJECT (program, "start");
   gss_program_set_state (program, GSS_PROGRAM_STATE_STARTING);
 
   for (g = program->streams; g; g = g_list_next (g)) {
@@ -452,26 +452,6 @@ gss_program_set_jpegsink (GssProgram * program, GstElement * jpegsink)
   gst_object_replace ((GstObject **) & program->jpegsink,
       GST_OBJECT (jpegsink));
 
-}
-
-void
-gss_program_log (GssProgram * program, const char *message, ...)
-{
-  char *thetime = gss_utils_get_time_string ();
-  char *s;
-  va_list varargs;
-
-  g_return_if_fail (program);
-  g_return_if_fail (message);
-
-  va_start (varargs, message);
-  s = g_strdup_vprintf (message, varargs);
-  va_end (varargs);
-
-  gss_server_log (program->server, g_strdup_printf ("%s: %s: %s",
-          thetime, GST_OBJECT_NAME (program), s));
-  g_free (s);
-  g_free (thetime);
 }
 
 void
@@ -747,7 +727,7 @@ gss_program_put_resource (GssTransaction * t)
   /* FIXME should check if another client has connected */
 #if 0
   if (program->push_client) {
-    gss_program_log (program, "busy");
+    GST_DEBUG_LOG (program, "busy");
     soup_message_set_status (t->msg, SOUP_STATUS_CONFLICT);
     return;
   }
