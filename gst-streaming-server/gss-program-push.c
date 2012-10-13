@@ -30,8 +30,6 @@
 #include "gss-content.h"
 
 
-#define verbose FALSE
-
 
 static void handle_pipeline_message (GstBus * bus, GstMessage * message,
     gpointer user_data);
@@ -81,14 +79,13 @@ gss_stream_create_push_pipeline (GssStream * stream)
   g_string_append_printf (pipe_desc, "%s name=sink ",
       gss_server_get_multifdsink_string ());
 
-  if (verbose) {
-    g_print ("pipeline: %s\n", pipe_desc->str);
-  }
+  GST_DEBUG ("pipeline: %s", pipe_desc->str);
   error = NULL;
   pipe = gst_parse_launch (pipe_desc->str, &error);
   if (error != NULL) {
-    if (verbose)
-      g_print ("pipeline parse error: %s\n", error->message);
+    GST_WARNING ("pipeline parse error: %s", error->message);
+    g_error_free (error);
+    return;
   }
   g_string_free (pipe_desc, TRUE);
 
@@ -130,13 +127,11 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
 
       gst_message_parse_state_changed (message, &oldstate, &newstate, &pending);
 
-      if (0 && verbose)
-        g_print ("message: %s (%s,%s,%s) from %s\n",
-            GST_MESSAGE_TYPE_NAME (message),
-            gst_element_state_get_name (newstate),
-            gst_element_state_get_name (oldstate),
-            gst_element_state_get_name (pending),
-            GST_MESSAGE_SRC_NAME (message));
+      GST_DEBUG ("message: %s (%s,%s,%s) from %s",
+          GST_MESSAGE_TYPE_NAME (message),
+          gst_element_state_get_name (newstate),
+          gst_element_state_get_name (oldstate),
+          gst_element_state_get_name (pending), GST_MESSAGE_SRC_NAME (message));
 
       if (newstate == GST_STATE_PLAYING
           && message->src == GST_OBJECT (stream->pipeline)) {
@@ -155,9 +150,8 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
 
       gst_message_parse_stream_status (message, &type, &owner);
 
-      if (0 && verbose)
-        g_print ("message: %s (%d) from %s\n", GST_MESSAGE_TYPE_NAME (message),
-            type, GST_MESSAGE_SRC_NAME (message));
+      GST_DEBUG ("message: %s (%d) from %s", GST_MESSAGE_TYPE_NAME (message),
+          type, GST_MESSAGE_SRC_NAME (message));
     }
       break;
     case GST_MESSAGE_ERROR:

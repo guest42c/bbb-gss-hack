@@ -30,9 +30,6 @@
 #include <fcntl.h>
 
 
-#define verbose FALSE
-
-
 static void vod_resource_chunked (GssTransaction * transaction);
 
 

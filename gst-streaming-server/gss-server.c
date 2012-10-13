@@ -37,8 +37,6 @@
 
 #define BASE "/"
 
-#define verbose FALSE
-
 enum
 {
   PROP_0,
@@ -258,8 +256,7 @@ gss_server_log (GssServer * server, char *message)
   g_return_if_fail (server);
   g_return_if_fail (message);
 
-  if (verbose)
-    g_print ("%s\n", message);
+  GST_DEBUG ("%s", message);
   server->messages = g_list_append (server->messages, message);
   server->n_messages++;
   while (server->n_messages > 50) {

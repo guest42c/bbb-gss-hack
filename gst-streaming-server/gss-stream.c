@@ -43,7 +43,6 @@ enum
 #define DEFAULT_BITRATE 600000
 
 
-#define verbose FALSE
 
 static void msg_wrote_headers (SoupMessage * msg, void *user_data);
 
@@ -150,8 +149,8 @@ gss_stream_finalize (GObject * object)
   }
 #define CLEANUP(x) do { \
   if (x) { \
-    if (verbose && GST_OBJECT_REFCOUNT (x) != 1) \
-      g_print( #x "refcount %d\n", GST_OBJECT_REFCOUNT (x)); \
+    if (GST_OBJECT_REFCOUNT (x) != 1) \
+      GST_WARNING( #x "refcount %d", GST_OBJECT_REFCOUNT (x)); \
     g_object_unref (x); \
   } \
 } while (0)
@@ -414,13 +413,11 @@ stream_resource (GssTransaction * t)
   if (t->server->metrics->n_clients >= t->server->max_connections ||
       t->server->metrics->bitrate + stream->bitrate >=
       t->server->max_rate * 8000) {
-    if (verbose)
-      g_print ("n_clients %d max_connections %d\n",
-          t->server->metrics->n_clients, t->server->max_connections);
-    if (verbose)
-      g_print ("current bitrate %" G_GINT64_FORMAT " bitrate %d max_bitrate %d"
-          "\n", t->server->metrics->bitrate, stream->bitrate,
-          t->server->max_rate * 8000);
+    GST_DEBUG ("n_clients %d max_connections %d\n",
+        t->server->metrics->n_clients, t->server->max_connections);
+    GST_DEBUG ("current bitrate %" G_GINT64_FORMAT " bitrate %d max_bitrate %d"
+        "\n", t->server->metrics->bitrate, stream->bitrate,
+        t->server->max_rate * 8000);
     soup_message_set_status (t->msg, SOUP_STATUS_SERVICE_UNAVAILABLE);
     return;
   }

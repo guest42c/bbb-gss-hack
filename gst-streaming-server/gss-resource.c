@@ -28,9 +28,6 @@
 
 
 
-#define verbose FALSE
-
-
 void
 gss_resource_free (GssResource * resource)
 {
@@ -125,8 +122,7 @@ gss_resource_new_file (const char *filename, GssResourceFlags flags,
   ret = g_file_get_contents (filename + 1, &contents, &size, &error);
   if (!ret) {
     g_error_free (error);
-    if (verbose)
-      g_print ("missing file %s\n", filename);
+    GST_WARNING ("missing file %s", filename);
     return NULL;
   }
 

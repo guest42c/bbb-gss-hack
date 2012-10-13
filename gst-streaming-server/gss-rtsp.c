@@ -26,9 +26,6 @@
 #include <gst/rtsp-server/rtsp-server.h>
 
 
-#define verbose FALSE
-
-
 void
 gss_server_rtsp_init (GssServer * server)
 {
@@ -83,8 +80,7 @@ gss_rtsp_stream_start (GssRtspStream * rtsp_stream)
   g_string_append (pipe_desc, "demux. ! queue ! rtpvorbispay name=pay1 pt=97 ");
   g_string_append (pipe_desc, ")");
 
-  if (verbose)
-    printf ("%s\n", pipe_desc->str);
+  GST_DEBUG ("%s", pipe_desc->str);
 
   rtsp_stream->factory = gst_rtsp_media_factory_new ();
   gst_rtsp_media_factory_set_launch (rtsp_stream->factory, pipe_desc->str);
