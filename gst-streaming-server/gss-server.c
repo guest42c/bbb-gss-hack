@@ -80,6 +80,7 @@ enum
 /* Server Resources */
 static void gss_server_resource_main_page (GssTransaction * transaction);
 static void gss_server_resource_list (GssTransaction * transaction);
+static void gss_server_resource_about (GssTransaction * t);
 
 
 /* GssServer internals */
@@ -582,7 +583,7 @@ gss_server_setup_resources (GssServer * server)
       gss_server_resource_list, NULL, NULL, NULL);
 
   gss_server_add_resource (server, "/about", GSS_RESOURCE_UI, "text/html",
-      gss_resource_unimplemented, NULL, NULL, NULL);
+      gss_server_resource_about, NULL, NULL, NULL);
   gss_server_add_resource (server, "/contact", GSS_RESOURCE_UI, "text/html",
       gss_resource_unimplemented, NULL, NULL, NULL);
   gss_server_add_resource (server, "/add_program", GSS_RESOURCE_UI, "text/html",
@@ -1034,4 +1035,128 @@ periodic_timer (gpointer data)
   }
 
   return TRUE;
+}
+
+static void
+gss_server_resource_about (GssTransaction * t)
+{
+  GString *s;
+
+  s = t->s = g_string_new ("");
+
+  gss_html_header (t);
+
+  GSS_P ("<h2>About</h2>\n");
+
+  GSS_P ("<p>GStreamer Streaming Server is based on the work of many\n");
+  GSS_P ("open source projects, some of which are listed below.\n");
+  GSS_P ("</p>\n");
+
+  GSS_P ("<h3>GStreamer Streaming Server</h3>\n");
+  GSS_P ("<pre>\n");
+  GSS_P ("Copyright (C) 2009-2012 Entropy Wave Inc <info@entropywave.com>\n");
+  GSS_P ("Copyright (C) 2009-2012 David Schleef <ds@schleef.org>\n");
+  GSS_P ("Copyright (C) 2012 Jan Schmidt <thaytan@noraisin.net>\n");
+  GSS_P ("\n");
+  GSS_P ("This library is free software; you can redistribute it and/or\n");
+  GSS_P ("modify it under the terms of the GNU Library General Public\n");
+  GSS_P ("License as published by the Free Software Foundation; either\n");
+  GSS_P ("version 2 of the License, or (at your option) any later version.\n");
+  GSS_P ("\n");
+  GSS_P ("This library is distributed in the hope that it will be useful,\n");
+  GSS_P ("but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
+  GSS_P ("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n");
+  GSS_P ("Library General Public License for more details.\n");
+  GSS_P ("\n");
+  GSS_P ("You should have received a copy of the GNU Library General Public\n");
+  GSS_P ("License along with this library; if not, write to the\n");
+  GSS_P ("Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,\n");
+  GSS_P ("Boston, MA 02110-1301, USA.\n");
+  GSS_P ("</pre>\n");
+
+  GSS_P ("<h3>Twitter Bootstrap</h3>\n");
+  GSS_P ("<pre>\n");
+  GSS_A ("Copyright 2012 Twitter, Inc\n");
+  GSS_A ("Licensed under the Apache License v2.0\n");
+  GSS_A ("http://www.apache.org/licenses/LICENSE-2.0\n");
+  GSS_A ("\n");
+  GSS_A
+      ("Designed and built with all the love in the world @twitter by @mdo and @fat.\n");
+  GSS_P ("</pre>\n");
+
+  GSS_P ("<h3>GStreamer</h3>\n");
+  GSS_P ("<p>Includes gstreamer, gst-plugins-base, gst-plugins-good, \n");
+  GSS_P ("gst-plugins-bad, and gst-rtsp-server.</p>\n");
+  GSS_P ("<pre>\n");
+  GSS_P ("Copyright (C) 1999-2012 GStreamer contributors\n");
+  GSS_P ("\n");
+  GSS_P ("This library is free software; you can redistribute it and/or\n");
+  GSS_P ("modify it under the terms of the GNU Library General Public\n");
+  GSS_P ("License as published by the Free Software Foundation; either\n");
+  GSS_P ("version 2 of the License, or (at your option) any later version.\n");
+  GSS_P ("\n");
+  GSS_P ("This library is distributed in the hope that it will be useful,\n");
+  GSS_P ("but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
+  GSS_P ("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n");
+  GSS_P ("Library General Public License for more details.\n");
+  GSS_P ("\n");
+  GSS_P ("You should have received a copy of the GNU Library General Public\n");
+  GSS_P ("License along with this library; if not, write to the\n");
+  GSS_P ("Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,\n");
+  GSS_P ("Boston, MA 02110-1301, USA.\n");
+  GSS_P ("</pre>\n");
+
+  GSS_P ("<h3>Libsoup</h3>\n");
+  GSS_P ("<pre>\n");
+  GSS_P ("Copyright (C) 2009, 2010 Red Hat, Inc.\n");
+  GSS_A ("Copyright 1999-2003 Ximian, Inc.\n");
+  GSS_A ("Copyright (C) 2000-2003, Ximian, Inc.\n");
+  GSS_A ("Copyright (C) 2001-2007 Novell, Inc.\n");
+  GSS_A ("Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012 Red Hat, Inc.\n");
+  GSS_A ("Copyright (C) 2008 Diego Escalante Urrelo\n");
+  GSS_A ("Copyright (C) 2009, 2011 Collabora Ltd.\n");
+  GSS_A ("Copyright (C) 2009 Gustavo Noronha Silva.\n");
+  GSS_A ("Copyright (C) 2009, 2010 Igalia S.L.\n");
+  GSS_P ("\n");
+  GSS_P ("This library is free software; you can redistribute it and/or\n");
+  GSS_P ("modify it under the terms of the GNU Library General Public\n");
+  GSS_P ("License as published by the Free Software Foundation; either\n");
+  GSS_P ("version 2 of the License, or (at your option) any later version.\n");
+  GSS_P ("\n");
+  GSS_P ("This library is distributed in the hope that it will be useful,\n");
+  GSS_P ("but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
+  GSS_P ("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n");
+  GSS_P ("Library General Public License for more details.\n");
+  GSS_P ("\n");
+  GSS_P ("You should have received a copy of the GNU Library General Public\n");
+  GSS_P ("License along with this library; if not, write to the\n");
+  GSS_P ("Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,\n");
+  GSS_P ("Boston, MA 02110-1301, USA.\n");
+  GSS_P ("</pre>\n");
+
+  GSS_P ("<h3>JSON-Glib</h3>\n");
+  GSS_P ("<pre>\n");
+  GSS_P ("Copyright (C) 1997, 1998 Tim Janik\n");
+  GSS_P ("Copyright (C) 2007, 2008, 2009  OpenedHand Ltd.\n");
+  GSS_P ("Copyright (C) 2009, 2010, 2011  Intel Corp.\n");
+  GSS_P ("Copyright (C) 2010  Luca Bruno <lethalman88@gmail.com>\n");
+  GSS_P ("\n");
+  GSS_P ("This library is free software; you can redistribute it and/or\n");
+  GSS_P ("modify it under the terms of the GNU Lesser General Public\n");
+  GSS_P ("License as published by the Free Software Foundation; either\n");
+  GSS_P
+      ("version 2.1 of the License, or (at your option) any later version.\n");
+  GSS_P ("\n");
+  GSS_P ("This library is distributed in the hope that it will be useful,\n");
+  GSS_P ("but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
+  GSS_P ("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n");
+  GSS_P ("Library General Public License for more details.\n");
+  GSS_P ("\n");
+  GSS_P ("You should have received a copy of the GNU Library General Public\n");
+  GSS_P ("License along with this library; if not, write to the\n");
+  GSS_P ("Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,\n");
+  GSS_P ("Boston, MA 02110-1301, USA.\n");
+  GSS_P ("</pre>\n");
+
+  gss_html_footer (t);
 }
