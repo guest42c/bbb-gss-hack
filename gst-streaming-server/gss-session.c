@@ -23,7 +23,6 @@
 
 #include "gss-server.h"
 #include "gss-config.h"
-#include "gss-form.h"
 #include "gss-html.h"
 #include "gss-soup.h"
 #include "gss-utils.h"
@@ -32,18 +31,10 @@
 
 #define GST_CAT_DEFAULT gss_debug
 
-#define REALM "Entropy Wave E1000"
+#define REALM "GStreamer Streaming Server"
 #define BASE "/"
 
 static GList *sessions;
-
-static GssField login_fields[] = {
-  {GSS_FIELD_SECTION, NULL, "Login"},
-  {GSS_FIELD_TEXT_INPUT, "username", "User", "", 0},
-  {GSS_FIELD_PASSWORD, "password", "Password", "", 0},
-  {GSS_FIELD_SUBMIT, "submit", "Login", NULL, 1},
-  {GSS_FIELD_NONE}
-};
 
 
 typedef struct _AddrRange AddrRange;
@@ -71,15 +62,12 @@ gss_session_add_session_callbacks (GssServer * server)
   gss_server_add_resource (server, "/logout", GSS_RESOURCE_HTTPS_ONLY,
       "text/html", session_logout_resource, NULL, NULL, NULL);
 
-  gss_config_set_notify (server->config, "hosts_allow",
-      gss_session_notify_hosts_allow, server);
   gss_session_notify_hosts_allow ("hosts_allow", server);
 }
 
 void
 gss_session_notify_hosts_allow (const char *key, void *priv)
 {
-  GssServer *server = (GssServer *) priv;
   char **chunks;
   char *end;
   const char *s;
@@ -89,7 +77,9 @@ gss_session_notify_hosts_allow (const char *key, void *priv)
   g_free (hosts_allow);
   n_hosts_allow = 0;
 
-  s = gss_config_get (server->config, "hosts_allow");
+  /* FIXME */
+  //s = gss_config_get (server->config, "hosts_allow");
+  s = "";
   chunks = g_strsplit (s, " ", 0);
   n = g_strv_length (chunks);
 
@@ -764,7 +754,28 @@ session_login_get_resource (GssTransaction * t)
     location = g_strdup ("/login");
   }
 
-  gss_config_form_add_form (server, s, location, "Login", login_fields, NULL);
+  GSS_A ("<h2>Login</h2><br>\n");
+  GSS_A
+      ("<form class='form-horizontal' method='post' enctype='multipart/form-data'>\n");
+  GSS_A ("<div class='control-group'>\n");
+  GSS_A ("<label class='control-label' for='username'>Username</label>\n");
+  GSS_A ("<div class='controls'>\n");
+  GSS_A ("<div class='input'>\n");
+  GSS_A ("<input name='username' id='username' type='text'>");
+  GSS_A ("</div>\n");
+  GSS_A ("</div>\n");
+  GSS_A ("</div>\n");
+  GSS_A ("<div class='control-group'>\n");
+  GSS_A ("<label class='control-label' for='password'>Password</label>\n");
+  GSS_A ("<div class='controls'>\n");
+  GSS_A ("<div class='input-append'>\n");
+  GSS_A ("<input name='password' id='password' type='password'>");
+  GSS_A ("</div>\n");
+  GSS_A ("</div>\n");
+  GSS_A ("</div>\n");
+  GSS_A ("<button type='submit' class='btn'>Login</button>\n");
+  GSS_A ("</form>\n");
+
   g_free (location);
 
   gss_html_footer (t);

@@ -18,46 +18,39 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#ifndef _GSS_CONFIG_H_
-#define _GSS_CONFIG_H_
+#include "config.h"
 
-#include <glib-object.h>
-
-#include "gss-session.h"
+#include "gss-html.h"
 #include "gss-transaction.h"
 
+#include <string.h>
 
-G_BEGIN_DECLS
-
-#define GSS_PARAM_SECURE (1<<27)
-#define GSS_PARAM_MULTILINE (1<<28)
-#define GSS_PARAM_HIDE (1<<29)
-#define GSS_PARAM_FILE_UPLOAD (1<<30)
-
-typedef struct _GssConfig GssConfig;
-
-struct _GssConfig
+void
+gss_transaction_redirect (GssTransaction * t, const char *target)
 {
-  GObject *object;
+  char *s;
 
+  s = g_strdup_printf ("<html><body>Oops, you were supposed to "
+      "be redirected <a href='%s'>here</a>.</body></html>\n", target);
+  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE, s,
+      strlen (s));
+  soup_message_headers_append (t->msg->response_headers, "Location", target);
+  soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
+}
 
-};
+void
+gss_transaction_error (GssTransaction * t, const char *message)
+{
+  GString *s = g_string_new ("");
 
-void gss_config_attach (GObject *object);
-void gss_config_free_all (void);
+  t->s = s;
 
-void gss_config_append_config_block (GObject *object, GssTransaction *t,
-    gboolean show);
-gboolean gss_config_handle_post (GObject *object, GssTransaction *t);
-GHashTable * gss_config_get_post_hash (GssTransaction *t);
-gboolean gss_config_handle_post_hash (GObject * object, GssTransaction * t,
-    GHashTable *hash);
-void gss_config_add_server_resources (GssServer *server);
-void gss_config_save_config_file (void);
-void gss_config_load_config_file (void);
+  gss_html_header (t);
 
+  g_string_append (s, "<h1>Configuration Failed</h1><hr>\n");
+  g_string_append (s, "<p>Invalid configuration options were provided.\n"
+      "Please return to previous page and retry.</p>\n");
 
-G_END_DECLS
-
-#endif
-
+  gss_html_footer (t);
+  soup_message_set_status (t->msg, SOUP_STATUS_BAD_REQUEST);
+}

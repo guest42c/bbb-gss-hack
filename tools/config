@@ -1,26 +1,27 @@
-admin_token=5fb50a9baa7563e13a10ab50a17a1b87
-enable_public_ui=on
-enable_streaming=on
-hosts_allow=
-max_bandwidth=100000
-max_connections=10000
-server_name=localhost
-server_port=
-stream0=off
-stream0_name=stream0
-stream0_type=icecast
-stream0_url=
-stream1=off
-stream1_name=stream1
-stream1_type=icecast
-stream1_url=
-stream2=off
-stream2_name=stream2
-stream2_type=icecast
-stream2_url=
-stream3_name=stream3
-stream3_type=icecast
-stream3_url=
-stream4_name=stream4
-stream4_type=icecast
-stream4_url=
+<?xml version="1.0"?>
+<oberon xmlns:ew="http://entropywave.com/oberon/1.0/">
+  <ew:user>
+    <ew:name>admin.user</ew:name>
+    <ew:users></ew:users>
+    <ew:admin-password0></ew:admin-password0>
+    <ew:admin-password1></ew:admin-password1>
+    <ew:permanent-sessions>00000000</ew:permanent-sessions>
+  </ew:user>
+  <ew:server>
+    <ew:name>admin.server</ew:name>
+    <ew:enable-public-interface>true</ew:enable-public-interface>
+    <ew:http-port>8080</ew:http-port>
+    <ew:https-port>8443</ew:https-port>
+    <ew:server-hostname>ginger</ew:server-hostname>
+    <ew:title>GStreamer Streaming Server</ew:title>
+    <ew:max-connections>10000</ew:max-connections>
+    <ew:max-rate>100000</ew:max-rate>
+    <ew:admin-hosts-allow>0.0.0.0/0</ew:admin-hosts-allow>
+    <ew:admin-token>f09e5ebc80c348d2ccf8a59a8cd37827</ew:admin-token>
+    <ew:enable-html5-video>true</ew:enable-html5-video>
+    <ew:enable-cortado>false</ew:enable-cortado>
+    <ew:enable-flash>true</ew:enable-flash>
+    <ew:enable-rtsp>false</ew:enable-rtsp>
+    <ew:archive-dir>/mnt/sdb1</ew:archive-dir>
+  </ew:server>
+</oberon>

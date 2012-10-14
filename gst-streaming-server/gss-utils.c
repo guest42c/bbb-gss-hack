@@ -21,6 +21,7 @@
 #include "config.h"
 
 #include "gss-utils.h"
+#include "gss-config.h"
 
 #include <gst/gst.h>
 
@@ -164,4 +165,129 @@ gss_utils_get_random_bytes (guint8 * entropy, int n)
     }
     i += n;
   }
+}
+
+char *
+g_object_get_as_string (GObject * object, const GParamSpec * pspec)
+{
+  GValue value = G_VALUE_INIT;
+  char *s;
+
+  g_value_init (&value, pspec->value_type);
+  g_object_get_property (object, pspec->name, &value);
+  if (G_VALUE_HOLDS_STRING (&value)) {
+    s = g_value_dup_string (&value);
+  } else if (G_VALUE_HOLDS_ENUM (&value)) {
+    const GEnumValue *ev;
+    ev = g_enum_get_value (G_ENUM_CLASS (g_type_class_peek
+            (pspec->value_type)), g_value_get_enum (&value));
+    if (ev) {
+      s = g_strdup (ev->value_name);
+    } else {
+      GST_WARNING ("bad value %d for enum %s", g_value_get_enum (&value),
+          g_type_name (pspec->value_type));
+      s = g_strdup ("");
+    }
+  } else {
+    s = gst_value_serialize (&value);
+  }
+  g_value_unset (&value);
+
+  return s;
+}
+
+gboolean
+g_object_set_as_string (GObject * obj, const char *property, const char *value)
+{
+  GParamSpec *ps;
+  GEnumValue *ev;
+  gboolean ret = TRUE;
+
+  g_return_val_if_fail (obj, FALSE);
+  g_return_val_if_fail (G_IS_OBJECT (obj), FALSE);
+
+  ps = g_object_class_find_property (G_OBJECT_GET_CLASS (obj), property);
+  if (ps == NULL)
+    return FALSE;
+
+  if (G_TYPE_IS_ENUM (ps->value_type)) {
+    ev = g_enum_get_value_by_name (G_ENUM_CLASS (g_type_class_peek
+            (ps->value_type)), value);
+    if (ev == NULL)
+      return FALSE;
+
+    g_object_set (obj, property, ev->value, NULL);
+  } else {
+    GValue val = G_VALUE_INIT;
+    g_value_init (&val, ps->value_type);
+    if (ps->value_type == G_TYPE_STRING) {
+      g_value_set_string (&val, value);
+    } else {
+      ret = gst_value_deserialize (&val, value);
+    }
+    g_object_set_property (obj, property, &val);
+    g_value_reset (&val);
+  }
+
+  return ret;
+}
+
+gboolean
+g_object_property_is_default (GObject * object, const GParamSpec * pspec)
+{
+  GValue value = G_VALUE_INIT;
+  gboolean ret;
+
+  g_value_init (&value, pspec->value_type);
+  g_object_get_property (object, pspec->name, &value);
+
+  ret = g_param_value_defaults ((GParamSpec *) pspec, &value);
+
+  g_value_unset (&value);
+
+  return ret;
+}
+
+char *
+gss_utils_crlf_to_lf (const char *s)
+{
+  char *t;
+  int len;
+  int i;
+  int j;
+
+  len = strlen (s);
+  t = g_malloc (len + 1);
+
+  j = 0;
+  for (i = 0; i < len; i++) {
+    if (s[i] == '\r' && s[i + 1] == '\n') {
+      t[j] = '\n';
+      i++;
+    } else {
+      t[j] = s[i];
+    }
+    j++;
+  }
+  t[j] = 0;
+
+  return t;
+}
+
+gboolean
+gss_object_param_is_secure (GObject * object, const char *property_name)
+{
+  GParamSpec *ps;
+
+  g_return_val_if_fail (object, FALSE);
+  g_return_val_if_fail (G_IS_OBJECT (object), FALSE);
+
+  ps = g_object_class_find_property (G_OBJECT_GET_CLASS (object),
+      property_name);
+  if (ps == NULL)
+    return FALSE;
+
+  if (ps->flags & GSS_PARAM_SECURE)
+    return TRUE;
+  return FALSE;
 }

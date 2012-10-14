@@ -47,6 +47,15 @@ char * gss_html_sanitize_url (const char *s);
 gboolean gss_html_entity_is_sane (const char *s);
 gboolean gss_html_attribute_is_sane (const char *s);
 gboolean gss_html_url_is_sane (const char *s);
+void gss_html_append_button (GString * s, const char *button_name,
+    const char *key, const char *value);
+void gss_html_append_button_target (GString * s, const char *button_name,
+    const char *key, const char *value, const char *target);
+void gss_html_append_button2 (GString * s, const char *button_name,
+    const char *key0, const char *value0, const char *key1, const char *value1);
+void gss_html_append_button3 (GString * s, const char *button_name,
+    const char *key0, const char *value0,
+    const char *key1, const char *value1, const char *key2, const char *value2);
 
 #define GSS_A(a) g_string_append (s, a)
 #define GSS_P(...) g_string_append_printf (s, __VA_ARGS__)

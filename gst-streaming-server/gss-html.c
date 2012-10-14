@@ -496,3 +496,59 @@ gss_html_url_is_sane (const char *s)
   return TRUE;
 
 }
+
+void
+gss_html_append_button (GString * s, const char *button_name,
+    const char *key, const char *value)
+{
+  g_string_append (s, "<form method='post' enctype='multipart/form-data'>\n");
+  g_string_append_printf (s,
+      "<input name='%s' type='hidden' value='%s'>\n", key, value);
+  g_string_append_printf (s,
+      "<button type='submit' class='btn btn-mini'>%s</button>\n", button_name);
+  g_string_append (s, "</form>\n");
+}
+
+void
+gss_html_append_button_target (GString * s, const char *button_name,
+    const char *key, const char *value, const char *target)
+{
+  g_string_append_printf (s, "<form method='post' action='%s' "
+      "enctype='multipart/form-data'>\n", target);
+  g_string_append_printf (s,
+      "<input name='%s' type='hidden' value='%s'>\n", key, value);
+  g_string_append_printf (s,
+      "<button type='submit' class='btn btn-mini'>%s</button>\n", button_name);
+  g_string_append (s, "</form>\n");
+}
+
+void
+gss_html_append_button2 (GString * s, const char *button_name,
+    const char *key0, const char *value0, const char *key1, const char *value1)
+{
+  g_string_append (s, "<form method='post' enctype='multipart/form-data'>\n");
+  g_string_append_printf (s,
+      "<input name='%s' type='hidden' value='%s'>\n", key0, value0);
+  g_string_append_printf (s,
+      "<input name='%s' type='hidden' value='%s'>\n", key1, value1);
+  g_string_append_printf (s,
+      "<button type='submit' class='btn btn-mini'>%s</button>\n", button_name);
+  g_string_append (s, "</form>\n");
+}
+
+void
+gss_html_append_button3 (GString * s, const char *button_name,
+    const char *key0, const char *value0,
+    const char *key1, const char *value1, const char *key2, const char *value2)
+{
+  g_string_append (s, "<form method='post' enctype='multipart/form-data'>\n");
+  g_string_append_printf (s,
+      "<input name='%s' type='hidden' value='%s'>\n", key0, value0);
+  g_string_append_printf (s,
+      "<input name='%s' type='hidden' value='%s'>\n", key1, value1);
+  g_string_append_printf (s,
+      "<input name='%s' type='hidden' value='%s'>\n", key2, value2);
+  g_string_append_printf (s,
+      "<button type='submit' class='btn btn-mini'>%s</button>\n", button_name);
+  g_string_append (s, "</form>\n");
+}

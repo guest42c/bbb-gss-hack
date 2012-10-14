@@ -57,9 +57,6 @@ struct _GssServer
 {
   GstObject object;
 
-  GssConfig *config;
-  //char * config_filename;
-  
   /* properties */
   gboolean enable_public_interface;
   int http_port;

@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include "gss-server.h"
+#include "gss-utils.h"
 
 
 

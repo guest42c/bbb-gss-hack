@@ -23,6 +23,9 @@
 #define _GSS_UTILS_H
 
 #include <glib.h>
+#include <glib-object.h>
+
+#include <string.h>
 
 G_BEGIN_DECLS
 
@@ -31,6 +34,16 @@ char * gss_utils_get_ip_address_string (const char *interface);
 char * gss_utils_gethostname (void);
 void gss_utils_dump_hash (GHashTable *hash);
 void gss_utils_get_random_bytes (guint8 *entropy, int n);
+char * g_object_get_as_string (GObject * object, const GParamSpec * pspec);
+gboolean g_object_set_as_string (GObject * obj, const char *property,
+    const char *value);
+gboolean g_object_property_is_default (GObject * object,
+    const GParamSpec * pspec);
+char * gss_utils_crlf_to_lf (const char *s);
+
+gboolean gss_object_param_is_secure (GObject *object, const char *property_name);
+
+
   
 G_END_DECLS
 

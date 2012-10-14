@@ -196,7 +196,6 @@ gss_server_init (GssServer * server)
   char *s;
   int port, https_port;
 
-  server->config = gss_config_new ();
   server->metrics = gss_metrics_new ();
 
   server->resources = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -273,7 +272,6 @@ gss_server_finalize (GObject * object)
 
   g_hash_table_unref (server->resources);
   gss_metrics_free (server->metrics);
-  gss_config_free (server->config);
   g_free (server->base_url);
   g_free (server->base_url_https);
   g_free (server->server_hostname);

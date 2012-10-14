@@ -45,6 +45,9 @@ struct _GssTransaction {
   int id;
 };
 
+void gss_transaction_redirect (GssTransaction * t, const char *target);
+void gss_transaction_error (GssTransaction * t, const char *message);
+
 
 G_END_DECLS
 

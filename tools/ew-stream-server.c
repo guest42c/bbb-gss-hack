@@ -23,6 +23,7 @@
 #endif
 
 #include "ew-stream-server.h"
+#include "gst-streaming-server/gss-user.h"
 
 #include <gst/gst.h>
 
@@ -31,6 +32,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 
 
 #define GETTEXT_PACKAGE "ew-stream-server"
@@ -38,9 +40,6 @@
 #define CONFIG_FILENAME "config"
 
 #define LOG g_print
-
-
-extern GssConfigDefault config_defaults[];
 
 gboolean verbose = TRUE;
 gboolean cl_verbose;
@@ -62,6 +61,7 @@ static GOptionEntry entries[] = {
 };
 
 GssServer *server;
+GssUser *user;
 GMainLoop *main_loop;
 
 static void G_GNUC_NORETURN
@@ -142,7 +142,7 @@ main (int argc, char *argv[])
   signal (SIGPIPE, SIG_IGN);
   signal (SIGINT, signal_interrupt);
 
-  context = g_option_context_new ("- Entropy Wave Streaming Server");
+  context = g_option_context_new ("- GStreamer Streaming Server");
   g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
   g_option_context_add_group (context, gst_init_get_option_group ());
   if (!g_option_context_parse (context, &argc, &argv, &error)) {
@@ -152,15 +152,35 @@ main (int argc, char *argv[])
   g_option_context_free (context);
 
   server = gss_server_new ();
+  gst_object_set_name (GST_OBJECT (server), "admin.server");
 
   if (enable_daemon)
     daemonize ();
 
-  gss_server_set_title (server, "Entropy Wave Streaming Server");
+  if (server->server == NULL) {
+    g_print ("failed to create HTTP server\n");
+    exit (1);
+  }
+  if (server->ssl_server == NULL) {
+    g_print ("failed to create HTTPS server\n");
+    exit (1);
+  }
+
+  gss_server_set_title (server, "GStreamer Streaming Server");
   gss_server_set_footer_html (server, footer_html, NULL);
 
+  //ew_stream_server_add_admin_callbacks (server);
+
+  gss_config_attach (G_OBJECT (server));
+  gss_config_add_server_resources (server);
+
+  user = gss_user_new ();
+  gss_config_attach (G_OBJECT (user));
+  gss_user_add_resources (user, server);
+
+#define ENABLE_DEBUG
 #ifdef ENABLE_DEBUG
-#define REALM "Entropy Wave E1000"
+#define REALM "GStreamer Streaming Server"
   {
     GssSession *session;
     char *s;
@@ -177,27 +197,24 @@ main (int argc, char *argv[])
   }
 #endif
 
-  ew_stream_server_add_admin_callbacks (server);
-
-  gss_server_read_config (server, CONFIG_FILENAME);
-
-  gss_config_set_config_filename (server->config, CONFIG_FILENAME);
-  gss_config_load_defaults (server->config, config_defaults);
-  gss_config_load_from_file (server->config);
-  gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".perm");
-  gss_config_load_from_file_locked (server->config, CONFIG_FILENAME ".package");
-
-  for (i = 0;; i++) {
+  for (i = 0; i < 5; i++) {
     char *key;
 
-    key = g_strdup_printf ("stream%d_name", i);
+    key = g_strdup_printf ("stream%d", i);
+#if 0
     if (!gss_config_exists (server->config, key))
       break;
+#endif
 
     add_program (server, i);
 
     g_free (key);
   }
+
+  gss_config_load_config_file ();
+
+  gss_config_save_config_file ();
+
 
   //g_timeout_add (1000, periodic_timer, NULL);
 
@@ -230,24 +247,14 @@ static void
 add_program (GssServer * server, int i)
 {
   GssProgram *program;
-  const char *url;
-  const char *stream_name;
-  const char *stream_type;
-  char *key;
+  char *stream_name;
 
-  key = g_strdup_printf ("stream%d_name", i);
-  stream_name = gss_config_get (server->config, key);
-  g_free (key);
-
-  key = g_strdup_printf ("stream%d_type", i);
-  stream_type = gss_config_get (server->config, key);
-  g_free (key);
-
-  key = g_strdup_printf ("stream%d_url", i);
-  url = gss_config_get (server->config, key);
-  g_free (key);
+  stream_name = g_strdup_printf ("stream%d_name", i);
 
   program = gss_server_add_program (server, stream_name);
+  gss_program_icecast (program);
+
+#if 0
   if (strcmp (stream_type, "http-follow") == 0) {
     gss_program_http_follow (program, url);
   } else if (strcmp (stream_type, "ew-contrib") == 0) {
@@ -260,6 +267,9 @@ add_program (GssServer * server, int i)
     /* ew-follow */
     gss_program_follow (program, url, "stream");
   }
+#endif
+
+  g_free (stream_name);
 
 }
 

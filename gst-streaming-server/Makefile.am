@@ -20,7 +20,6 @@ libgss_la_SOURCES = \
 	gss-server.c \
 	gss-session.c \
 	gss-config.c \
-	gss-form.c \
 	gss-html.c \
 	gss-soup.c \
 	gss-metrics.c \
@@ -32,6 +31,8 @@ libgss_la_SOURCES = \
 	gss-program-follow.c \
 	gss-program-push.c \
 	gss-stream.c \
+	gss-transaction.c \
+	gss-user.c \
 	gss-utils.c \
 	gss-websocket.c
 
@@ -48,7 +49,6 @@ gss_include_HEADERS = \
 	gss-session.h \
 	gss-config.h \
 	gss-program.h \
-	gss-form.h \
 	gss-html.h \
 	gss-soup.h \
 	gss-rtsp.h \
@@ -57,6 +57,7 @@ gss_include_HEADERS = \
 	gss-stream.h \
 	gss-transaction.h \
 	gss-types.h \
+	gss-user.h \
 	gss-utils.h \
 	gss-vod.h \
 	gss-websocket.h

@@ -28,6 +28,7 @@
 #include "gss-rtsp.h"
 #endif
 #include "gss-content.h"
+#include "gss-utils.h"
 
 enum
 {
