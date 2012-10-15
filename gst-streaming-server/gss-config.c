@@ -515,14 +515,13 @@ gss_config_get_resource (GssTransaction * t)
   gss_html_footer (t);
 }
 
-static void
+void
 gss_config_post_resource (GssTransaction * t)
 {
   gboolean ret;
-  //GssServer *server = GSS_SERVER (t->resource->priv);
+  GObject *object = G_OBJECT (t->resource->priv);
 
-  //gss_config_handle_post (G_OBJECT (server), t);
-  ret = FALSE;
+  ret = gss_config_handle_post (object, t);
 
   if (ret) {
     gss_transaction_redirect (t, "");

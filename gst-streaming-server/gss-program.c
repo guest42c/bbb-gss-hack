@@ -231,7 +231,7 @@ gss_program_add_resources (GssProgram * program)
   s = g_strdup_printf ("/%s", GST_OBJECT_NAME (program));
   program->resource =
       gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/html",
-      gss_program_get_resource, NULL, NULL, program);
+      gss_program_get_resource, NULL, gss_config_post_resource, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", GST_OBJECT_NAME (program));
@@ -648,6 +648,10 @@ gss_program_get_resource (GssTransaction * t)
   gss_html_append_break (s);
 
   gss_program_add_stream_table (program, s);
+
+  if (t->session && t->session->is_admin) {
+    gss_config_append_config_block (G_OBJECT (program), t, FALSE);
+  }
 
   gss_html_footer (t);
 }

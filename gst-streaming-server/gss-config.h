@@ -55,6 +55,7 @@ gboolean gss_config_handle_post_hash (GObject * object, GssTransaction * t,
 void gss_config_add_server_resources (GssServer *server);
 void gss_config_save_config_file (void);
 void gss_config_load_config_file (void);
+void gss_config_post_resource (GssTransaction * t);
 
 
 G_END_DECLS
