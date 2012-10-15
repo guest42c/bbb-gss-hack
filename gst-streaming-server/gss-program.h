@@ -68,8 +68,8 @@ struct _GssProgram {
   /* properties */
   GssProgramState state;
   gboolean enabled;
+  char *uuid;
   char *description;
-
 
   GssProgramType program_type;
   gboolean is_archive;

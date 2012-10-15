@@ -291,3 +291,31 @@ gss_object_param_is_secure (GObject * object, const char *property_name)
     return TRUE;
   return FALSE;
 }
+
+void
+gss_uuid_create (guint8 * uuid)
+{
+  gss_utils_get_random_bytes (uuid, 16);
+
+  uuid[6] &= 0x0f;
+  uuid[6] |= 0x40;
+  uuid[8] &= 0x3f;
+  uuid[8] |= 0x80;
+}
+
+char *
+gss_uuid_to_string (guint8 * uuid)
+{
+  return g_strdup_printf ("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
+      "%02x%02x%02x%02x%02x%02x",
+      uuid[0],
+      uuid[1],
+      uuid[2],
+      uuid[3],
+      uuid[4],
+      uuid[5],
+      uuid[6],
+      uuid[7],
+      uuid[8],
+      uuid[9], uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15]);
+}

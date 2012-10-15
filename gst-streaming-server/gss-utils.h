@@ -40,9 +40,9 @@ gboolean g_object_set_as_string (GObject * obj, const char *property,
 gboolean g_object_property_is_default (GObject * object,
     const GParamSpec * pspec);
 char * gss_utils_crlf_to_lf (const char *s);
-
 gboolean gss_object_param_is_secure (GObject *object, const char *property_name);
-
+void gss_uuid_create (guint8 * uuid);
+char * gss_uuid_to_string (guint8 * uuid);
 
   
 G_END_DECLS
