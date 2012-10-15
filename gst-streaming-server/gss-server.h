@@ -146,6 +146,7 @@ GssResource *gss_server_add_resource (GssServer *server, const char *location,
     GssTransactionCallback put_callback, GssTransactionCallback post_callback,
     gpointer priv);
 void gss_server_remove_resource (GssServer *server, const char *location);
+void gss_server_remove_resources_by_priv (GssServer *server, void *priv);
 void gss_server_add_file_resource (GssServer *server,
     const char *filename, GssResourceFlags flags, const char *content_type);
 void gss_server_add_static_resource (GssServer * server, const char *filename,

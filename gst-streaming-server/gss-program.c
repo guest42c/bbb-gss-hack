@@ -54,6 +54,7 @@ static void gss_program_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gss_program_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
+static void gss_program_add_resources (GssProgram * program);
 
 static GObjectClass *parent_class;
 
@@ -132,6 +133,8 @@ gss_program_class_init (GssProgramClass * program_class)
       PROP_DESCRIPTION, g_param_spec_string ("description", "Description",
           "Description", DEFAULT_DESCRIPTION,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+
+  program_class->add_resources = gss_program_add_resources;
 
   parent_class = g_type_class_peek_parent (program_class);
 }
@@ -221,8 +224,8 @@ gss_program_new (const char *program_name)
   return g_object_new (GSS_TYPE_PROGRAM, "name", program_name, NULL);
 }
 
-void
-gss_program_add_server_resources (GssProgram * program)
+static void
+gss_program_add_resources (GssProgram * program)
 {
   char *s;
 

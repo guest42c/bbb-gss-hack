@@ -572,6 +572,22 @@ gss_server_remove_resource (GssServer * server, const char *location)
   g_hash_table_remove (server->resources, location);
 }
 
+void
+gss_server_remove_resources_by_priv (GssServer * server, void *priv)
+{
+  GHashTableIter iter;
+  const char *key;
+  GssResource *resource;
+
+  g_hash_table_iter_init (&iter, server->resources);
+  while (g_hash_table_iter_next (&iter, (gpointer *) & key,
+          (gpointer *) & resource)) {
+    if (resource->priv == priv) {
+      g_hash_table_iter_remove (&iter);
+    }
+  }
+}
+
 static void
 gss_server_setup_resources (GssServer * server)
 {
@@ -725,9 +741,15 @@ gss_server_follow_all (GssProgram * program, const char *host)
 void
 gss_server_add_program_simple (GssServer * server, GssProgram * program)
 {
+  GssProgramClass *program_class;
+
   server->programs = g_list_append (server->programs, program);
   program->server = server;
-  gss_program_add_server_resources (program);
+
+  program_class = GSS_PROGRAM_GET_CLASS (program);
+  if (program_class->add_resources) {
+    program_class->add_resources (program);
+  }
 
   gst_object_set_parent (GST_OBJECT (program), GST_OBJECT (server));
 }
@@ -747,7 +769,7 @@ gss_server_remove_program (GssServer * server, GssProgram * program)
   g_return_if_fail (GSS_IS_SERVER (server));
   g_return_if_fail (GSS_IS_PROGRAM (program));
 
-  gss_program_remove_server_resources (program);
+  gss_server_remove_resources_by_priv (server, program);
   server->programs = g_list_remove (server->programs, program);
   gst_object_unparent (GST_OBJECT (program));
 }

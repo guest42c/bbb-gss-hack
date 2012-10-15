@@ -112,6 +112,7 @@ struct _GssProgramClass
 {
   GstObjectClass object_class;
 
+  void (*add_resources) (GssProgram *program);
   void (*stop) (GssProgram *program);
   void (*start) (GssProgram *program);
 };
@@ -119,7 +120,6 @@ struct _GssProgramClass
 GType gss_program_get_type (void);
 
 GssProgram * gss_program_new (const char *program_name);
-void gss_program_add_server_resources (GssProgram *program);
 void gss_program_remove_server_resources (GssProgram *program);
 void gss_program_set_jpegsink (GssProgram *program, GstElement *jpegsink);
 void gss_program_stop (GssProgram * program);
