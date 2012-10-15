@@ -320,7 +320,8 @@ gss_user_get_string (GssUser * user)
   while (g_hash_table_iter_next (&iter, &key, &value)) {
     GssUserInfo *userinfo = value;
 
-    g_string_append_printf (s, "%s:%x ", userinfo->username, userinfo->groups);
+    g_string_append_printf (s, "%s:%04x ", userinfo->username,
+        userinfo->groups);
   }
 
   g_string_truncate (s, s->len - 1);
