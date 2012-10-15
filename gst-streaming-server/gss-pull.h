@@ -54,11 +54,13 @@ struct _GssPull {
 
 struct _GssPullClass
 {
-  GstObjectClass object_class;
+  GssProgramClass program_class;
 
 };
 
 GType gss_pull_get_type (void);
+
+GssProgram *gss_pull_new (void);
 
 
 G_END_DECLS

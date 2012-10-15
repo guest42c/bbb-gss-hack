@@ -123,10 +123,10 @@ gss_pull_get_property (GObject * object, guint prop_id,
 }
 
 
-GssPull *
-gss_pull_new (const char *program_name)
+GssProgram *
+gss_pull_new (void)
 {
-  return g_object_new (GSS_TYPE_PULL, "name", program_name, NULL);
+  return g_object_new (GSS_TYPE_PULL, NULL);
 }
 
 
