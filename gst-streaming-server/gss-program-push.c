@@ -175,10 +175,6 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
       GST_DEBUG_OBJECT (program, "end of stream");
       gss_program_stop (program);
       switch (program->program_type) {
-        case GSS_PROGRAM_EW_FOLLOW:
-        case GSS_PROGRAM_HTTP_FOLLOW:
-          program->restart_delay = 5;
-          break;
         case GSS_PROGRAM_HTTP_PUT:
         case GSS_PROGRAM_ICECAST:
           program->push_client = NULL;

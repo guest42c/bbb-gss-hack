@@ -401,14 +401,6 @@ gss_program_start (GssProgram * program)
     program_class->start (program);
   } else {
     switch (program->program_type) {
-      case GSS_PROGRAM_EW_FOLLOW:
-        gss_program_follow_get_list (program);
-        break;
-      case GSS_PROGRAM_HTTP_FOLLOW:
-        gss_program_add_stream_follow (program,
-            GSS_STREAM_TYPE_OGG_THEORA_VORBIS, 640, 360, 700000,
-            program->follow_uri);
-        break;
       case GSS_PROGRAM_MANUAL:
       case GSS_PROGRAM_ICECAST:
       case GSS_PROGRAM_HTTP_PUT:

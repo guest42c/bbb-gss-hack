@@ -156,7 +156,6 @@ const char * gss_stream_type_get_ext (int type);
 const char * gss_stream_type_get_content_type (int type);
 
 void gss_stream_set_sink (GssStream * stream, GstElement * sink);
-void gss_stream_create_follow_pipeline (GssStream * stream);
 void gss_stream_create_push_pipeline (GssStream * stream);
 void gss_stream_remove_resources (GssStream *stream);
 void gss_stream_add_resources (GssStream *stream);

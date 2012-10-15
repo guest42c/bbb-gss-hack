@@ -20,29 +20,161 @@
 
 #include "config.h"
 
+#include "gss-pull.h"
 #include "gss-server.h"
 #include "gss-html.h"
 #include "gss-session.h"
 #include "gss-soup.h"
-#ifdef ENABLE_RTSP
-#include "gss-rtsp.h"
-#endif
 #include "gss-content.h"
+#include "gss-utils.h"
+
+enum
+{
+  PROP_NONE,
+  PROP_PULL_URI
+};
+
+#define DEFAULT_PULL_URI "http://example.com/stream.webm"
 
 
+static void gss_pull_finalize (GObject * object);
+static void gss_pull_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec);
+static void gss_pull_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec);
 static void handle_pipeline_message (GstBus * bus, GstMessage * message,
     gpointer user_data);
 
-/* set up a stream follower */
+static void gss_pull_get_list (GssPull * pull);
+static void gss_pull_add_stream_follow (GssPull * program, int type,
+    int width, int height, int bitrate, const char *url);
+static void gss_stream_create_follow_pipeline (GssStream * stream);
+
+static GObjectClass *parent_class;
+
+G_DEFINE_TYPE (GssPull, gss_pull, GSS_TYPE_PROGRAM);
+
+static void
+gss_pull_init (GssPull * program)
+{
+  program->pull_uri = g_strdup (DEFAULT_PULL_URI);
+}
+
+static void
+gss_pull_class_init (GssPullClass * program_class)
+{
+  G_OBJECT_CLASS (program_class)->set_property = gss_pull_set_property;
+  G_OBJECT_CLASS (program_class)->get_property = gss_pull_get_property;
+  G_OBJECT_CLASS (program_class)->finalize = gss_pull_finalize;
+
+  g_object_class_install_property (G_OBJECT_CLASS (program_class),
+      PROP_PULL_URI, g_param_spec_string ("pull-uri", "Pull URI",
+          "URI for the stream or program to pull from.", DEFAULT_PULL_URI,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+
+  parent_class = g_type_class_peek_parent (program_class);
+}
+
+static void
+gss_pull_finalize (GObject * object)
+{
+  GssPull *pull = GSS_PULL (object);
+
+  g_free (pull->pull_uri);
+
+  parent_class->finalize (object);
+}
+
+static void
+gss_pull_set_property (GObject * object, guint prop_id,
+    const GValue * value, GParamSpec * pspec)
+{
+  GssPull *pull;
+
+  pull = GSS_PULL (object);
+
+  switch (prop_id) {
+    case PROP_PULL_URI:
+      g_free (pull->pull_uri);
+      pull->pull_uri = g_value_dup_string (value);
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+  }
+}
+
+static void
+gss_pull_get_property (GObject * object, guint prop_id,
+    GValue * value, GParamSpec * pspec)
+{
+  GssPull *pull;
+
+  pull = GSS_PULL (object);
+
+  switch (prop_id) {
+    case PROP_PULL_URI:
+      g_value_set_string (value, pull->pull_uri);
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+  }
+}
+
+
+GssPull *
+gss_pull_new (const char *program_name)
+{
+  return g_object_new (GSS_TYPE_PULL, "name", program_name, NULL);
+}
+
 
 void
-gss_program_add_stream_follow (GssProgram * program, int type, int width,
+gss_pull_stop (GssProgram * program)
+{
+  GList *g;
+
+  for (g = program->streams; g; g = g_list_next (g)) {
+    GssStream *stream = g->data;
+
+    gss_stream_set_sink (stream, NULL);
+    if (stream->pipeline) {
+      gst_element_set_state (stream->pipeline, GST_STATE_NULL);
+
+      g_object_unref (stream->pipeline);
+      stream->pipeline = NULL;
+    }
+  }
+
+  for (g = program->streams; g; g = g_list_next (g)) {
+    GssStream *stream = g->data;
+    g_object_unref (stream);
+  }
+}
+
+void
+gss_pull_start (GssProgram * program)
+{
+  GssPull *pull = GSS_PULL (program);
+
+  if (pull->is_ew) {
+    gss_pull_get_list (pull);
+  } else {
+    gss_pull_add_stream_follow (pull,
+        GSS_STREAM_TYPE_OGG_THEORA_VORBIS, 640, 360, 700000,
+        program->follow_uri);
+  }
+}
+
+static void
+gss_pull_add_stream_follow (GssPull * pull, int type, int width,
     int height, int bitrate, const char *url)
 {
   GssStream *stream;
 
-  stream = gss_program_add_stream_full (program, type, width, height,
-      bitrate, NULL);
+  stream = gss_program_add_stream_full (GSS_PROGRAM (pull),
+      type, width, height, bitrate, NULL);
   stream->follow_url = g_strdup (url);
 
   gss_stream_create_follow_pipeline (stream);
@@ -50,7 +182,7 @@ gss_program_add_stream_follow (GssProgram * program, int type, int width,
   gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
 }
 
-void
+static void
 gss_stream_create_follow_pipeline (GssStream * stream)
 {
   GstElement *pipe;
@@ -177,21 +309,7 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
     case GST_MESSAGE_EOS:
       GST_DEBUG_OBJECT (program, "end of stream");
       gss_program_stop (program);
-      switch (program->program_type) {
-        case GSS_PROGRAM_EW_FOLLOW:
-        case GSS_PROGRAM_HTTP_FOLLOW:
-          program->restart_delay = 5;
-          break;
-        case GSS_PROGRAM_HTTP_PUT:
-        case GSS_PROGRAM_ICECAST:
-          program->push_client = NULL;
-          break;
-        case GSS_PROGRAM_EW_CONTRIB:
-          break;
-        case GSS_PROGRAM_MANUAL:
-        default:
-          break;
-      }
+      program->restart_delay = 5;
       break;
     case GST_MESSAGE_ELEMENT:
       break;
@@ -203,14 +321,14 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
 static void
 follow_callback (SoupSession * session, SoupMessage * message, gpointer ptr)
 {
-  GssProgram *program = ptr;
+  GssPull *pull = ptr;
 
   if (message->status_code == SOUP_STATUS_OK) {
     SoupBuffer *buffer;
     char **lines;
     int i;
 
-    GST_DEBUG_OBJECT (program, "got list of streams");
+    GST_DEBUG_OBJECT (pull, "got list of streams");
 
     buffer = soup_message_body_flatten (message->response_body);
 
@@ -234,8 +352,8 @@ follow_callback (SoupSession * session, SoupMessage * message, gpointer ptr)
 
         type = gss_stream_type_from_id (type_str);
 
-        full_url = g_strdup_printf ("http://%s%s", program->follow_host, url);
-        gss_program_add_stream_follow (program, type, width, height, bitrate,
+        full_url = g_strdup_printf ("%s%s", pull->pull_uri, url);
+        gss_pull_add_stream_follow (pull, type, width, height, bitrate,
             full_url);
         g_free (full_url);
       }
@@ -246,39 +364,34 @@ follow_callback (SoupSession * session, SoupMessage * message, gpointer ptr)
 
     soup_buffer_free (buffer);
   } else {
-    GST_DEBUG_OBJECT (program, "failed to get list of streams");
-    program->restart_delay = 10;
-    gss_program_stop (program);
+    GST_DEBUG_OBJECT (pull, "failed to get list of streams");
+    pull->program.restart_delay = 10;
+    gss_program_stop (GSS_PROGRAM (pull));
   }
 
 }
 
 void
-gss_program_follow (GssProgram * program, const char *host, const char *stream)
+gss_pull_follow (GssPull * pull, const char *host, const char *stream)
 {
-  program->program_type = GSS_PROGRAM_EW_FOLLOW;
-  program->follow_uri = g_strdup_printf ("http://%s/%s.list", host, stream);
-  program->follow_host = g_strdup (host);
-  program->restart_delay = 1;
+  pull->is_ew = TRUE;
+  pull->pull_uri = g_strdup_printf ("http://%s/%s.list", host, stream);
 }
 
-void
-gss_program_follow_get_list (GssProgram * program)
+static void
+gss_pull_get_list (GssPull * pull)
 {
   SoupMessage *message;
 
-  message = soup_message_new ("GET", program->follow_uri);
+  message = soup_message_new ("GET", pull->pull_uri);
 
-  soup_session_queue_message (program->server->client_session, message,
-      follow_callback, program);
+  soup_session_queue_message (pull->program.server->client_session, message,
+      follow_callback, pull);
 }
 
 void
-gss_program_http_follow (GssProgram * program, const char *uri)
+gss_pull_http_follow (GssPull * pull, const char *uri)
 {
-  program->program_type = GSS_PROGRAM_HTTP_FOLLOW;
-  program->follow_uri = g_strdup (uri);
-  program->follow_host = g_strdup (uri);
-
-  program->restart_delay = 1;
+  pull->is_ew = FALSE;
+  pull->pull_uri = g_strdup (uri);
 }

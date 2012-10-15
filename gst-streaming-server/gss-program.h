@@ -53,8 +53,6 @@ typedef enum {
 } GssProgramState;
 
 typedef enum {
-  GSS_PROGRAM_EW_FOLLOW,
-  GSS_PROGRAM_HTTP_FOLLOW,
   GSS_PROGRAM_HTTP_PUT,
   GSS_PROGRAM_EW_CONTRIB,
   GSS_PROGRAM_ICECAST,
