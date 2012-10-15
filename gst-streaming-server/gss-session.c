@@ -46,8 +46,8 @@ struct _AddrRange
 AddrRange *hosts_allow;
 int n_hosts_allow;
 
-static GssSessionAuthorizationFunc _ew_session_authorization_func;
-static gpointer _ew_session_authorization_priv;
+static GssSessionAuthorizationFunc _gss_session_authorization_func;
+static gpointer _gss_session_authorization_priv;
 
 static void session_login_post_resource (GssTransaction * t);
 static void session_login_get_resource (GssTransaction * t);
@@ -377,9 +377,9 @@ gss_session_new (const char *username)
   session->last_time = time (NULL);
   session->valid = TRUE;
 
-  if (_ew_session_authorization_func) {
-    session->priv = _ew_session_authorization_func (session,
-        _ew_session_authorization_priv);
+  if (_gss_session_authorization_func) {
+    session->priv = _gss_session_authorization_func (session,
+        _gss_session_authorization_priv);
   }
 
   session->refcount = 1;
@@ -410,8 +410,8 @@ void
 gss_session_set_authorization_function (GssSessionAuthorizationFunc func,
     gpointer priv)
 {
-  _ew_session_authorization_func = func;
-  _ew_session_authorization_priv = priv;
+  _gss_session_authorization_func = func;
+  _gss_session_authorization_priv = priv;
 }
 
 typedef struct _BrowserIDVerify BrowserIDVerify;
