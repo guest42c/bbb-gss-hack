@@ -24,6 +24,7 @@
 
 #include "ew-stream-server.h"
 #include "gst-streaming-server/gss-user.h"
+#include "gst-streaming-server/gss-manager.h"
 #include "gst-streaming-server/gss-push.h"
 
 #include <gst/gst.h>
@@ -63,6 +64,7 @@ static GOptionEntry entries[] = {
 
 GssServer *server;
 GssUser *user;
+GssManager *manager;
 GMainLoop *main_loop;
 
 static void G_GNUC_NORETURN
@@ -179,6 +181,10 @@ main (int argc, char *argv[])
   gss_config_attach (G_OBJECT (user));
   gss_user_add_resources (user, server);
 
+  manager = gss_manager_new ();
+  gss_config_attach (G_OBJECT (manager));
+  gss_manager_add_resources (manager, server);
+
 #define ENABLE_DEBUG
 #ifdef ENABLE_DEBUG
 #define REALM "GStreamer Streaming Server"
@@ -198,7 +204,7 @@ main (int argc, char *argv[])
   }
 #endif
 
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < 1; i++) {
     char *key;
 
     key = g_strdup_printf ("stream%d", i);
@@ -250,7 +256,7 @@ add_program (GssServer * server, int i)
   GssProgram *program;
   char *stream_name;
 
-  stream_name = g_strdup_printf ("stream%d_name", i);
+  stream_name = g_strdup_printf ("stream%d", i);
   program = gss_push_new ();
   g_object_set (program, "name", stream_name, NULL);
   gss_server_add_program_simple (server, program);

@@ -26,6 +26,7 @@ libgss_la_SOURCES = \
 	gss-content.c \
 	gss-content.h \
 	gss-vod.c \
+	gss-manager.c \
 	gss-resource.c \
 	gss-program.c \
 	gss-pull.c \
@@ -52,6 +53,7 @@ gss_include_HEADERS = \
 	gss-soup.h \
 	gss-rtsp.h \
 	gss-metrics.h \
+	gss-manager.h \
 	gss-program.h \
 	gss-pull.h \
 	gss-push.h \
