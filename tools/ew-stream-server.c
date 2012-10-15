@@ -24,6 +24,7 @@
 
 #include "ew-stream-server.h"
 #include "gst-streaming-server/gss-user.h"
+#include "gst-streaming-server/gss-push.h"
 
 #include <gst/gst.h>
 
@@ -250,27 +251,10 @@ add_program (GssServer * server, int i)
   char *stream_name;
 
   stream_name = g_strdup_printf ("stream%d_name", i);
-
-  program = gss_server_add_program (server, stream_name);
-  gss_program_icecast (program);
-
-#if 0
-  if (strcmp (stream_type, "http-follow") == 0) {
-    gss_program_http_follow (program, url);
-  } else if (strcmp (stream_type, "ew-contrib") == 0) {
-    gss_program_ew_contrib (program);
-  } else if (strcmp (stream_type, "http-put") == 0) {
-    gss_program_http_put (program);
-  } else if (strcmp (stream_type, "icecast") == 0) {
-    gss_program_icecast (program);
-  } else {
-    /* ew-follow */
-    gss_program_follow (program, url, "stream");
-  }
-#endif
-
+  program = gss_push_new ();
+  g_object_set (program, "name", stream_name, NULL);
+  gss_server_add_program_simple (server, program);
   g_free (stream_name);
-
 }
 
 static void

@@ -43,7 +43,6 @@ enum
 
 
 static void gss_program_get_resource (GssTransaction * transaction);
-static void gss_program_put_resource (GssTransaction * transaction);
 static void gss_program_frag_resource (GssTransaction * transaction);
 static void gss_program_list_resource (GssTransaction * transaction);
 static void gss_program_png_resource (GssTransaction * transaction);
@@ -232,7 +231,7 @@ gss_program_add_resources (GssProgram * program)
   s = g_strdup_printf ("/%s", GST_OBJECT_NAME (program));
   program->resource =
       gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/html",
-      gss_program_get_resource, gss_program_put_resource, NULL, program);
+      gss_program_get_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", GST_OBJECT_NAME (program));
@@ -414,16 +413,6 @@ gss_program_start (GssProgram * program)
   program_class = GSS_PROGRAM_GET_CLASS (program);
   if (program_class->start) {
     program_class->start (program);
-  } else {
-    switch (program->program_type) {
-      case GSS_PROGRAM_MANUAL:
-      case GSS_PROGRAM_ICECAST:
-      case GSS_PROGRAM_HTTP_PUT:
-        break;
-      default:
-        g_warning ("not implemented");
-        break;
-    }
   }
 }
 
@@ -698,110 +687,6 @@ gss_program_add_stream_table (GssProgram * program, GString * s)
 
 }
 
-
-static void
-push_wrote_headers (SoupMessage * msg, void *user_data)
-{
-  GssStream *stream = (GssStream *) user_data;
-  SoupSocket *socket;
-
-  socket = soup_client_context_get_socket (stream->program->push_client);
-  stream->push_fd = soup_socket_get_fd (socket);
-
-  gss_stream_create_push_pipeline (stream);
-
-  gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
-}
-
-
-static void
-gss_program_put_resource (GssTransaction * t)
-{
-  GssProgram *program = (GssProgram *) t->resource->priv;
-  const char *content_type;
-  GssStream *stream;
-  gboolean is_icecast;
-
-  /* FIXME should check if another client has connected */
-#if 0
-  if (program->push_client) {
-    GST_DEBUG_LOG (program, "busy");
-    soup_message_set_status (t->msg, SOUP_STATUS_CONFLICT);
-    return;
-  }
-#endif
-
-  is_icecast = FALSE;
-  if (soup_message_headers_get_one (t->msg->request_headers, "ice-name")) {
-    is_icecast = TRUE;
-  }
-
-  content_type = soup_message_headers_get_one (t->msg->request_headers,
-      "Content-Type");
-  if (content_type) {
-    if (strcmp (content_type, "application/ogg") == 0) {
-      program->push_media_type = GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
-    } else if (strcmp (content_type, "video/webm") == 0) {
-      program->push_media_type = GSS_STREAM_TYPE_WEBM;
-    } else if (strcmp (content_type, "video/mpeg-ts") == 0) {
-      program->push_media_type = GSS_STREAM_TYPE_M2TS_H264BASE_AAC;
-    } else if (strcmp (content_type, "video/mp2t") == 0) {
-      program->push_media_type = GSS_STREAM_TYPE_M2TS_H264MAIN_AAC;
-    } else if (strcmp (content_type, "video/x-flv") == 0) {
-      program->push_media_type = GSS_STREAM_TYPE_FLV_H264BASE_AAC;
-    } else {
-      program->push_media_type = GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
-    }
-  } else {
-    program->push_media_type = GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
-  }
-
-  if (program->push_client == NULL) {
-    if (is_icecast) {
-      program->program_type = GSS_PROGRAM_ICECAST;
-    } else {
-      program->program_type = GSS_PROGRAM_HTTP_PUT;
-    }
-
-    stream = gss_program_add_stream_full (program, program->push_media_type,
-        640, 360, 600000, NULL);
-
-    if (!is_icecast) {
-      gss_stream_create_push_pipeline (stream);
-
-      gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
-    }
-
-    gss_program_start (program);
-
-    program->push_client = t->client;
-  }
-
-  /* FIXME the user should specify a stream */
-  stream = program->streams->data;
-
-  if (is_icecast) {
-    soup_message_headers_set_encoding (t->msg->response_headers,
-        SOUP_ENCODING_EOF);
-
-    g_signal_connect (t->msg, "wrote-headers", G_CALLBACK (push_wrote_headers),
-        stream);
-  } else {
-    if (t->msg->request_body) {
-      GstBuffer *buffer;
-      GstFlowReturn flow_ret;
-
-      buffer = gst_buffer_new_and_alloc (t->msg->request_body->length);
-      memcpy (GST_BUFFER_DATA (buffer), t->msg->request_body->data,
-          t->msg->request_body->length);
-
-      g_signal_emit_by_name (stream->src, "push-buffer", buffer, &flow_ret);
-      gst_buffer_unref (buffer);
-    }
-  }
-
-  soup_message_set_status (t->msg, SOUP_STATUS_OK);
-}
 
 static void
 gss_program_list_resource (GssTransaction * t)

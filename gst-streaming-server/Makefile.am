@@ -28,8 +28,8 @@ libgss_la_SOURCES = \
 	gss-vod.c \
 	gss-resource.c \
 	gss-program.c \
-	gss-program-push.c \
 	gss-pull.c \
+	gss-push.c \
 	gss-stream.c \
 	gss-transaction.c \
 	gss-user.c \
@@ -54,6 +54,7 @@ gss_include_HEADERS = \
 	gss-metrics.h \
 	gss-program.h \
 	gss-pull.h \
+	gss-push.h \
 	gss-resource.h \
 	gss-stream.h \
 	gss-transaction.h \

@@ -52,12 +52,6 @@ typedef enum {
   GSS_PROGRAM_STATE_STOPPING,
 } GssProgramState;
 
-typedef enum {
-  GSS_PROGRAM_HTTP_PUT,
-  GSS_PROGRAM_EW_CONTRIB,
-  GSS_PROGRAM_ICECAST,
-  GSS_PROGRAM_MANUAL
-} GssProgramType;
 
 struct _GssProgram {
   GstObject object;
@@ -71,14 +65,10 @@ struct _GssProgram {
   char *uuid;
   char *description;
 
-  GssProgramType program_type;
   gboolean is_archive;
 
   char *follow_uri;
   char *follow_host;
-
-  SoupClientContext *push_client;
-  int push_media_type;
 
   gboolean enable_streaming;
 
