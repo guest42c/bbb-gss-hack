@@ -329,8 +329,10 @@ void
 gss_program_set_enabled (GssProgram * program, gboolean enabled)
 {
   if (program->enabled && !enabled) {
+    program->enabled = enabled;
     gss_program_stop (program);
   } else if (!program->enabled && enabled) {
+    program->enabled = enabled;
     gss_program_start (program);
   }
 }
@@ -340,7 +342,6 @@ gss_program_stop (GssProgram * program)
 {
   GssProgramClass *program_class;
 
-  program->enabled = FALSE;
   if (program->state == GSS_PROGRAM_STATE_STOPPED ||
       program->state == GSS_PROGRAM_STATE_STOPPING) {
     return;
@@ -379,13 +380,12 @@ gss_program_start (GssProgram * program)
   GssProgramClass *program_class;
   GList *g;
 
-  program->enabled = TRUE;
   if (program->state == GSS_PROGRAM_STATE_STARTING ||
       program->state == GSS_PROGRAM_STATE_RUNNING ||
       program->state == GSS_PROGRAM_STATE_STOPPING) {
     return;
   }
-  if (!program->server->enable_programs) {
+  if (!program->enabled || !program->server->enable_programs) {
     return;
   }
   gss_program_log (program, "start");
