@@ -230,6 +230,7 @@ gss_server_init (GssServer * server)
   server->enable_rtsp = DEFAULT_ENABLE_RTSP;
   server->enable_rtmp = DEFAULT_ENABLE_RTMP;
 
+  server->enable_flowplayer = TRUE;
   server->enable_programs = TRUE;
   server->programs = NULL;
   server->archive_dir = g_strdup (DEFAULT_ARCHIVE_DIR);
