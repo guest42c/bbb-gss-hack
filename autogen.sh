@@ -13,5 +13,7 @@ fi
 
 autoreconf -i -f
 #patch -p0 <patch-configure
-./configure $confargs $@
+if [ "$NOCONFIGURE" = "" ] ; then
+  ./configure $confargs $@
+fi
 
