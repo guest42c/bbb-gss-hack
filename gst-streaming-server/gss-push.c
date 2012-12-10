@@ -290,7 +290,6 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
 {
   GssStream *stream = user_data;
   GssProgram *program = stream->program;
-  GssPush *push = GSS_PUSH (program);
 
   switch (GST_MESSAGE_TYPE (message)) {
     case GST_MESSAGE_STATE_CHANGED:
