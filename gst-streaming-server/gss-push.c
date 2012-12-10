@@ -185,7 +185,10 @@ gss_push_get_push_uri (GssPush * push)
 static void
 gss_push_stop (GssProgram * program)
 {
+  GssPush *push = GSS_PUSH (program);
   GssStream *stream;
+
+  push->push_client = NULL;
 
   if (program->streams) {
     stream = program->streams->data;
@@ -345,14 +348,6 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
     case GST_MESSAGE_EOS:
       GST_DEBUG_OBJECT (program, "end of stream");
       gss_program_stop (program);
-      switch (push->push_method) {
-        case GSS_PUSH_METHOD_HTTP_PUT:
-        case GSS_PUSH_METHOD_ICECAST:
-          push->push_client = NULL;
-          break;
-        default:
-          break;
-      }
       break;
     case GST_MESSAGE_ELEMENT:
       break;
@@ -410,14 +405,11 @@ gss_push_put_resource (GssTransaction * t)
   GssStream *stream;
   gboolean is_icecast;
 
-  /* FIXME should check if another client has connected */
-#if 0
-  if (program->push_client) {
-    GST_DEBUG_LOG (program, "busy");
+  if (push->push_client) {
+    GST_DEBUG_OBJECT (program, "busy");
     soup_message_set_status (t->msg, SOUP_STATUS_CONFLICT);
     return;
   }
-#endif
 
   is_icecast = FALSE;
   if (soup_message_headers_get_one (t->msg->request_headers, "ice-name")) {
@@ -427,6 +419,7 @@ gss_push_put_resource (GssTransaction * t)
   content_type = soup_message_headers_get_one (t->msg->request_headers,
       "Content-Type");
   if (content_type) {
+    GST_DEBUG_OBJECT (push, "content_type %s", content_type);
     if (strcmp (content_type, "application/ogg") == 0) {
       push->push_media_type = GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
     } else if (strcmp (content_type, "video/webm") == 0) {
