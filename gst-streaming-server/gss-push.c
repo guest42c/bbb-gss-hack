@@ -50,6 +50,8 @@ static void handle_pipeline_message (GstBus * bus, GstMessage * message,
 static void gss_stream_create_push_pipeline (GssStream * stream);
 static void gss_push_add_resources (GssProgram * program);
 static char *gss_push_get_push_uri (GssPush * push);
+static void gss_push_start (GssProgram * program);
+static void gss_push_stop (GssProgram * program);
 
 static GssProgramClass *parent_class;
 
@@ -111,6 +113,8 @@ gss_push_class_init (GssPushClass * push_class)
           (GParamFlags) (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
 
   GSS_PROGRAM_CLASS (push_class)->add_resources = gss_push_add_resources;
+  GSS_PROGRAM_CLASS (push_class)->start = gss_push_start;
+  GSS_PROGRAM_CLASS (push_class)->stop = gss_push_stop;
 
   parent_class = g_type_class_peek_parent (push_class);
 }
@@ -178,26 +182,15 @@ gss_push_get_push_uri (GssPush * push)
       GST_OBJECT_NAME (push));
 }
 
-void
+static void
 gss_push_stop (GssProgram * program)
 {
-  GList *g;
+  GssStream *stream;
 
-  for (g = program->streams; g; g = g_list_next (g)) {
-    GssStream *stream = g->data;
+  if (program->streams) {
+    stream = program->streams->data;
 
-    gss_stream_set_sink (stream, NULL);
-    if (stream->pipeline) {
-      gst_element_set_state (stream->pipeline, GST_STATE_NULL);
-
-      g_object_unref (stream->pipeline);
-      stream->pipeline = NULL;
-    }
-  }
-
-  for (g = program->streams; g; g = g_list_next (g)) {
-    GssStream *stream = g->data;
-    g_object_unref (stream);
+    gss_program_remove_stream (program, stream);
   }
 }
 
@@ -458,8 +451,11 @@ gss_push_put_resource (GssTransaction * t)
       push->push_method = GSS_PUSH_METHOD_HTTP_PUT;
     }
 
-    stream = gss_program_add_stream_full (GSS_PROGRAM (push),
-        push->push_media_type, 640, 360, 600000, NULL);
+    if (program->streams == NULL) {
+      stream = gss_program_add_stream_full (GSS_PROGRAM (push),
+          push->push_media_type, 640, 360, 600000, NULL);
+    }
+    stream = program->streams->data;
 
     if (!is_icecast) {
       gss_stream_create_push_pipeline (stream);

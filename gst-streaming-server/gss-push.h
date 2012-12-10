@@ -24,6 +24,7 @@
 
 #include <gst/gst.h>
 #include "gss-program.h"
+#include "gss-stream.h"
 
 G_BEGIN_DECLS
 
@@ -57,7 +58,7 @@ struct _GssPush {
   GssPushMethod push_method;
 
   SoupClientContext *push_client;
-  int push_media_type;
+  GssStreamType push_media_type;
 };
 
 struct _GssPushClass

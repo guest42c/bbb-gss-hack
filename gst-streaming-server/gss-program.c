@@ -284,7 +284,7 @@ gss_program_remove_stream (GssProgram * program, GssStream * stream)
   program->streams = g_list_remove (program->streams, stream);
 
   gss_stream_remove_resources (stream);
-  gst_object_set_parent (GST_OBJECT (stream), NULL);
+  gst_object_unparent (GST_OBJECT (stream));
   stream->program = NULL;
 }
 
@@ -381,10 +381,12 @@ gss_program_stop (GssProgram * program)
       }
     }
 
+#if 0
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
       g_object_unref (stream);
     }
+#endif
   }
 }
 

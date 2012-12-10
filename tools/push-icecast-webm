@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+#  This script assumes you have the ew-stream-server program in this
+#  directory running on the local system, on port 8080/8443 (the
+#  defaults, as long as you don't run it as root).
+#
+#  This script generates a test stream and streams it to the server
+#  using WebM and Icecast.
+#
+#
+
+
+user=admin
+password=admin
+
+host=localhost:8443
+
+curlopts="$curlopts --insecure"
+curlcmd="--data username=$user --data password=$password"
+
+session_url=`curl -s $curlopts -w '%{redirect_url}' $curlcmd https://$host/login\?redirect_url=/admin/status -o /dev/null`
+
+
+echo session url $session_url
+
+
+url=$(echo $session_url | sed 's,\?,stream0?,')
+curl -s $curlopts --data enabled=true --data push-method=icecast $url >/dev/null
+
+
+gst-launch -q \
+  videotestsrc is-live=true ! \
+  video/x-raw-yuv,format=\(fourcc\)I420,width=320,height=180 ! \
+  timeoverlay ! \
+  vp8enc ! \
+  queue ! \
+  webmmux streamable=true name=mux ! \
+  shout2send ip=127.0.0.1 port=8080 mount=stream0 \
+  audiotestsrc volume=0.1 wave=ticks is-live=true ! \
+  vorbisenc ! \
+  queue ! \
+  mux.audio_%d
+
+# | curl -T - http://preston:8080/push
+
+#  souphttpclientsink location=http://preston:8080/push \
