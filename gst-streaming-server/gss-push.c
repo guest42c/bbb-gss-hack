@@ -363,6 +363,10 @@ push_wrote_headers (SoupMessage * msg, void *user_data)
 
   socket =
       soup_client_context_get_socket (GSS_PUSH (stream->program)->push_client);
+  if (socket == NULL) {
+    GST_WARNING_OBJECT (stream, "Push socket is NULL");
+    return;
+  }
   stream->push_fd = soup_socket_get_fd (socket);
 
   gss_stream_create_push_pipeline (stream);
