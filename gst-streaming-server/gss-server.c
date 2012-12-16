@@ -65,7 +65,9 @@ enum
 #define DEFAULT_MAX_CONNECTIONS 10000
 #define DEFAULT_MAX_RATE 100000
 #define DEFAULT_ADMIN_HOSTS_ALLOW "0.0.0.0/0"
-#define DEFAULT_ADMIN_TOKEN ""
+/* This is the result of soup_auth_domain_digest_encode_password ("admin",
+ * "GStreamer Streaming Server", "admin"); */
+#define DEFAULT_ADMIN_TOKEN "f09e5ebc80c348d2ccf8a59a8cd37827"
 #define DEFAULT_ENABLE_HTML5_VIDEO TRUE
 #define DEFAULT_ENABLE_CORTADO FALSE
 #define DEFAULT_ENABLE_FLASH TRUE

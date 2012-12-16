@@ -37,29 +37,17 @@ enum
   PROP_REMOVE_SESSION,
 };
 
-#ifdef ENABLE_DEBUG
-#define DEFAULT_USERS "ds@entropywave.com:ffffffff"
-#else
 #define DEFAULT_USERS ""
-#endif
 #define DEFAULT_ADMIN_PASSWORD0 ""
 #define DEFAULT_ADMIN_PASSWORD1 ""
-#ifdef ENABLE_DEBUG
-#define DEFAULT_PERMANENT_SESSIONS "00000000"
-#else
 #define DEFAULT_PERMANENT_SESSIONS ""
-#endif
 #define DEFAULT_REMOVE_SESSION ""
 
 #define REALM "GStreamer Streaming Server"
 
 
-#ifdef ENABLE_DEBUG
-#define GROUP_START 0
-#else
 /* Hide the ew-admin group */
 #define GROUP_START 1
-#endif
 #define N_GROUPS 4
 static const char *group_names[] = { "ew-admin", "admin", "producer", "user" };
 
@@ -87,24 +75,12 @@ static GObjectClass *parent_class;
 static void
 gss_user_init (GssUser * user)
 {
-#ifdef ENABLE_DEBUG
-  char *s;
-#endif
-
   user->users = g_hash_table_new_full (g_str_hash, g_str_equal,
       NULL, (GDestroyNotify) gss_user_info_free);
   gss_user_parse_users_string (user, DEFAULT_USERS);
 
   user->admin_password0 = NULL;
   user->admin_password1 = NULL;
-
-#ifdef ENABLE_DEBUG
-  s = soup_auth_domain_digest_encode_password ("admin", REALM, "admin");
-  //g_object_set (user->server, "admin-token", s, NULL);
-  g_free (s);
-
-  gss_user_add_permanent_session (user, "00000000");
-#endif
 }
 
 static void

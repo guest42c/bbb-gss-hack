@@ -185,25 +185,6 @@ main (int argc, char *argv[])
   gss_config_attach (G_OBJECT (manager));
   gss_manager_add_resources (manager, server);
 
-#define ENABLE_DEBUG
-#ifdef ENABLE_DEBUG
-#define REALM "GStreamer Streaming Server"
-  {
-    GssSession *session;
-    char *s;
-
-    s = soup_auth_domain_digest_encode_password ("admin", REALM, "admin");
-    g_object_set (server, "admin-token", s, NULL);
-    g_free (s);
-
-    session = gss_session_new ("permanent");
-    g_free (session->session_id);
-    session->session_id = g_strdup ("00000000");
-    session->permanent = TRUE;
-    session->is_admin = TRUE;
-  }
-#endif
-
   for (i = 0; i < 1; i++) {
     char *key;
 
