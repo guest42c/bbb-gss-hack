@@ -459,11 +459,13 @@ gss_vts_stop (GssProgram * program)
 
 }
 
-void
+#if 0
+static void
 gss_vts_add_resources (GssVts * vts)
 {
 
 }
+#endif
 
 static void
 handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)

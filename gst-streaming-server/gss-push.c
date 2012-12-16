@@ -74,7 +74,8 @@ gss_push_method_get_type (void)
   return (GType) id;
 }
 
-const char *
+#if 0
+static const char *
 gss_push_method_get_name (GssPushMethod method)
 {
   GEnumValue *ev;
@@ -86,6 +87,7 @@ gss_push_method_get_name (GssPushMethod method)
 
   return ev->value_name;
 }
+#endif
 
 G_DEFINE_TYPE (GssPush, gss_push, GSS_TYPE_PROGRAM);
 

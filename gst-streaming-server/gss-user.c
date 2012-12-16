@@ -100,7 +100,7 @@ gss_user_init (GssUser * user)
 
 #ifdef ENABLE_DEBUG
   s = soup_auth_domain_digest_encode_password ("admin", REALM, "admin");
-  g_object_set (server, "admin-token", s, NULL);
+  //g_object_set (user->server, "admin-token", s, NULL);
   g_free (s);
 
   gss_user_add_permanent_session (user, "00000000");

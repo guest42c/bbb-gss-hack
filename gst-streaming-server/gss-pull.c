@@ -45,6 +45,8 @@ static void gss_pull_get_property (GObject * object, guint prop_id,
 static void handle_pipeline_message (GstBus * bus, GstMessage * message,
     gpointer user_data);
 
+static void gss_pull_stop (GssProgram * program);
+static void gss_pull_start (GssProgram * program);
 static void gss_pull_get_list (GssPull * pull);
 static void gss_pull_add_stream_follow (GssPull * program, int type,
     int width, int height, int bitrate, const char *url);
@@ -71,6 +73,9 @@ gss_pull_class_init (GssPullClass * program_class)
       PROP_PULL_URI, g_param_spec_string ("pull-uri", "Pull URI",
           "URI for the stream or program to pull from.", DEFAULT_PULL_URI,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+
+  GSS_PROGRAM_CLASS (program_class)->start = gss_pull_start;
+  GSS_PROGRAM_CLASS (program_class)->stop = gss_pull_stop;
 
   parent_class = g_type_class_peek_parent (program_class);
 }
@@ -130,7 +135,7 @@ gss_pull_new (void)
 }
 
 
-void
+static void
 gss_pull_stop (GssProgram * program)
 {
   GList *g;
@@ -153,7 +158,7 @@ gss_pull_stop (GssProgram * program)
   }
 }
 
-void
+static void
 gss_pull_start (GssProgram * program)
 {
   GssPull *pull = GSS_PULL (program);
@@ -371,12 +376,14 @@ follow_callback (SoupSession * session, SoupMessage * message, gpointer ptr)
 
 }
 
-void
+#if 0
+static void
 gss_pull_follow (GssPull * pull, const char *host, const char *stream)
 {
   pull->is_ew = TRUE;
   pull->pull_uri = g_strdup_printf ("http://%s/%s.list", host, stream);
 }
+#endif
 
 static void
 gss_pull_get_list (GssPull * pull)
@@ -389,9 +396,11 @@ gss_pull_get_list (GssPull * pull)
       follow_callback, pull);
 }
 
-void
+#if 0
+static void
 gss_pull_http_follow (GssPull * pull, const char *uri)
 {
   pull->is_ew = FALSE;
   pull->pull_uri = g_strdup (uri);
 }
+#endif
