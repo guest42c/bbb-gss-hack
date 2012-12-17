@@ -351,7 +351,9 @@ gss_vts_set_property (GObject * object, guint prop_id,
 
   switch (prop_id) {
     default:
+#if 0
       g_assert_not_reached ();
+#endif
       break;
   }
 }
@@ -367,7 +369,9 @@ gss_vts_get_property (GObject * object, guint prop_id,
 
   switch (prop_id) {
     default:
+#if 0
       g_assert_not_reached ();
+#endif
       break;
   }
 }
