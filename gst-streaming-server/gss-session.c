@@ -31,7 +31,6 @@
 
 #define GST_CAT_DEFAULT gss_debug
 
-#define REALM "GStreamer Streaming Server"
 #define BASE "/"
 
 static GList *sessions;
@@ -637,7 +636,8 @@ session_login_post_resource (GssTransaction * t)
         gss_config_value_is_equal (server->config, "admin_hash", hash);
     g_free (hash);
 #endif
-    hash = soup_auth_domain_digest_encode_password (username, REALM, password);
+    hash = soup_auth_domain_digest_encode_password (username, server->realm,
+        password);
     valid = (strcmp (username, "admin") == 0) &&
         (strcmp (hash, server->admin_token) == 0);
     g_free (hash);

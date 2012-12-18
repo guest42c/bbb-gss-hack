@@ -728,7 +728,7 @@ gss_user_post_resource (GssTransaction * t)
         if (strcmp (user->admin_password0, user->admin_password1) == 0) {
           char *s;
           s = soup_auth_domain_digest_encode_password ("admin",
-              REALM, user->admin_password0);
+              t->server->realm, user->admin_password0);
           g_object_set (t->server, "admin-token", s, NULL);
           g_free (s);
 

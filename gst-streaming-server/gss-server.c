@@ -48,6 +48,7 @@ enum
   PROP_MAX_CONNECTIONS,
   PROP_MAX_RATE,
   PROP_ADMIN_HOSTS_ALLOW,
+  PROP_REALM,
   PROP_ADMIN_TOKEN,
   PROP_ENABLE_HTML5_VIDEO,
   PROP_ENABLE_CORTADO,
@@ -68,6 +69,7 @@ enum
 /* This is the result of soup_auth_domain_digest_encode_password ("admin",
  * "GStreamer Streaming Server", "admin"); */
 #define DEFAULT_ADMIN_TOKEN "f09e5ebc80c348d2ccf8a59a8cd37827"
+#define DEFAULT_REALM "GStreamer Streaming Server"
 #define DEFAULT_ENABLE_HTML5_VIDEO TRUE
 #define DEFAULT_ENABLE_CORTADO FALSE
 #define DEFAULT_ENABLE_FLASH TRUE
@@ -226,6 +228,7 @@ gss_server_init (GssServer * server)
   server->max_rate = DEFAULT_MAX_RATE;
   server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_HOSTS_ALLOW);
   server->admin_token = g_strdup (DEFAULT_ADMIN_TOKEN);
+  server->realm = g_strdup (DEFAULT_REALM);
   server->enable_html5_video = DEFAULT_ENABLE_HTML5_VIDEO;
   server->enable_cortado = DEFAULT_ENABLE_CORTADO;
   server->enable_flash = DEFAULT_ENABLE_FLASH;
@@ -280,6 +283,7 @@ gss_server_finalize (GObject * object)
   g_free (server->base_url_https);
   g_free (server->server_hostname);
   g_free (server->title);
+  g_free (server->realm);
   g_free (server->admin_hosts_allow);
   g_free (server->admin_token);
   g_free (server->archive_dir);
@@ -335,6 +339,15 @@ gss_server_class_init (GssServerClass * server_class)
           "Allowed Hosts (admin)", "Allowed Hosts (admin)",
           DEFAULT_ADMIN_HOSTS_ALLOW,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+#if 0
+  /* Don't want to expose this yet */
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_REALM, g_param_spec_string ("realm",
+          "Realm", "Realm",
+          DEFAULT_REALM,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (1 <<
+                  29))));
+#endif
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_ADMIN_TOKEN, g_param_spec_string ("admin-token",
           "Admin Token", "Admin Token",
@@ -422,6 +435,10 @@ gss_server_set_property (GObject * object, guint prop_id,
       g_free (server->admin_token);
       server->admin_token = g_value_dup_string (value);
       break;
+    case PROP_REALM:
+      g_free (server->realm);
+      server->realm = g_value_dup_string (value);
+      break;
     case PROP_ARCHIVE_DIR:
       g_free (server->archive_dir);
       server->archive_dir = g_value_dup_string (value);
@@ -483,6 +500,9 @@ gss_server_get_property (GObject * object, guint prop_id,
     case PROP_ADMIN_TOKEN:
       g_value_set_string (value, server->admin_token);
       break;
+    case PROP_REALM:
+      g_value_set_string (value, server->realm);
+      break;
     case PROP_ARCHIVE_DIR:
       g_value_set_string (value, server->archive_dir);
       break;
@@ -520,6 +540,13 @@ gss_server_set_title (GssServer * server, const char *title)
 {
   g_free (server->title);
   server->title = g_strdup (title);
+}
+
+void
+gss_server_set_realm (GssServer * server, const char *realm)
+{
+  g_free (server->realm);
+  server->realm = g_strdup (realm);
 }
 
 GssServer *

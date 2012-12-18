@@ -66,6 +66,7 @@ struct _GssServer
   int max_connections;
   int max_rate;
   char *admin_hosts_allow;
+  char *realm;
   gboolean enable_html5_video;
   gboolean enable_cortado;
   gboolean enable_flash;
@@ -127,6 +128,7 @@ void gss_server_follow_all (GssProgram *program, const char *host);
 void gss_server_set_footer_html (GssServer *server, GssFooterHtml footer_html,
     gpointer priv);
 void gss_server_set_title (GssServer *server, const char *title);
+void gss_server_set_realm (GssServer *server, const char *realm);
 
 const char * gss_server_get_multifdsink_string (void);
 
