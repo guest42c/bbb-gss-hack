@@ -749,6 +749,7 @@ gss_server_set_server_hostname (GssServer * server, const char *hostname)
   server->server_hostname = g_strdup (hostname);
 
   g_free (server->base_url);
+  g_free (server->base_url_https);
   if (server->server_hostname[0]) {
     if (server->http_port == 80) {
       server->base_url = g_strdup_printf ("http://%s", server->server_hostname);
@@ -757,8 +758,16 @@ gss_server_set_server_hostname (GssServer * server, const char *hostname)
           g_strdup_printf ("http://%s:%d", server->server_hostname,
           server->http_port);
     }
+    if (server->https_port == 443) {
+      server->base_url_https = g_strdup_printf ("https://%s",
+          server->server_hostname);
+    } else {
+      server->base_url_https = g_strdup_printf ("https://%s:%d",
+          server->server_hostname, server->https_port);
+    }
   } else {
     server->base_url = g_strdup ("");
+    server->base_url_https = g_strdup ("");
   }
 }
 
