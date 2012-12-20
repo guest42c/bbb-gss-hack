@@ -67,6 +67,7 @@ struct _GssServer
   int max_rate;
   char *admin_hosts_allow;
   char *realm;
+  char *cas_server;
   gboolean enable_html5_video;
   gboolean enable_cortado;
   gboolean enable_flash;

@@ -55,7 +55,8 @@ enum
   PROP_ENABLE_FLASH,
   PROP_ENABLE_RTSP,
   PROP_ENABLE_RTMP,
-  PROP_ARCHIVE_DIR
+  PROP_ARCHIVE_DIR,
+  PROP_CAS_SERVER
 };
 
 #define DEFAULT_ENABLE_PUBLIC_INTERFACE TRUE
@@ -80,6 +81,7 @@ enum
 #else
 #define DEFAULT_ARCHIVE_DIR "/mnt/sdb1"
 #endif
+#define DEFAULT_CAS_SERVER "https://10.0.2.23:8444/cas"
 
 /* Server Resources */
 static void gss_server_resource_main_page (GssTransaction * transaction);
@@ -239,6 +241,7 @@ gss_server_init (GssServer * server)
   server->enable_programs = TRUE;
   server->programs = NULL;
   server->archive_dir = g_strdup (DEFAULT_ARCHIVE_DIR);
+  server->cas_server = g_strdup (DEFAULT_CAS_SERVER);
 
 #ifdef ENABLE_RTSP
   if (server->enable_rtsp)
@@ -392,6 +395,13 @@ gss_server_class_init (GssServerClass * server_class)
       g_param_spec_boolean ("enable-rtmp", "Enable RTMP",
           "Enable RTMP", DEFAULT_ENABLE_RTMP,
           (GParamFlags) (RTMP_FLAGS | G_PARAM_STATIC_STRINGS)));
+#ifdef ENABLE_CAS
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_CAS_SERVER, g_param_spec_string ("cas-server", "CAS Server",
+          "CAS Server used for authentication (Example: https://cas.example.com/cas",
+          DEFAULT_CAS_SERVER,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+#endif
 
   parent_class = g_type_class_peek_parent (server_class);
 }
@@ -458,6 +468,10 @@ gss_server_set_property (GObject * object, guint prop_id,
     case PROP_ENABLE_RTMP:
       server->enable_rtmp = g_value_get_boolean (value);
       break;
+    case PROP_CAS_SERVER:
+      g_free (server->cas_server);
+      server->cas_server = g_value_dup_string (value);
+      break;
     default:
       g_assert_not_reached ();
       break;
@@ -520,6 +534,9 @@ gss_server_get_property (GObject * object, guint prop_id,
       break;
     case PROP_ENABLE_RTMP:
       g_value_set_boolean (value, server->enable_rtmp);
+      break;
+    case PROP_CAS_SERVER:
+      g_value_set_string (value, server->cas_server);
       break;
     default:
       g_assert_not_reached ();

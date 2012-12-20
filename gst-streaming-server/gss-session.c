@@ -526,6 +526,65 @@ err_no_msg:
   g_free (v);
 }
 
+#ifdef ENABLE_CAS
+static void
+cas_verify_done (SoupSession * session, SoupMessage * msg, gpointer user_data)
+{
+  BrowserIDVerify *v = (BrowserIDVerify *) user_data;
+  char *s2;
+
+  GST_DEBUG ("cas verify done");
+
+  if (msg->response_body->length > 5 &&
+      strncmp (msg->response_body->data, "yes\n", 4) == 0) {
+    GssSession *login_session;
+    char *username;
+    char *location;
+
+    username = strndup (msg->response_body->data + 4,
+        msg->response_body->length - 5);
+    GST_DEBUG ("username %s", username);
+
+    login_session = gss_session_new (username);
+
+    /* FIXME this can return session_id in HTTP */
+    location = g_strdup_printf ("%s%s?session_id=%s",
+        gss_soup_get_base_url_https (v->server, v->msg), v->redirect_url,
+        login_session->session_id);
+
+    GST_INFO ("new session for user %s", username);
+
+    soup_message_headers_append (v->msg->response_headers, "Location",
+        location);
+    s2 = g_strdup_printf ("<html><body>Oops, you were supposed to "
+        "be redirected <a href='%s'>here</a>.</body></html>\n", location);
+    g_free (location);
+    soup_message_set_response (v->msg, "text/html", SOUP_MEMORY_TAKE, s2,
+        strlen (s2));
+    soup_message_set_status (v->msg, SOUP_STATUS_SEE_OTHER);
+
+    g_free (username);
+  } else {
+    s2 = g_strdup_printf ("<html>\n"
+        "<head>\n"
+        "<title>Authorization Failed</title>\n"
+        "</head>\n"
+        "<body>\n"
+        "<h1>Authorization Failed</h1>\n"
+        "<p>Please go back and try again.</p>\n"
+        "<br>\n"
+        "<p>Response:</p>\n"
+        "<pre>%s</pre>\n" "</body>\n" "</html>\n", msg->response_body->data);
+    soup_message_set_response (v->msg, "text/html", SOUP_MEMORY_TAKE,
+        s2, strlen (s2));
+    soup_message_set_status (v->msg, SOUP_STATUS_UNAUTHORIZED);
+  }
+  soup_server_unpause_message (v->soupserver, v->msg);
+  g_free (v->redirect_url);
+  g_free (v);
+}
+#endif
+
 static void
 session_login_post_resource (GssTransaction * t)
 {
@@ -708,6 +767,59 @@ session_login_post_resource (GssTransaction * t)
   soup_message_set_status (t->msg, SOUP_STATUS_UNAUTHORIZED);
 }
 
+#ifdef ENABLE_CAS
+static void
+handle_cas_ticket (GssTransaction * t)
+{
+  const char *ticket;
+  SoupMessage *client_msg;
+  BrowserIDVerify *v;
+  char *s;
+  char *request_host;
+
+  ticket = g_hash_table_lookup (t->query, "ticket");
+  g_return_if_fail (ticket != NULL);
+
+  soup_server_pause_message (t->soupserver, t->msg);
+
+  v = g_malloc0 (sizeof (BrowserIDVerify));
+  v->server = t->server;
+  v->soupserver = t->soupserver;
+  v->msg = t->msg;
+
+  s = g_hash_table_lookup (t->query, "redirect_url");
+  if (s) {
+    v->redirect_url = g_uri_unescape_string (s, NULL);
+  } else {
+    char *base_url;
+    base_url = gss_soup_get_base_url_https (t->server, t->msg);
+    v->redirect_url = g_strdup_printf ("%s/", base_url);
+    g_free (base_url);
+  }
+
+  /* Redirect URLs must be local references, and must point to an
+   * existing resource.  Otherwise, just ignore it.  */
+  if (v->redirect_url[0] != '/' ||
+      g_hash_table_lookup (t->server->resources, v->redirect_url) == NULL) {
+    g_free (v->redirect_url);
+    v->redirect_url = g_strdup ("/");
+  }
+
+  request_host = gss_soup_get_request_host (t->msg);
+  s = g_strdup_printf
+      ("%s/validate?service=https://127.0.0.1:8443/login&ticket=%s",
+      t->server->cas_server, ticket);
+  client_msg = soup_message_new ("GET", s);
+  g_free (s);
+  g_free (request_host);
+  soup_message_headers_replace (client_msg->request_headers,
+      "Content-Type", "application/x-www-form-urlencoded");
+
+  soup_session_queue_message (t->server->client_session, client_msg,
+      cas_verify_done, v);
+}
+#endif
+
 static void
 session_login_get_resource (GssTransaction * t)
 {
@@ -736,6 +848,12 @@ session_login_get_resource (GssTransaction * t)
     g_free (base_url);
     return;
   }
+#ifdef ENABLE_CAS
+  if (t->query && g_hash_table_lookup (t->query, "ticket")) {
+    handle_cas_ticket (t);
+    return;
+  }
+#endif
 
   t->s = s = g_string_new ("");
 
