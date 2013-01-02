@@ -122,7 +122,6 @@ GType gss_server_get_type (void);
 
 GssServer * gss_server_new (void);
 void gss_server_set_server_hostname (GssServer *server, const char *hostname);
-void gss_server_read_config (GssServer *server, const char *config_filename);
 
 GssProgram * gss_server_add_program (GssServer *server, const char *program_name);
 void gss_server_remove_program (GssServer *server, GssProgram *program);

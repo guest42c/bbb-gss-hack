@@ -1069,23 +1069,6 @@ gss_server_resource_list (GssTransaction * t)
   }
 }
 
-void
-gss_server_read_config (GssServer * server, const char *config_filename)
-{
-  GKeyFile *kf;
-  GError *error;
-
-  error = NULL;
-  kf = g_key_file_new ();
-  g_key_file_load_from_file (kf, config_filename,
-      G_KEY_FILE_KEEP_COMMENTS, &error);
-  if (error) {
-    g_error_free (error);
-  }
-
-  g_key_file_free (kf);
-}
-
 
 static gboolean
 periodic_timer (gpointer data)
