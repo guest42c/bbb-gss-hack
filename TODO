@@ -1,10 +1,5 @@
 
-
-- move gss_server_log out of gss-server
-
 - control to disable all public access
-
-
 
 
 documentation:

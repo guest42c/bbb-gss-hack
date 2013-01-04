@@ -6,11 +6,11 @@ Contributing to gss-stream-server/ew-stream-server.
 
 Source code is kept in git, at this URL:
 
-  git://code.entropywave.com/git/ew-stream-server.git
+  git://anongit.freedesktop.org/gstreamer/gst-streaming-server
 
 Developer access is via ssh:
 
-  git+ssh://code.entropywave.com/git/ew-stream-server.git
+  git+ssh://git.freedesktop.org/git/gstreamer/gst-streaming-server
 
 
 Bugs reports are handled on the GNOME Bugzilla:
