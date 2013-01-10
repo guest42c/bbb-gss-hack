@@ -1,0 +1,15 @@
+#!/bin/sh
+
+
+gst-launch-0.10 videotestsrc is_live=1 ! \
+  video/x-raw-yuv,width=640,height=360,framerate=30000/1001 ! \
+  x264enc tune=zerolatency profile=baseline sync-lookahead=0 \
+    pass=cbr rc-lookahead=0 bitrate=600 key-int-max=4000 ! \
+  mpegtsmux name=mux ! \
+  queue ! \
+  souphttpclientsink location=http://localhost:8080/stream0 \
+  audiotestsrc is-live=true wave=ticks volume=0.2 ! \
+  audioconvert ! faac ! \
+  queue ! mux.
+
+
