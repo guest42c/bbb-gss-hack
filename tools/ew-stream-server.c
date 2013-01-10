@@ -242,6 +242,8 @@ add_program (GssServer * server, int i)
   g_object_set (program, "name", stream_name, NULL);
   gss_server_add_program_simple (server, program);
   g_free (stream_name);
+
+  g_object_set (program, "enabled", TRUE, NULL);
 }
 
 static void
