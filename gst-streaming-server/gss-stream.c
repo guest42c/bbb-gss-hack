@@ -72,7 +72,7 @@ gss_stream_init (GssStream * stream)
   stream->bitrate = DEFAULT_BITRATE;
 }
 
-static GType
+GType
 gss_stream_type_get_type (void)
 {
   static gsize id = 0;

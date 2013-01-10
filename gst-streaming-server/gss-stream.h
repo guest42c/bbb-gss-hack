@@ -143,6 +143,7 @@ FDInfo gss_stream_fd_table[GSS_STREAM_MAX_FDS];
 
 
 GType gss_stream_get_type (void);
+GType gss_stream_type_get_type (void);
 
 void gss_stream_set_type (GssStream *stream, int type);
 

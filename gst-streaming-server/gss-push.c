@@ -32,11 +32,13 @@ enum
 {
   PROP_NONE,
   PROP_PUSH_URI,
-  PROP_PUSH_METHOD
+  PROP_PUSH_METHOD,
+  PROP_DEFAULT_TYPE
 };
 
 #define DEFAULT_PUSH_URI "http://example.com/stream.webm"
 #define DEFAULT_PUSH_METHOD GSS_PUSH_METHOD_HTTP_PUT
+#define DEFAULT_DEFAULT_TYPE GSS_STREAM_TYPE_WEBM
 
 
 static void gss_push_finalize (GObject * object);
@@ -96,6 +98,7 @@ gss_push_init (GssPush * push)
 {
   push->push_uri = g_strdup (DEFAULT_PUSH_URI);
   push->push_method = DEFAULT_PUSH_METHOD;
+  push->default_type = DEFAULT_DEFAULT_TYPE;
 }
 
 static void
@@ -113,6 +116,11 @@ gss_push_class_init (GssPushClass * push_class)
       PROP_PUSH_URI, g_param_spec_string ("push-uri", "Push URI",
           "URI for the stream or program to push to.", DEFAULT_PUSH_URI,
           (GParamFlags) (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (push_class),
+      PROP_DEFAULT_TYPE, g_param_spec_enum ("default-type",
+          "Default Stream Format", "Default Stream Format",
+          gss_stream_type_get_type (), DEFAULT_DEFAULT_TYPE,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   GSS_PROGRAM_CLASS (push_class)->add_resources = gss_push_add_resources;
   GSS_PROGRAM_CLASS (push_class)->start = gss_push_start;
@@ -143,6 +151,9 @@ gss_push_set_property (GObject * object, guint prop_id,
     case PROP_PUSH_METHOD:
       push->push_method = g_value_get_enum (value);
       break;
+    case PROP_DEFAULT_TYPE:
+      push->default_type = g_value_get_enum (value);
+      break;
     default:
       g_assert_not_reached ();
       break;
@@ -163,6 +174,9 @@ gss_push_get_property (GObject * object, guint prop_id,
       break;
     case PROP_PUSH_URI:
       g_value_take_string (value, gss_push_get_push_uri (push));
+      break;
+    case PROP_DEFAULT_TYPE:
+      g_value_set_enum (value, push->default_type);
       break;
     default:
       g_assert_not_reached ();
@@ -410,7 +424,7 @@ gss_push_put_resource (GssTransaction * t)
   GssStream *stream;
   gboolean is_icecast;
 
-  if (push->push_client) {
+  if (push->push_client && push->push_method == GSS_PUSH_METHOD_ICECAST) {
     GST_DEBUG_OBJECT (program, "busy");
     soup_message_set_status (t->msg, SOUP_STATUS_CONFLICT);
     return;
@@ -439,7 +453,7 @@ gss_push_put_resource (GssTransaction * t)
       push->push_media_type = GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
     }
   } else {
-    push->push_media_type = GSS_STREAM_TYPE_OGG_THEORA_VORBIS;
+    push->push_media_type = push->default_type;
   }
 
   if (push->push_client == NULL) {

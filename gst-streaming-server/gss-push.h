@@ -56,6 +56,7 @@ struct _GssPush {
   /* properties */
   char *push_uri;
   GssPushMethod push_method;
+  GssStreamType default_type;
 
   SoupClientContext *push_client;
   GssStreamType push_media_type;
