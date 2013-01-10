@@ -195,6 +195,9 @@ main (int argc, char *argv[])
 
   gss_vts_new (server, "vts-stream");
 
+  gss_config_load_config_file ();
+  gss_config_save_config_file ();
+
   main_loop = g_main_loop_new (NULL, TRUE);
 
   g_main_loop_run (main_loop);
