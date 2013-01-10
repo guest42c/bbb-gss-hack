@@ -39,7 +39,8 @@
 #include <string.h>
 
 //#define STREAM_TYPE GSS_STREAM_TYPE_OGG_THEORA_VORBIS
-#define STREAM_TYPE GSS_STREAM_TYPE_WEBM
+//#define STREAM_TYPE GSS_STREAM_TYPE_WEBM
+#define STREAM_TYPE GSS_STREAM_TYPE_M2TS_H264BASE_AAC
 
 
 #define GETTEXT_PACKAGE "ew-stream-server"
@@ -389,28 +390,41 @@ gss_vts_start (GssProgram * program)
   GError *error = NULL;
   char *s;
 
-#if STREAM_TYPE == GSS_STREAM_TYPE_WEBM
-  s = g_strdup_printf ("videotestsrc is-live=true pattern=%d ! "
-      "video/x-raw-yuv,format=(fourcc)I420,width=640,height=360 ! "
-      "timeoverlay ! "
-      "vp8enc ! queue ! "
-      "webmmux streamable=true name=mux ! %s name=multifdsink "
-      "audiotestsrc is-live=true wave=ticks volume=0.2 ! "
-      "audioconvert ! vorbisenc ! "
-      "queue ! mux.audio_%%d ",
-      vts->pattern, gss_server_get_multifdsink_string ());
-#elif STREAM_TYPE == GSS_STREAM_TYPE_OGG_THEORA_VORBIS
-  s = g_strdup_printf ("videotestsrc is-live=true pattern=%d ! "
-      "video/x-raw-yuv,format=(fourcc)I420,width=640,height=360 ! "
-      "timeoverlay ! "
-      "theoraenc ! queue ! "
-      "oggmux name=mux ! %s name=multifdsink "
-      "audiotestsrc is-live=true wave=ticks volume=0.2 ! "
-      "audioconvert ! vorbisenc ! "
-      "queue ! mux. ", vts->pattern, gss_server_get_multifdsink_string ());
-#else
-#error FIXME
-#endif
+  if (STREAM_TYPE == GSS_STREAM_TYPE_WEBM) {
+    s = g_strdup_printf ("videotestsrc is-live=true pattern=%d ! "
+        "video/x-raw-yuv,format=(fourcc)I420,width=640,height=360 ! "
+        "timeoverlay ! "
+        "vp8enc ! queue ! "
+        "webmmux streamable=true name=mux ! %s name=multifdsink "
+        "audiotestsrc is-live=true wave=ticks volume=0.2 ! "
+        "audioconvert ! vorbisenc ! "
+        "queue ! mux.audio_%%d ",
+        vts->pattern, gss_server_get_multifdsink_string ());
+  } else if (STREAM_TYPE == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
+    s = g_strdup_printf ("videotestsrc is-live=true pattern=%d ! "
+        "video/x-raw-yuv,format=(fourcc)I420,width=640,height=360 ! "
+        "timeoverlay ! "
+        "theoraenc ! queue ! "
+        "oggmux name=mux ! %s name=multifdsink "
+        "audiotestsrc is-live=true wave=ticks volume=0.2 ! "
+        "audioconvert ! vorbisenc ! "
+        "queue ! mux. ", vts->pattern, gss_server_get_multifdsink_string ());
+  } else if (STREAM_TYPE == GSS_STREAM_TYPE_M2TS_H264BASE_AAC) {
+    s = g_strdup_printf ("videotestsrc is-live=true pattern=%d ! "
+        "video/x-raw-yuv,format=(fourcc)I420,width=320,height=180,framerate=30/1 ! "
+        "timeoverlay ! "
+        //"x264enc tune=zerolatency profile=baseline sync-lookahead=0 "
+        //"pass=cbr rc-lookahead=0 bitrate=600 key-int-max=4000 ! "
+        "ewh264enc speed=10 profile=baseline queue-size=1 keyframe-interval=300 "
+        "bitrate=600000 buffer-size=600000 ! "
+        "queue ! "
+        "mpegtsmux name=mux ! queue ! %s name=multifdsink "
+        "audiotestsrc is-live=true wave=ticks volume=0.2 ! "
+        "audioconvert ! ewaacenc ! "
+        "queue ! mux. ", vts->pattern, gss_server_get_multifdsink_string ());
+  } else {
+    g_assert_not_reached ();
+  }
   pipe = gst_parse_launch (s, &error);
   if (error) {
     GST_INFO_OBJECT (vts, "pipeline parsing error: %s", error->message);
