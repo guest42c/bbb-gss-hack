@@ -548,7 +548,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_M2TS_H264BASE_AAC ||
           stream->type == GSS_STREAM_TYPE_M2TS_H264MAIN_AAC) {
-        GSS_P ("<source src=\"%s\" >\n", stream->playlist_location);
+        GSS_P ("<source src=\"/%s.m3u8\" >\n", GST_OBJECT_NAME (program));
         break;
       }
     }
@@ -662,6 +662,7 @@ void
 gss_program_add_stream_table (GssProgram * program, GString * s)
 {
   GList *g;
+  gboolean have_hls = FALSE;
 
   GSS_A ("<table class='table table-striped table-bordered "
       "table-condensed'>\n");
@@ -682,6 +683,17 @@ gss_program_add_stream_table (GssProgram * program, GString * s)
     GSS_P ("<td>%d kbps</td>\n", stream->bitrate / 1000);
     GSS_P ("<td><a href=\"%s\">stream</a></td>\n", stream->location);
     GSS_P ("<td><a href=\"%s\">playlist</a></td>\n", stream->playlist_location);
+    GSS_A ("</tr>\n");
+
+    if (stream->type == GSS_STREAM_TYPE_M2TS_H264BASE_AAC ||
+        stream->type == GSS_STREAM_TYPE_M2TS_H264MAIN_AAC) {
+      have_hls = TRUE;
+    }
+  }
+  if (have_hls) {
+    GSS_A ("<tr>\n");
+    GSS_P ("<td colspan='7'><a href='/%s.m3u8'>HLS</a></td>\n",
+        GST_OBJECT_NAME (program));
     GSS_A ("</tr>\n");
   }
   GSS_A ("<tr>\n");
