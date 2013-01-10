@@ -151,7 +151,7 @@ gss_stream_finalize (GObject * object)
 #define CLEANUP(x) do { \
   if (x) { \
     if (GST_OBJECT_REFCOUNT (x) != 1) \
-      GST_WARNING( #x "refcount %d", GST_OBJECT_REFCOUNT (x)); \
+      GST_WARNING( #x " refcount %d", GST_OBJECT_REFCOUNT (x)); \
     g_object_unref (x); \
   } \
 } while (0)
@@ -165,8 +165,6 @@ gss_stream_finalize (GObject * object)
     gst_element_set_state (GST_ELEMENT (stream->pipeline), GST_STATE_NULL);
     CLEANUP (stream->pipeline);
   }
-  if (stream->adapter)
-    g_object_unref (stream->adapter);
   gss_metrics_free (stream->metrics);
 
   parent_class->finalize (object);
