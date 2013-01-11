@@ -404,7 +404,7 @@ gss_push_get_resource (GssTransaction * t)
 
   gss_program_add_video_block (program, t, 0);
 
-  gss_html_append_break (s);
+  GSS_A ("<br>");
 
   gss_program_add_stream_table (program, s);
 

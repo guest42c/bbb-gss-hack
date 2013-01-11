@@ -459,7 +459,7 @@ gss_program_add_jpeg_block (GssProgram * program, GssTransaction * t)
 
   if (program->state == GSS_PROGRAM_STATE_RUNNING) {
     if (program->jpegsink) {
-      GSS_P ("<img id='id%d' src='/%s-snapshot.jpeg' />",
+      GSS_P ("<img id='id%d' src='/%s-snapshot.jpeg' alt='snapshot'>",
           t->id, GST_OBJECT_NAME (program));
       if (t->script == NULL)
         t->script = g_string_new ("");
@@ -475,10 +475,10 @@ gss_program_add_jpeg_block (GssProgram * program, GssTransaction * t)
           t->id, GST_OBJECT_NAME (program), t->id, GST_OBJECT_NAME (program));
       t->id++;
     } else {
-      GSS_P ("<img src='/no-snapshot.png'>\n");
+      GSS_P ("<img src='/no-snapshot.png' alt='no snapshot'>\n");
     }
   } else {
-    GSS_P ("<img src='/offline.png'>\n");
+    GSS_P ("<img src='/offline.png' alt='offline'>\n");
   }
 }
 
@@ -493,7 +493,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
   int flash_only = TRUE;
 
   if (program->state != GSS_PROGRAM_STATE_RUNNING) {
-    GSS_P ("<img src='/offline.png'>\n");
+    GSS_P ("<img src='/offline.png' alt='offline'>\n");
     return;
   }
 
@@ -503,7 +503,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
           "/%s-snapshot.jpeg", 0, 0, "snapshot image",
           GST_OBJECT_NAME (program));
     } else {
-      GSS_P ("<img src='/no-snapshot.png'>\n");
+      GSS_P ("<img src='/no-snapshot.png' alt='no snapshot'>\n");
     }
   }
 
@@ -647,7 +647,7 @@ gss_program_get_resource (GssTransaction * t)
 
   gss_program_add_video_block (program, t, 0);
 
-  gss_html_append_break (s);
+  GSS_A ("<br>");
 
   gss_program_add_stream_table (program, s);
 
@@ -671,6 +671,8 @@ gss_program_add_stream_table (GssProgram * program, GString * s)
   GSS_A ("<th>Type</th>\n");
   GSS_A ("<th>Size</th>\n");
   GSS_A ("<th>Bitrate</th>\n");
+  GSS_A ("<th></th>\n");
+  GSS_A ("<th></th>\n");
   GSS_A ("</tr>\n");
   GSS_A ("</thead>\n");
   GSS_A ("<tbody>\n");
@@ -692,12 +694,12 @@ gss_program_add_stream_table (GssProgram * program, GString * s)
   }
   if (have_hls) {
     GSS_A ("<tr>\n");
-    GSS_P ("<td colspan='7'><a href='/%s.m3u8'>HLS</a></td>\n",
+    GSS_P ("<td colspan='5'><a href='/%s.m3u8'>HLS</a></td>\n",
         GST_OBJECT_NAME (program));
     GSS_A ("</tr>\n");
   }
   GSS_A ("<tr>\n");
-  GSS_P ("<td colspan='7'><a class='btn btn-mini' href='/'>"
+  GSS_P ("<td colspan='5'><a class='btn btn-mini' href='/'>"
       "<i class='icon-plus'></i>Add</a></td>\n");
   GSS_A ("</tr>\n");
   GSS_A ("</tbody>\n");

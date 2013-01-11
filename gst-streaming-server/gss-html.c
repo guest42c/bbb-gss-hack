@@ -53,16 +53,6 @@ gss_html_error_404 (GssServer * server, SoupMessage * msg)
 }
 
 void
-gss_html_append_break (GString * s)
-{
-#ifdef USE_XHTML
-  GSS_A ("<br />");
-#else
-  GSS_A ("<br>");
-#endif
-}
-
-void
 gss_html_append_image (GString * s, const char *url, int width, int height,
     const char *alt_text)
 {
@@ -73,21 +63,7 @@ gss_html_append_image (GString * s, const char *url, int width, int height,
   if (width > 0 && height > 0) {
     GSS_P ("width='%d' height='%d' ", width, height);
   }
-#ifdef USE_HTML5
-  /* border is in CSS */
-#else
-  GSS_A ("border='0' ");
-#endif
-
-#ifdef USE_XHTML
   GSS_A ("/>");
-#else
-#ifdef USE_HTML5
-  GSS_A ("/>");
-#else
-  GSS_A (">");
-#endif
-#endif
 }
 
 void
@@ -169,7 +145,7 @@ gss_html_header (GssTransaction * t)
     GSS_P
         ("<a class='btn dropdown-toggle' data-toggle='dropdown' data-target='#'>\n"
         "<i class='icon-user'></i> %s\n"
-        "<span class='caret'></span>\n", t->session->username);
+        "<span class='caret'></span></a>\n", t->session->username);
   } else {
 #ifdef ENABLE_CAS
     char *base_url;
@@ -191,8 +167,7 @@ gss_html_header (GssTransaction * t)
 #endif
   }
 
-  GSS_P ("</a>\n"
-      "<ul class='dropdown-menu'>\n"
+  GSS_P ("<ul class='dropdown-menu'>\n"
       "<li><a href='/profile%s'>Profile</a></li>\n"
       "<li class='divider'></li>\n"
       "<li><a href='/logout%s'>Sign Out</a></li>\n"
@@ -277,7 +252,7 @@ gss_html_bootstrap_doc (GssTransaction * t)
   GString *s = t->s;
 
   GSS_A ("<div class='hero-unit'>\n");
-  GSS_A ("<img src='/offline.png'>\n");
+  GSS_A ("<img src='/offline.png' alt='offline'>\n");
   GSS_A ("<p>Content #1.</p>\n");
   GSS_A
       ("<p><a class='btn btn-primary btn-large'>Learn more &raquo;</a></p>\n");

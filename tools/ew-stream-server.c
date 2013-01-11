@@ -250,11 +250,11 @@ static void
 footer_html (GssServer * server, GString * s, void *priv)
 {
   g_string_append (s,
-      "        <div class='span4'>\n"
-      "          <p>&copy; Entropy Wave Inc 2012</p>\n"
-      "        </div>\n"
-      "        <div class='span4'>\n"
-      "          <a href='http://entropywave.com'>\n"
-      "            <img src='/images/footer-entropywave.png'>\n"
-      "          </a>\n" "        </div>\n");
+      "<div class='span4'>\n"
+      "<p>&copy; Entropy Wave Inc 2013</p>\n"
+      "</div>\n"
+      "<div class='span4'>\n"
+      "<a href='http://entropywave.com'>\n"
+      "<img src='/images/footer-entropywave.png' alt='Entropy Wave Inc'>\n"
+      "</a>\n" "</div>\n");
 }

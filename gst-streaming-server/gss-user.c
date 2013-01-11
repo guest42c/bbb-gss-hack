@@ -541,7 +541,7 @@ gss_user_get_resource (GssTransaction * t)
   g_string_append (s, "<div class='accordion-heading'>\n");
   g_string_append (s, "<div class='accordion-toggle'>\n");
   g_string_append (s, "<button class='btn btn-mini' data-toggle='collapse' "
-      "data-parent='#accordion-config' href='#collapse-config'>\n");
+      "data-parent='#accordion-config' data-target='#collapse-config'>\n");
   g_string_append (s, "<b class='caret'></b> Change Administrator Password\n");
   g_string_append (s, "</button>\n");
   g_string_append (s, "</div>\n");
@@ -587,6 +587,7 @@ gss_user_get_resource (GssTransaction * t)
   g_string_append (s, "</div>\n");
 
 
+  g_string_append (s, "</form>\n");
   g_string_append (s, "</div>\n");
   g_string_append (s, "</div>\n");
   g_string_append (s, "</div>\n");

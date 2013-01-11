@@ -173,15 +173,15 @@ gss_manager_get_resource (GssTransaction * t)
   GSS_A
       ("<form class='form-horizontal' method='post' enctype='multipart/form-data'>\n");
   GSS_A ("<div class='control-group'>\n");
-  GSS_A ("<label class='control-label' for='name'>Stream name</label>\n");
+  GSS_A ("<label class='control-label' for='name1'>Stream name</label>\n");
   GSS_A ("<div class='controls'>\n");
   GSS_A ("<div class='input'>\n");
-  GSS_A ("<input name='name' id='name' type='text'>");
+  GSS_A ("<input name='name' id='name1' type='text'>");
   GSS_A ("</div>\n");
   GSS_A ("</div>\n");
   GSS_A ("</div>\n");
   GSS_A
-      ("<input name='action' id='name' type='hidden' value='add-push-stream'>");
+      ("<input name='action' id='button1' type='hidden' value='add-push-stream'>");
   GSS_A ("<button type='submit' class='btn'>Create Push Channel</button>\n");
   GSS_A ("</form>\n");
 
@@ -193,15 +193,15 @@ gss_manager_get_resource (GssTransaction * t)
   GSS_A
       ("<form class='form-horizontal' method='post' enctype='multipart/form-data'>\n");
   GSS_A ("<div class='control-group'>\n");
-  GSS_A ("<label class='control-label' for='name'>Stream name</label>\n");
+  GSS_A ("<label class='control-label' for='name2'>Stream name</label>\n");
   GSS_A ("<div class='controls'>\n");
   GSS_A ("<div class='input'>\n");
-  GSS_A ("<input name='name' id='name' type='text'>");
+  GSS_A ("<input name='name' id='name2' type='text'>");
   GSS_A ("</div>\n");
   GSS_A ("</div>\n");
   GSS_A ("</div>\n");
   GSS_A
-      ("<input name='action' id='name' type='hidden' value='add-pull-stream'>");
+      ("<input name='action' id='button2' type='hidden' value='add-pull-stream'>");
   GSS_A ("<button type='submit' class='btn'>Create Push Channel</button>\n");
   GSS_A ("</form>\n");
 

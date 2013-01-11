@@ -80,7 +80,7 @@ gss_config_append_config_block (GObject * object, GssTransaction * t,
     g_string_append (s, "<div class='accordion-heading'>\n");
     g_string_append (s, "<div class='accordion-toggle'>\n");
     g_string_append (s, "<button class='btn btn-mini' data-toggle='collapse' "
-        "data-parent='#accordion-config' href='#collapse-config'>\n");
+        "data-parent='#accordion-config' data-target='#collapse-config'>\n");
     g_string_append (s, "<b class='caret'></b> Edit\n");
     g_string_append (s, "</button>\n");
     g_string_append (s, "</div>\n");
@@ -166,14 +166,16 @@ gss_config_append_config_block (GObject * object, GssTransaction * t,
     value = g_object_get_as_string (object, pspecs[i]);
 
     g_string_append (s, "<div class='control-group'>\n");
+    g_string_append (s, "<label class='control-label'");
+    if (pspecs[i]->flags & G_PARAM_WRITABLE) {
+      g_string_append_printf (s, " for='%s'", pspecs[i]->name);
+    }
     if (g_object_property_is_default (object, pspecs[i])) {
-      g_string_append_printf (s,
-          "<label class='control-label' for='%s'>%s</label>\n",
-          pspecs[i]->name, g_param_spec_get_nick (pspecs[i]));
+      g_string_append_printf (s, ">%s</label>\n",
+          g_param_spec_get_nick (pspecs[i]));
     } else {
-      g_string_append_printf (s,
-          "<label class='control-label' for='%s'><b>%s</b></label>\n",
-          pspecs[i]->name, g_param_spec_get_nick (pspecs[i]));
+      g_string_append_printf (s, "><b>%s</b></label>\n",
+          g_param_spec_get_nick (pspecs[i]));
     }
 
     g_string_append (s, "<div class='controls'>\n");
@@ -228,10 +230,12 @@ gss_config_append_config_block (GObject * object, GssTransaction * t,
           "<input type='checkbox' class='input' "
           "id='%s' name='%s' value='1' %s>",
           pspecs[i]->name,
-          pspecs[i]->name, pspecs[i]->name, selected ? "checked='on'" : "");
-    } else if ((pspecs[i]->value_type == G_TYPE_STRING) &&
-        pspecs[i]->flags & GSS_PARAM_FILE_UPLOAD) {
-      g_string_append_printf (s, "<input type='file' class='input-xlarge' "
+          pspecs[i]->name, pspecs[i]->name,
+          selected ? "checked='checked'" : "");
+    } else if ((pspecs[i]->value_type == G_TYPE_STRING)
+        && pspecs[i]->flags & GSS_PARAM_FILE_UPLOAD) {
+      g_string_append_printf (s,
+          "<input type='file' class='input-xlarge' "
           "id='%s' name='%s' value=''>", pspecs[i]->name, pspecs[i]->name);
     } else if (pspecs[i]->value_type == G_TYPE_INT) {
       g_string_append_printf (s,
@@ -827,7 +831,7 @@ gss_config_load_config_file (void)
   //load_config (root, "network", "admin.network");
   //load_config (root, "hardware", "admin.hardware");
   load_config (root, "server", "admin.server");
-  //load_config (root, "user", "admin.user");
+  load_config (root, "user", "admin.user");
 
   xmlFreeDoc (doc);
 }
