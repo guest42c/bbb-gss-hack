@@ -290,6 +290,7 @@ gss_server_finalize (GObject * object)
   g_free (server->admin_hosts_allow);
   g_free (server->admin_token);
   g_free (server->archive_dir);
+  g_free (server->cas_server);
   g_object_unref (server->client_session);
 
   parent_class->finalize (object);
