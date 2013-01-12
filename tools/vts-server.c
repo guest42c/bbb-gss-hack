@@ -26,6 +26,7 @@
 #include "gst-streaming-server/gss-user.h"
 #include "gst-streaming-server/gss-manager.h"
 #include "gst-streaming-server/gss-push.h"
+#include "gst-streaming-server/gss-utils.h"
 
 
 
@@ -38,9 +39,11 @@
 #include <unistd.h>
 #include <string.h>
 
-//#define STREAM_TYPE GSS_STREAM_TYPE_OGG_THEORA_VORBIS
+#undef USE_EW_CODECS
+
+#define STREAM_TYPE GSS_STREAM_TYPE_OGG_THEORA_VORBIS
 //#define STREAM_TYPE GSS_STREAM_TYPE_WEBM
-#define STREAM_TYPE GSS_STREAM_TYPE_M2TS_H264BASE_AAC
+//#define STREAM_TYPE GSS_STREAM_TYPE_M2TS_H264BASE_AAC
 
 
 #define GETTEXT_PACKAGE "ew-stream-server"
@@ -164,7 +167,7 @@ main (int argc, char *argv[])
   g_option_context_free (context);
 
   server = gss_server_new ();
-  gst_object_set_name (GST_OBJECT (server), "admin.server");
+  gss_object_set_name (GSS_OBJECT (server), "admin.server");
 
   if (enable_daemon)
     daemonize ();
@@ -206,8 +209,9 @@ main (int argc, char *argv[])
   g_main_loop_unref (main_loop);
   main_loop = NULL;
 
-  g_object_unref (server);
-  server = NULL;
+  GSS_CLEANUP (server);
+  GSS_CLEANUP (user);
+  GSS_CLEANUP (manager);
 
   gss_server_deinit ();
   gst_deinit ();
@@ -412,19 +416,27 @@ gss_vts_start (GssProgram * program)
     s = g_strdup_printf ("videotestsrc is-live=true pattern=%d ! "
         "video/x-raw-yuv,format=(fourcc)I420,width=320,height=180,framerate=30/1 ! "
         "timeoverlay ! "
-        //"x264enc tune=zerolatency profile=baseline sync-lookahead=0 "
-        //"pass=cbr rc-lookahead=0 bitrate=600 key-int-max=4000 ! "
+#ifdef USE_EW_CODECS
         "ewh264enc speed=10 profile=baseline queue-size=1 keyframe-interval=300 "
         "bitrate=600000 buffer-size=600000 ! "
+#else
+        "x264enc tune=zerolatency profile=baseline sync-lookahead=0 "
+        "pass=cbr rc-lookahead=0 bitrate=600 key-int-max=4000 ! "
+#endif
         "queue ! "
         "mpegtsmux name=mux ! queue ! %s name=multifdsink "
-        "audiotestsrc is-live=true wave=ticks volume=0.2 ! "
-        "audioconvert ! ewaacenc ! "
+        "audiotestsrc is-live=true wave=ticks volume=0.2 ! " "audioconvert ! "
+#ifdef USE_EW_CODECS
+        "ewaacenc ! "
+#else
+        "faac ! "
+#endif
         "queue ! mux. ", vts->pattern, gss_server_get_multifdsink_string ());
   } else {
     g_assert_not_reached ();
   }
   pipe = gst_parse_launch (s, &error);
+  g_free (s);
   if (error) {
     GST_INFO_OBJECT (vts, "pipeline parsing error: %s", error->message);
     g_error_free (error);
@@ -456,8 +468,9 @@ gss_vts_start (GssProgram * program)
 static void
 gss_vts_stop (GssProgram * program)
 {
-  //GssVts *vts = GSS_VTS (program);
+  GssVts *vts = GSS_VTS (program);
 
+  gst_element_set_state (vts->pipeline, GST_STATE_NULL);
 }
 
 #if 0
@@ -491,7 +504,7 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
 
       if (newstate == GST_STATE_PLAYING
           && message->src == GST_OBJECT (vts->pipeline)) {
-        GST_ERROR_OBJECT (program, "vts started");
+        GST_DEBUG_OBJECT (program, "vts started");
         gss_program_set_state (program, GSS_PROGRAM_STATE_RUNNING);
       }
     }
