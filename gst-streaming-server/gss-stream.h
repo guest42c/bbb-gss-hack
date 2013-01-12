@@ -89,9 +89,6 @@ struct _GssStream {
   int program_id;
   gboolean is_hls;
 
-  /* for follow programs */
-  char *follow_url;
-
   GssResource *resource;
   GssResource *playlist_resource;
 

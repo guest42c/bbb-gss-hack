@@ -50,7 +50,8 @@ static void gss_pull_start (GssProgram * program);
 static void gss_pull_get_list (GssPull * pull);
 static void gss_pull_add_stream_follow (GssPull * program, int type,
     int width, int height, int bitrate, const char *url);
-static void gss_stream_create_follow_pipeline (GssStream * stream);
+static void
+gss_stream_create_follow_pipeline (GssStream * stream, const char *follow_url);
 
 static GObjectClass *parent_class;
 
@@ -180,15 +181,14 @@ gss_pull_add_stream_follow (GssPull * pull, int type, int width,
 
   stream = gss_program_add_stream_full (GSS_PROGRAM (pull),
       type, width, height, bitrate, NULL);
-  stream->follow_url = g_strdup (url);
 
-  gss_stream_create_follow_pipeline (stream);
+  gss_stream_create_follow_pipeline (stream, url);
 
   gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
 }
 
 static void
-gss_stream_create_follow_pipeline (GssStream * stream)
+gss_stream_create_follow_pipeline (GssStream * stream, const char *follow_url)
 {
   GstElement *pipe;
   GstElement *e;
@@ -235,7 +235,7 @@ gss_stream_create_follow_pipeline (GssStream * stream)
 
   e = gst_bin_get_by_name (GST_BIN (pipe), "src");
   g_assert (e != NULL);
-  g_object_set (e, "location", stream->follow_url, NULL);
+  g_object_set (e, "location", follow_url, NULL);
   g_object_unref (e);
 
   e = gst_bin_get_by_name (GST_BIN (pipe), "sink");

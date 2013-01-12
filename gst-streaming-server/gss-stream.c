@@ -133,7 +133,6 @@ gss_stream_finalize (GObject * object)
   g_free (stream->playlist_location);
   g_free (stream->location);
   g_free (stream->codecs);
-  g_free (stream->follow_url);
 
   for (i = 0; i < GSS_STREAM_HLS_CHUNKS; i++) {
     GssHLSSegment *segment = &stream->chunks[i];
