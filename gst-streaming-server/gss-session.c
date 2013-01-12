@@ -35,6 +35,10 @@
 
 static GList *sessions;
 
+static void append_login_html_login (GssServer * server, GssTransaction * t);
+static void append_login_html_browserid (GssServer * server,
+    GssTransaction * t);
+static void append_login_html_cas (GssServer * server, GssTransaction * t);
 
 typedef struct _AddrRange AddrRange;
 struct _AddrRange
@@ -55,6 +59,12 @@ static void session_logout_resource (GssTransaction * t);
 void
 gss_session_add_session_callbacks (GssServer * server)
 {
+  if (0)
+    server->append_login_html = append_login_html_login;
+  server->append_login_html = append_login_html_browserid;
+  if (0)
+    server->append_login_html = append_login_html_cas;
+
   gss_server_add_resource (server, "/login", 0,
       GSS_TEXT_HTML,
       session_login_get_resource, NULL, session_login_post_resource, NULL);
@@ -916,4 +926,34 @@ session_logout_resource (GssTransaction * t)
 
   soup_message_headers_append (t->msg->response_headers, "Location", "/");
   soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
+}
+
+
+
+
+static void
+append_login_html_login (GssServer * server, GssTransaction * t)
+{
+  g_string_append (t->s, "<a href='/login' title='Login'>Login</a>\n");
+}
+
+static void
+append_login_html_browserid (GssServer * server, GssTransaction * t)
+{
+  g_string_append (t->s,
+      "<a href='#' id='browserid' title='Sign-in with Persona'>\n"
+      "<img src='/sign_in_blue.png' alt='Sign in' "
+      "onclick='navigator.id.get(gotAssertion);'>\n" "</a>\n");
+}
+
+static void
+append_login_html_cas (GssServer * server, GssTransaction * t)
+{
+  char *base_url;
+  base_url = gss_soup_get_base_url_https (t->server, t->msg);
+  g_string_append_printf (t->s,
+      "<a href='%s/login?service=%s/login' title='Login'>Login</a>\n",
+      t->server->cas_server, t->server->base_url_https);
+
+  g_free (base_url);
 }

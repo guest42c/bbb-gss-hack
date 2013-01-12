@@ -147,24 +147,7 @@ gss_html_header (GssTransaction * t)
         "<i class='icon-user'></i> %s\n"
         "<span class='caret'></span></a>\n", t->session->username);
   } else {
-#ifdef ENABLE_CAS
-    char *base_url;
-#endif
-
-#if 0
-    char *base_url = gss_soup_get_base_url_https (t->server, t->msg);
-    GSS_P ("<a href='%s/login' title='Login'>Login</a>\n", base_url);
-    g_free (base_url);
-#endif
-    GSS_P ("<a href='#' id='browserid' title='Sign-in with Persona'>\n"
-        "<img src='/sign_in_blue.png' alt='Sign in' onclick='navigator.id.get(gotAssertion);'>\n"
-        "</a>\n");
-#ifdef ENABLE_CAS
-    base_url = gss_soup_get_base_url_https (t->server, t->msg);
-    GSS_P ("<a href='%s/login?service=%s/login' title='Login'>Login</a>\n",
-        t->server->cas_server, t->server->base_url_https);
-    g_free (base_url);
-#endif
+    t->server->append_login_html (t->server, t);
   }
 
   GSS_P ("<ul class='dropdown-menu'>\n"

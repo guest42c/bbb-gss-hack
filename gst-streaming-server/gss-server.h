@@ -105,6 +105,8 @@ struct _GssServer
   GList *featured_resources;
   char *archive_dir;
 
+  void (*append_login_html) (GssServer *server, GssTransaction *t);
+
   void (*add_warnings) (GssTransaction *t, void *priv);
   void *add_warnings_priv;
 };
