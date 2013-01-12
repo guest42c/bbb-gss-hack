@@ -148,7 +148,7 @@ gss_manager_add_resources (GssManager * manager, GssServer * server)
   GssResource *r;
 
   r = gss_server_add_resource (server, "/admin/manager", GSS_RESOURCE_ADMIN,
-      "text/html", gss_manager_get_resource, NULL, gss_manager_post_resource,
+      GSS_TEXT_HTML, gss_manager_get_resource, NULL, gss_manager_post_resource,
       manager);
   gss_server_add_admin_resource (server, r, "Manager");
 

@@ -843,14 +843,14 @@ gss_config_add_server_resources (GssServer * server)
   GssResource *r;
 
   r = gss_server_add_resource (server, "/admin/server", GSS_RESOURCE_ADMIN,
-      "text/html", gss_server_get_resource, NULL, gss_server_post_resource,
+      GSS_TEXT_HTML, gss_server_get_resource, NULL, gss_server_post_resource,
       server);
   gss_server_add_admin_resource (server, r, "Server");
 
   r = gss_server_add_resource (server, "/admin/config", GSS_RESOURCE_ADMIN,
-      "text/html", gss_config_get_resource, NULL, gss_config_post_resource,
+      GSS_TEXT_HTML, gss_config_get_resource, NULL, gss_config_post_resource,
       NULL);
 
   gss_server_add_resource (server, "/admin/config_file", GSS_RESOURCE_ADMIN,
-      "text/plain", gss_config_file_get_resource, NULL, NULL, NULL);
+      GSS_TEXT_PLAIN, gss_config_file_get_resource, NULL, NULL, NULL);
 }

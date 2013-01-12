@@ -56,10 +56,10 @@ void
 gss_session_add_session_callbacks (GssServer * server)
 {
   gss_server_add_resource (server, "/login", 0,
-      "text/html",
+      GSS_TEXT_HTML,
       session_login_get_resource, NULL, session_login_post_resource, NULL);
   gss_server_add_resource (server, "/logout", GSS_RESOURCE_HTTPS_ONLY,
-      "text/html", session_logout_resource, NULL, NULL, NULL);
+      GSS_TEXT_HTML, session_logout_resource, NULL, NULL, NULL);
 
   gss_session_notify_hosts_allow ("hosts_allow", server);
 }
@@ -492,7 +492,7 @@ persona_verify_done (SoupSession * session, SoupMessage * msg,
   s2 = g_strdup_printf ("<html><body>Oops, you were supposed to "
       "be redirected <a href='%s'>here</a>.</body></html>\n", location);
   g_free (location);
-  soup_message_set_response (v->msg, "text/html", SOUP_MEMORY_TAKE, s2,
+  soup_message_set_response (v->msg, GSS_TEXT_HTML, SOUP_MEMORY_TAKE, s2,
       strlen (s2));
   soup_message_set_status (v->msg, SOUP_STATUS_SEE_OTHER);
 
@@ -518,7 +518,7 @@ err_no_msg:
       "<br>\n"
       "<p>Response:</p>\n"
       "<pre>%s</pre>\n" "</body>\n" "</html>\n", msg->response_body->data);
-  soup_message_set_response (v->msg, "text/html", SOUP_MEMORY_TAKE,
+  soup_message_set_response (v->msg, GSS_TEXT_HTML, SOUP_MEMORY_TAKE,
       s2, strlen (s2));
   soup_message_set_status (v->msg, SOUP_STATUS_UNAUTHORIZED);
   soup_server_unpause_message (v->soupserver, v->msg);
@@ -559,7 +559,7 @@ cas_verify_done (SoupSession * session, SoupMessage * msg, gpointer user_data)
     s2 = g_strdup_printf ("<html><body>Oops, you were supposed to "
         "be redirected <a href='%s'>here</a>.</body></html>\n", location);
     g_free (location);
-    soup_message_set_response (v->msg, "text/html", SOUP_MEMORY_TAKE, s2,
+    soup_message_set_response (v->msg, GSS_TEXT_HTML, SOUP_MEMORY_TAKE, s2,
         strlen (s2));
     soup_message_set_status (v->msg, SOUP_STATUS_SEE_OTHER);
 
@@ -575,7 +575,7 @@ cas_verify_done (SoupSession * session, SoupMessage * msg, gpointer user_data)
         "<br>\n"
         "<p>Response:</p>\n"
         "<pre>%s</pre>\n" "</body>\n" "</html>\n", msg->response_body->data);
-    soup_message_set_response (v->msg, "text/html", SOUP_MEMORY_TAKE,
+    soup_message_set_response (v->msg, GSS_TEXT_HTML, SOUP_MEMORY_TAKE,
         s2, strlen (s2));
     soup_message_set_status (v->msg, SOUP_STATUS_UNAUTHORIZED);
   }
@@ -740,7 +740,7 @@ session_login_post_resource (GssTransaction * t)
           location);
       s = g_strdup_printf ("<html><body>Oops, you were supposed to "
           "be redirected <a href='%s'>here</a>.</body></html>\n", location);
-      soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE, s,
+      soup_message_set_response (t->msg, GSS_TEXT_HTML, SOUP_MEMORY_TAKE, s,
           strlen (s));
       soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
       g_free (location);
@@ -762,7 +762,7 @@ session_login_post_resource (GssTransaction * t)
       "<body>\n"
       "<h1>Authorization Failed</h1>\n"
       "<p>Please go back and try again.</p>\n" "</body>\n" "</html>\n");
-  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE,
+  soup_message_set_response (t->msg, GSS_TEXT_HTML, SOUP_MEMORY_TAKE,
       s, strlen (s));
   soup_message_set_status (t->msg, SOUP_STATUS_UNAUTHORIZED);
 }
@@ -840,7 +840,7 @@ session_login_get_resource (GssTransaction * t)
         location);
     s2 = g_strdup_printf ("<html><body>Oops, you were supposed to "
         "be redirected <a href='%s'>here</a>.</body></html>\n", location);
-    soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE, s2,
+    soup_message_set_response (t->msg, GSS_TEXT_HTML, SOUP_MEMORY_TAKE, s2,
         strlen (s2));
     soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);
 

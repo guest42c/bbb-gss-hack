@@ -515,8 +515,8 @@ gss_push_add_resources (GssProgram * program)
 
   s = g_strdup_printf ("/%s", GSS_OBJECT_NAME (program));
   program->resource =
-      gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/html",
-      gss_push_get_resource, gss_push_put_resource, gss_config_post_resource,
-      program);
+      gss_server_add_resource (program->server, s, GSS_RESOURCE_UI,
+      GSS_TEXT_HTML, gss_push_get_resource, gss_push_put_resource,
+      gss_config_post_resource, program);
   g_free (s);
 }

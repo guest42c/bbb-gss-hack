@@ -236,7 +236,7 @@ gss_resource_onetime_redirect (GssTransaction * t)
   g_free (base_url);
   soup_message_headers_append (t->msg->response_headers, "Location", url);
   soup_message_set_status (t->msg, SOUP_STATUS_TEMPORARY_REDIRECT);
-  soup_message_set_response (t->msg, "text/plain", SOUP_MEMORY_TAKE,
+  soup_message_set_response (t->msg, GSS_TEXT_PLAIN, SOUP_MEMORY_TAKE,
       url, strlen (url));
 }
 

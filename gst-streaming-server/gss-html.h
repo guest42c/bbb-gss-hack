@@ -29,6 +29,9 @@
 
 G_BEGIN_DECLS
 
+#define GSS_TEXT_HTML "text/html;charset=utf-8"
+#define GSS_TEXT_PLAIN "text/plain;charset=utf-8"
+
 void gss_html_header (GssTransaction *t);
 void gss_html_footer (GssTransaction *t);
 void gss_html_error_404 (GssServer *server, SoupMessage *msg);

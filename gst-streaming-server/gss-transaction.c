@@ -32,7 +32,7 @@ gss_transaction_redirect (GssTransaction * t, const char *target)
 
   s = g_strdup_printf ("<html><body>Oops, you were supposed to "
       "be redirected <a href='%s'>here</a>.</body></html>\n", target);
-  soup_message_set_response (t->msg, "text/html", SOUP_MEMORY_TAKE, s,
+  soup_message_set_response (t->msg, GSS_TEXT_HTML, SOUP_MEMORY_TAKE, s,
       strlen (s));
   soup_message_headers_append (t->msg->response_headers, "Location", target);
   soup_message_set_status (t->msg, SOUP_STATUS_SEE_OTHER);

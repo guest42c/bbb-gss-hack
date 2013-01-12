@@ -228,12 +228,12 @@ gss_user_add_resources (GssUser * user, GssServer * server)
 
   r = gss_server_add_resource (server, "/admin/users",
       GSS_RESOURCE_ADMIN,
-      "text/html", gss_user_get_resource, NULL, gss_user_post_resource, user);
+      GSS_TEXT_HTML, gss_user_get_resource, NULL, gss_user_post_resource, user);
   gss_server_add_admin_resource (server, r, "Users");
 
   gss_server_add_resource (server, "/profile",
       GSS_RESOURCE_UI | GSS_RESOURCE_USER,
-      "text/html", gss_profile_get_resource, NULL, gss_profile_post_resource,
+      GSS_TEXT_HTML, gss_profile_get_resource, NULL, gss_profile_post_resource,
       user);
 }
 

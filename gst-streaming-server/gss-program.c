@@ -227,17 +227,18 @@ gss_program_add_resources (GssProgram * program)
 
   s = g_strdup_printf ("/%s", GSS_OBJECT_NAME (program));
   program->resource =
-      gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/html",
-      gss_program_get_resource, NULL, gss_config_post_resource, program);
+      gss_server_add_resource (program->server, s, GSS_RESOURCE_UI,
+      GSS_TEXT_HTML, gss_program_get_resource, NULL, gss_config_post_resource,
+      program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", GSS_OBJECT_NAME (program));
-  gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/plain",
+  gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, GSS_TEXT_PLAIN,
       gss_program_frag_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.list", GSS_OBJECT_NAME (program));
-  gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/plain",
+  gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, GSS_TEXT_PLAIN,
       gss_program_list_resource, NULL, NULL, program);
   g_free (s);
 

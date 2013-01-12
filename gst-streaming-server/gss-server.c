@@ -635,22 +635,22 @@ gss_server_setup_resources (GssServer * server)
 {
   gss_session_add_session_callbacks (server);
 
-  gss_server_add_resource (server, "/", GSS_RESOURCE_UI, "text/html",
+  gss_server_add_resource (server, "/", GSS_RESOURCE_UI, GSS_TEXT_HTML,
       gss_server_resource_main_page, NULL, NULL, NULL);
-  gss_server_add_resource (server, "/list", GSS_RESOURCE_UI, "text/plain",
+  gss_server_add_resource (server, "/list", GSS_RESOURCE_UI, GSS_TEXT_PLAIN,
       gss_server_resource_list, NULL, NULL, NULL);
 
-  gss_server_add_resource (server, "/about", GSS_RESOURCE_UI, "text/html",
+  gss_server_add_resource (server, "/about", GSS_RESOURCE_UI, GSS_TEXT_HTML,
       gss_server_resource_about, NULL, NULL, NULL);
-  gss_server_add_resource (server, "/contact", GSS_RESOURCE_UI, "text/html",
+  gss_server_add_resource (server, "/contact", GSS_RESOURCE_UI, GSS_TEXT_HTML,
       gss_resource_unimplemented, NULL, NULL, NULL);
-  gss_server_add_resource (server, "/add_program", GSS_RESOURCE_UI, "text/html",
+  gss_server_add_resource (server, "/add_program", GSS_RESOURCE_UI,
+      GSS_TEXT_HTML, gss_resource_unimplemented, NULL, NULL, NULL);
+  gss_server_add_resource (server, "/dashboard", GSS_RESOURCE_UI, GSS_TEXT_HTML,
       gss_resource_unimplemented, NULL, NULL, NULL);
-  gss_server_add_resource (server, "/dashboard", GSS_RESOURCE_UI, "text/html",
+  gss_server_add_resource (server, "/monitor", GSS_RESOURCE_UI, GSS_TEXT_HTML,
       gss_resource_unimplemented, NULL, NULL, NULL);
-  gss_server_add_resource (server, "/monitor", GSS_RESOURCE_UI, "text/html",
-      gss_resource_unimplemented, NULL, NULL, NULL);
-  gss_server_add_resource (server, "/meep", GSS_RESOURCE_UI, "text/html",
+  gss_server_add_resource (server, "/meep", GSS_RESOURCE_UI, GSS_TEXT_HTML,
       gss_resource_unimplemented, NULL, NULL, NULL);
 
   if (server->enable_cortado) {
@@ -679,7 +679,7 @@ gss_server_setup_resources (GssServer * server)
       gss_data_footer_entropywave_png, gss_data_footer_entropywave_png_len);
 
   gss_server_add_string_resource (server, "/robots.txt", 0,
-      "text/plain", "User-agent: *\nDisallow: /\n");
+      GSS_TEXT_PLAIN, "User-agent: *\nDisallow: /\n");
 
   gss_server_add_static_resource (server, "/include.js", 0,
       "text/javascript", gss_data_include_js, gss_data_include_js_len);

@@ -46,7 +46,7 @@ gss_html_error_404 (GssServer * server, SoupMessage * msg)
 
   content = g_string_free (s, FALSE);
 
-  soup_message_set_response (msg, "text/html", SOUP_MEMORY_TAKE,
+  soup_message_set_response (msg, GSS_TEXT_HTML, SOUP_MEMORY_TAKE,
       content, strlen (content));
 
   soup_message_set_status (msg, SOUP_STATUS_NOT_FOUND);
