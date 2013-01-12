@@ -205,7 +205,7 @@ gss_html_header (GssTransaction * t)
       continue;
     GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
         (program->resource == t->resource) ? "class='active'" : "",
-        program->resource->location, session_id, GST_OBJECT_NAME (program));
+        program->resource->location, session_id, GSS_OBJECT_NAME (program));
   };
 
   GSS_A ("<li class='nav-header'>Archive</li>\n");
@@ -215,7 +215,7 @@ gss_html_header (GssTransaction * t)
       continue;
     GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
         (program->resource == t->resource) ? "class='active'" : "",
-        program->resource->location, session_id, GST_OBJECT_NAME (program));
+        program->resource->location, session_id, GSS_OBJECT_NAME (program));
   };
 
   if (t->session) {

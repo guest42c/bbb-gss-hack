@@ -487,7 +487,7 @@ gss_config_get_resource (GssTransaction * t)
       g_string_append (s, "<td>\n");
       if (!is_default)
         g_string_append (s, "<b>");
-      g_string_append_printf (s, "%s.%s\n", GST_OBJECT_NAME (object),
+      g_string_append_printf (s, "%s.%s\n", GSS_OBJECT_NAME (object),
           pspec->name);
       g_string_append (s, "</td>\n");
       if (!is_default)
@@ -723,7 +723,7 @@ gss_config_get (const char *name)
 {
   GList *g;
   for (g = config_list; g; g = g->next) {
-    if (strcmp (GST_OBJECT_NAME (g->data), name) == 0) {
+    if (strcmp (GSS_OBJECT_NAME (g->data), name) == 0) {
       return (GObject *) g->data;
     }
   }
@@ -772,7 +772,7 @@ load_config (xmlNodePtr root, const char *type, const char *name)
           xmlChar *s;
           s = xmlNodeGetContent (n2);
           GST_DEBUG_OBJECT (stream, "setting %s:%s to %s",
-              GST_OBJECT_NAME (stream), n2->name, s);
+              GSS_OBJECT_NAME (stream), n2->name, s);
           g_object_set_as_string (G_OBJECT (stream), (char *) n2->name,
               (char *) s);
           xmlFree (s);
@@ -792,7 +792,7 @@ load_config (xmlNodePtr root, const char *type, const char *name)
     } else if (n->type == XML_ELEMENT_NODE) {
       xmlChar *s;
       s = xmlNodeGetContent (n);
-      GST_DEBUG_OBJECT (object, "setting %s:%s to %s", GST_OBJECT_NAME (object),
+      GST_DEBUG_OBJECT (object, "setting %s:%s to %s", GSS_OBJECT_NAME (object),
           n->name,
           gss_object_param_is_secure (object, (char *) n->name) ? "SECURE" :
           (char *) s);

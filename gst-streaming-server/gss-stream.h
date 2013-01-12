@@ -30,8 +30,8 @@
 #include <libsoup/soup.h>
 #include "gss-config.h"
 #include "gss-types.h"
+#include "gss-object.h"
 #include "gss-session.h"
-#include "gss-program.h"
 
 G_BEGIN_DECLS
 
@@ -67,7 +67,7 @@ struct _GssHLSSegment {
 };
 
 struct _GssStream {
-  GstObject object;
+  GssObject object;
 
   /* properties */
   GssStreamType type;
@@ -119,7 +119,7 @@ struct _GssStream {
 
 typedef struct _GssStreamClass GssStreamClass;
 struct _GssStreamClass {
-  GstObjectClass object_class;
+  GssObjectClass object_class;
 
 };
 

@@ -27,6 +27,7 @@
 #include <libsoup/soup.h>
 #include "gss-config.h"
 #include "gss-types.h"
+#include "gss-object.h"
 #include "gss-session.h"
 
 G_BEGIN_DECLS
@@ -54,7 +55,7 @@ typedef enum {
 
 
 struct _GssProgram {
-  GstObject object;
+  GssObject object;
 
   GssServer *server;
   GssResource *resource;
@@ -100,7 +101,7 @@ struct _GssProgram {
 typedef struct _GssProgramClass GssProgramClass;
 struct _GssProgramClass
 {
-  GstObjectClass object_class;
+  GssObjectClass object_class;
 
   void (*add_resources) (GssProgram *program);
   void (*stop) (GssProgram *program);

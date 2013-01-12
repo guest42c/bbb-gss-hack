@@ -57,7 +57,7 @@ static void gss_program_add_resources (GssProgram * program);
 
 static GObjectClass *parent_class;
 
-G_DEFINE_TYPE (GssProgram, gss_program, GST_TYPE_OBJECT);
+G_DEFINE_TYPE (GssProgram, gss_program, GSS_TYPE_OBJECT);
 
 static GType
 gss_program_state_get_type (void)
@@ -142,14 +142,8 @@ static void
 gss_program_finalize (GObject * object)
 {
   GssProgram *program = GSS_PROGRAM (object);
-  GList *g;
 
-  for (g = program->streams; g; g = g_list_next (g)) {
-    GssStream *stream = g->data;
-
-    gst_object_unparent (GST_OBJECT (stream));
-  }
-  g_list_free (program->streams);
+  g_list_free_full (program->streams, g_object_unref);
 
   if (program->hls.variant_buffer) {
     soup_buffer_free (program->hls.variant_buffer);
@@ -163,6 +157,7 @@ gss_program_finalize (GObject * object)
   g_free (program->follow_uri);
   g_free (program->follow_host);
   g_free (program->description);
+  g_free (program->uuid);
 
   parent_class->finalize (object);
 }
@@ -228,28 +223,28 @@ gss_program_add_resources (GssProgram * program)
 {
   char *s;
 
-  s = g_strdup_printf ("/%s", GST_OBJECT_NAME (program));
+  s = g_strdup_printf ("/%s", GSS_OBJECT_NAME (program));
   program->resource =
       gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/html",
       gss_program_get_resource, NULL, gss_config_post_resource, program);
   g_free (s);
 
-  s = g_strdup_printf ("/%s.frag", GST_OBJECT_NAME (program));
+  s = g_strdup_printf ("/%s.frag", GSS_OBJECT_NAME (program));
   gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/plain",
       gss_program_frag_resource, NULL, NULL, program);
   g_free (s);
 
-  s = g_strdup_printf ("/%s.list", GST_OBJECT_NAME (program));
+  s = g_strdup_printf ("/%s.list", GSS_OBJECT_NAME (program));
   gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/plain",
       gss_program_list_resource, NULL, NULL, program);
   g_free (s);
 
-  s = g_strdup_printf ("/%s-snapshot.png", GST_OBJECT_NAME (program));
+  s = g_strdup_printf ("/%s-snapshot.png", GSS_OBJECT_NAME (program));
   gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "image/png",
       gss_program_png_resource, NULL, NULL, program);
   g_free (s);
 
-  s = g_strdup_printf ("/%s-snapshot.jpeg", GST_OBJECT_NAME (program));
+  s = g_strdup_printf ("/%s-snapshot.jpeg", GSS_OBJECT_NAME (program));
   gss_server_add_resource (program->server, s, 0,
       "image/jpeg", gss_program_jpeg_resource, NULL, NULL, program);
   g_free (s);
@@ -271,8 +266,6 @@ gss_program_add_stream (GssProgram * program, GssStream * stream)
 
   stream->program = program;
   gss_stream_add_resources (stream);
-
-  gst_object_set_parent (GST_OBJECT (stream), GST_OBJECT (program));
 }
 
 void
@@ -284,8 +277,9 @@ gss_program_remove_stream (GssProgram * program, GssStream * stream)
   program->streams = g_list_remove (program->streams, stream);
 
   gss_stream_remove_resources (stream);
-  gst_object_unparent (GST_OBJECT (stream));
   stream->program = NULL;
+
+  g_object_unref (stream);
 }
 
 void
@@ -447,9 +441,9 @@ gss_program_get_n_streams (GssProgram * program)
 void
 gss_program_set_jpegsink (GssProgram * program, GstElement * jpegsink)
 {
-  gst_object_replace ((GstObject **) & program->jpegsink,
-      GST_OBJECT (jpegsink));
-
+  if (program->jpegsink)
+    g_object_unref (program->jpegsink);
+  program->jpegsink = g_object_ref (jpegsink);
 }
 
 void
@@ -460,7 +454,7 @@ gss_program_add_jpeg_block (GssProgram * program, GssTransaction * t)
   if (program->state == GSS_PROGRAM_STATE_RUNNING) {
     if (program->jpegsink) {
       GSS_P ("<img id='id%d' src='/%s-snapshot.jpeg' alt='snapshot'>",
-          t->id, GST_OBJECT_NAME (program));
+          t->id, GSS_OBJECT_NAME (program));
       if (t->script == NULL)
         t->script = g_string_new ("");
       g_string_append_printf (t->script,
@@ -472,7 +466,7 @@ gss_program_add_jpeg_block (GssProgram * program, GssTransaction * t)
           "'/%s-snapshot.jpeg?_=' + new Date().getTime();\n"
           " }, 1000);\n"
           "});\n",
-          t->id, GST_OBJECT_NAME (program), t->id, GST_OBJECT_NAME (program));
+          t->id, GSS_OBJECT_NAME (program), t->id, GSS_OBJECT_NAME (program));
       t->id++;
     } else {
       GSS_P ("<img src='/no-snapshot.png' alt='no snapshot'>\n");
@@ -501,7 +495,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
     if (program->jpegsink) {
       gss_html_append_image_printf (s,
           "/%s-snapshot.jpeg", 0, 0, "snapshot image",
-          GST_OBJECT_NAME (program));
+          GSS_OBJECT_NAME (program));
     } else {
       GSS_P ("<img src='/no-snapshot.png' alt='no snapshot'>\n");
     }
@@ -548,7 +542,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_M2TS_H264BASE_AAC ||
           stream->type == GSS_STREAM_TYPE_M2TS_H264MAIN_AAC) {
-        GSS_P ("<source src=\"/%s.m3u8\" >\n", GST_OBJECT_NAME (program));
+        GSS_P ("<source src=\"/%s.m3u8\" >\n", GSS_OBJECT_NAME (program));
         break;
       }
     }
@@ -592,7 +586,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
           if (program->enable_snapshot) {
             gss_html_append_image_printf (s,
                 "/%s-snapshot.png", 0, 0, "snapshot image",
-                GST_OBJECT_NAME (program));
+                GSS_OBJECT_NAME (program));
           }
           GSS_P (" </object>\n");
         } else if (t->server->enable_flowplayer) {
@@ -608,7 +602,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
     if (program->enable_snapshot) {
       gss_html_append_image_printf (s,
           "/%s-snapshot.png", 0, 0, "snapshot image",
-          GST_OBJECT_NAME (program));
+          GSS_OBJECT_NAME (program));
     }
   }
 
@@ -643,7 +637,7 @@ gss_program_get_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  GSS_P ("<h1>%s</h1>\n", GST_OBJECT_NAME (program));
+  GSS_P ("<h1>%s</h1>\n", GSS_OBJECT_NAME (program));
 
   gss_program_add_video_block (program, t, 0);
 
@@ -695,7 +689,7 @@ gss_program_add_stream_table (GssProgram * program, GString * s)
   if (have_hls) {
     GSS_A ("<tr>\n");
     GSS_P ("<td colspan='5'><a href='/%s.m3u8'>HLS</a></td>\n",
-        GST_OBJECT_NAME (program));
+        GSS_OBJECT_NAME (program));
     GSS_A ("</tr>\n");
   }
   GSS_A ("<tr>\n");

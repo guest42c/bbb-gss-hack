@@ -54,7 +54,7 @@ struct _GssUserInfo {
 };
 
 struct _GssUser {
-  GstObject object;
+  GssObject object;
 
   /* properties */
   GHashTable *users;
@@ -63,7 +63,7 @@ struct _GssUser {
 };
 
 struct _GssUserClass {
-  GstObjectClass object_class;
+  GssObjectClass object_class;
 
 };
 

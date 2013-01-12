@@ -26,6 +26,7 @@
 #include "gst-streaming-server/gss-user.h"
 #include "gst-streaming-server/gss-manager.h"
 #include "gst-streaming-server/gss-push.h"
+#include "gst-streaming-server/gss-utils.h"
 
 #include <gst/gst.h>
 
@@ -155,7 +156,7 @@ main (int argc, char *argv[])
   g_option_context_free (context);
 
   server = gss_server_new ();
-  gst_object_set_name (GST_OBJECT (server), "admin.server");
+  gss_object_set_name (GSS_OBJECT (server), "admin.server");
 
   if (enable_daemon)
     daemonize ();
@@ -213,8 +214,9 @@ main (int argc, char *argv[])
   g_main_loop_unref (main_loop);
   main_loop = NULL;
 
-  g_object_unref (server);
-  server = NULL;
+  GSS_CLEANUP (server);
+  GSS_CLEANUP (user);
+  GSS_CLEANUP (manager);
 
   gss_server_deinit ();
   gst_deinit ();

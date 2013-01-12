@@ -44,14 +44,14 @@ typedef struct _GssManager GssManager;
 typedef struct _GssManagerClass GssManagerClass;
 
 struct _GssManager {
-  GstObject object;
+  GssObject object;
 
   /* properties */
   char *follow_hosts;
 };
 
 struct _GssManagerClass {
-  GstObjectClass object_class;
+  GssObjectClass object_class;
 
 };
 

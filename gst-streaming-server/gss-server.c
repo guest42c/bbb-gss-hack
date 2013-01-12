@@ -106,7 +106,7 @@ static gboolean periodic_timer (gpointer data);
 GST_DEBUG_CATEGORY (gss_debug);
 
 
-G_DEFINE_TYPE (GssServer, gss_server, GST_TYPE_OBJECT);
+G_DEFINE_TYPE (GssServer, gss_server, GSS_TYPE_OBJECT);
 
 
 static const gchar *soup_method_source;
@@ -263,14 +263,8 @@ static void
 gss_server_finalize (GObject * object)
 {
   GssServer *server = GSS_SERVER (object);
-  GList *g;
 
-  for (g = server->programs; g; g = g_list_next (g)) {
-    GssProgram *program = g->data;
-    g_assert (GSS_IS_PROGRAM (program));
-    gst_object_unparent (GST_OBJECT (program));
-  }
-  g_list_free (server->programs);
+  g_list_free_full (server->programs, g_object_unref);
 
   if (server->server)
     g_object_unref (server->server);
@@ -807,8 +801,6 @@ gss_server_add_program_simple (GssServer * server, GssProgram * program)
   if (program_class->add_resources) {
     program_class->add_resources (program);
   }
-
-  gst_object_set_parent (GST_OBJECT (program), GST_OBJECT (server));
 }
 
 GssProgram *
@@ -828,7 +820,7 @@ gss_server_remove_program (GssServer * server, GssProgram * program)
 
   gss_server_remove_resources_by_priv (server, program);
   server->programs = g_list_remove (server->programs, program);
-  gst_object_unparent (GST_OBJECT (program));
+  program->server = NULL;
 }
 
 void
@@ -868,7 +860,7 @@ gss_server_get_program_by_name (GssServer * server, const char *name)
 
   for (g = server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
-    if (strcmp (GST_OBJECT_NAME (program), name) == 0) {
+    if (strcmp (GSS_OBJECT_NAME (program), name) == 0) {
       return program;
     }
   }
@@ -1026,12 +1018,12 @@ gss_server_resource_main_page (GssTransaction * t)
     GSS_P ("<li class='span4'>\n");
     GSS_P ("<div class='thumbnail'>\n");
     GSS_P ("<a href=\"/%s%s%s\">",
-        GST_OBJECT_NAME (program),
+        GSS_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
     gss_program_add_jpeg_block (program, t);
     GSS_P ("</a>\n");
-    GSS_P ("<h5>%s</h5>\n", GST_OBJECT_NAME (program));
+    GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_NAME (program));
     GSS_P ("</div>\n");
     GSS_P ("</li>\n");
   }
@@ -1049,12 +1041,12 @@ gss_server_resource_main_page (GssTransaction * t)
     GSS_P ("<li class='span4'>\n");
     GSS_P ("<div class='thumbnail'>\n");
     GSS_P ("<a href=\"/%s%s%s\">",
-        GST_OBJECT_NAME (program),
+        GSS_OBJECT_NAME (program),
         t->session ? "?session_id=" : "",
         t->session ? t->session->session_id : "");
     gss_program_add_jpeg_block (program, t);
     GSS_P ("</a>\n");
-    GSS_P ("<h5>%s</h5>\n", GST_OBJECT_NAME (program));
+    GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_NAME (program));
     GSS_P ("</div>\n");
     GSS_P ("</li>\n");
   }
@@ -1073,7 +1065,7 @@ gss_server_resource_list (GssTransaction * t)
 
   for (g = t->server->programs; g; g = g_list_next (g)) {
     GssProgram *program = g->data;
-    GSS_P ("%s\n", GST_OBJECT_NAME (program));
+    GSS_P ("%s\n", GSS_OBJECT_NAME (program));
   }
 }
 

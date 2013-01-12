@@ -22,8 +22,13 @@
 #ifndef _GSS_TYPES_H
 #define _GSS_TYPES_H
 
+#include <glib.h>
+#include <glib-object.h>
+
 G_BEGIN_DECLS
 
+typedef struct _GssObject GssObject;
+typedef struct _GssObjectClass GssObjectClass;
 typedef struct _GssProgram GssProgram;
 typedef struct _GssStream GssStream;
 typedef struct _GssServer GssServer;

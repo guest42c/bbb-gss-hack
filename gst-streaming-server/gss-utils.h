@@ -27,6 +27,14 @@
 
 #include <string.h>
 
+#define GSS_CLEANUP(x) do { \
+  if (x) { \
+    if (GST_OBJECT_REFCOUNT (x) != 1) \
+      GST_WARNING( #x " refcount %d", GST_OBJECT_REFCOUNT (x)); \
+    g_object_unref (x); \
+  } \
+} while (0)
+
 G_BEGIN_DECLS
 
 char * gss_utils_get_time_string (void);

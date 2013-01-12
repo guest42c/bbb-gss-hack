@@ -68,7 +68,7 @@ static void gss_user_set_permanent_sessions (GssUser * user, const char *s);
 static void gss_user_info_free (GssUserInfo * ui);
 
 
-G_DEFINE_TYPE (GssUser, gss_user, GST_TYPE_OBJECT);
+G_DEFINE_TYPE (GssUser, gss_user, GSS_TYPE_OBJECT);
 
 static GObjectClass *parent_class;
 

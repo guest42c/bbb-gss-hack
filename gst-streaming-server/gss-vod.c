@@ -92,7 +92,7 @@ vod_resource_chunked (GssTransaction * t)
   vod->server = t->server;
 
   s = g_strdup_printf ("%s/%s", t->server->archive_dir,
-      GST_OBJECT_NAME (program));
+      GSS_OBJECT_NAME (program));
   vod->fd = open (s, O_RDONLY);
   if (vod->fd < 0) {
     GST_WARNING_OBJECT (program, "file not found %s", s);
@@ -143,14 +143,14 @@ gss_vod_setup (GssServer * server)
         stream = gss_stream_new (GSS_STREAM_TYPE_WEBM, 640, 360, 600);
         gss_program_add_stream (program, stream);
 
-        s = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s", GST_OBJECT_NAME (program),
+        s = g_strdup_printf ("%s-%dx%d-%dkbps%s.%s", GSS_OBJECT_NAME (program),
             stream->width, stream->height, stream->bitrate / 1000,
             gss_stream_type_get_mod (stream->type),
             gss_stream_type_get_ext (stream->type));
         gst_object_set_name (GST_OBJECT (stream), s);
         g_free (s);
 
-        s = g_strdup_printf ("/%s", GST_OBJECT_NAME (stream));
+        s = g_strdup_printf ("/%s", GSS_OBJECT_NAME (stream));
         gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
             gss_stream_type_get_content_type (stream->type),
             vod_resource_chunked, NULL, NULL, program);

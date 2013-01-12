@@ -30,6 +30,7 @@
 #include <libsoup/soup.h>
 #include "gss-config.h"
 #include "gss-types.h"
+#include "gss-object.h"
 #include "gss-session.h"
 #include "gss-program.h"
 #include "gss-metrics.h"
@@ -55,7 +56,7 @@ typedef void (GssFooterHtml) (GssServer *server, GString *s, void *priv);
 
 struct _GssServer
 {
-  GstObject object;
+  GssObject object;
 
   /* properties */
   gboolean enable_public_interface;
@@ -110,7 +111,7 @@ struct _GssServer
 
 struct _GssServerClass
 {
-  GstObjectClass object_class;
+  GssObjectClass object_class;
 
 };
 

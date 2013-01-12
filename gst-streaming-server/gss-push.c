@@ -195,7 +195,7 @@ static char *
 gss_push_get_push_uri (GssPush * push)
 {
   return g_strdup_printf ("%s/%s", push->program.server->base_url,
-      GST_OBJECT_NAME (push));
+      GSS_OBJECT_NAME (push));
 }
 
 static void
@@ -325,7 +325,7 @@ handle_pipeline_message (GstBus * bus, GstMessage * message, gpointer user_data)
       if (newstate == GST_STATE_PLAYING
           && message->src == GST_OBJECT (stream->pipeline)) {
         char *s;
-        s = g_strdup_printf ("stream %s started", GST_OBJECT_NAME (stream));
+        s = g_strdup_printf ("stream %s started", GSS_OBJECT_NAME (stream));
         GST_DEBUG_OBJECT (program, s);
         g_free (s);
         gss_program_set_state (program, GSS_PROGRAM_STATE_RUNNING);
@@ -400,7 +400,7 @@ gss_push_get_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  GSS_P ("<h1>%s</h1>\n", GST_OBJECT_NAME (program));
+  GSS_P ("<h1>%s</h1>\n", GSS_OBJECT_NAME (program));
 
   gss_program_add_video_block (program, t, 0);
 
@@ -513,7 +513,7 @@ gss_push_add_resources (GssProgram * program)
 
   parent_class->add_resources (program);
 
-  s = g_strdup_printf ("/%s", GST_OBJECT_NAME (program));
+  s = g_strdup_printf ("/%s", GSS_OBJECT_NAME (program));
   program->resource =
       gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "text/html",
       gss_push_get_resource, gss_push_put_resource, gss_config_post_resource,

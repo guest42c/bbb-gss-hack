@@ -48,7 +48,7 @@ static void gss_manager_get_property (GObject * object, guint prop_id,
 static void gss_manager_get_resource (GssTransaction * t);
 static void gss_manager_post_resource (GssTransaction * t);
 
-G_DEFINE_TYPE (GssManager, gss_manager, GST_TYPE_OBJECT);
+G_DEFINE_TYPE (GssManager, gss_manager, GSS_TYPE_OBJECT);
 
 static GObjectClass *parent_class;
 

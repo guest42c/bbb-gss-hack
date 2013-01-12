@@ -57,12 +57,11 @@ static void gss_stream_get_property (GObject * object, guint prop_id,
 static GObjectClass *parent_class;
 
 
-G_DEFINE_TYPE (GssStream, gss_stream, GST_TYPE_OBJECT);
+G_DEFINE_TYPE (GssStream, gss_stream, GSS_TYPE_OBJECT);
 
 static void
 gss_stream_init (GssStream * stream)
 {
-
   stream->metrics = gss_metrics_new ();
 
   stream->type = DEFAULT_TYPE;
@@ -514,7 +513,7 @@ gss_stream_add_resources (GssStream * stream)
 
   g_free (stream->location);
   stream->location = g_strdup_printf ("/%s/streams/stream%d-%dx%d-%dkbps%s.%s",
-      GST_OBJECT_NAME (stream->program),
+      GSS_OBJECT_NAME (stream->program),
       gss_program_get_stream_index (stream->program, stream),
       stream->width, stream->height,
       stream->bitrate / 1000,
@@ -528,7 +527,7 @@ gss_stream_add_resources (GssStream * stream)
   g_free (stream->playlist_location);
   stream->playlist_location =
       g_strdup_printf ("/%s/streams/stream%d-%dx%d-%dkbps%s-%s.m3u8",
-      GST_OBJECT_NAME (stream->program),
+      GSS_OBJECT_NAME (stream->program),
       gss_program_get_stream_index (stream->program, stream),
       stream->width, stream->height, stream->bitrate / 1000,
       gss_stream_type_get_mod (stream->type),
