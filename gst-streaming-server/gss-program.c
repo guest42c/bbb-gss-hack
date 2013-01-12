@@ -143,6 +143,8 @@ gss_program_finalize (GObject * object)
 {
   GssProgram *program = GSS_PROGRAM (object);
 
+  gss_program_stop (program);
+
   g_list_free_full (program->streams, g_object_unref);
 
   if (program->hls.variant_buffer) {
