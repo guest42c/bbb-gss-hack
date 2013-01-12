@@ -89,10 +89,6 @@ struct _GssStream {
   int program_id;
   gboolean is_hls;
 
-  /* For push programs */
-  GstAdapter *adapter;
-  int push_fd;
-
   /* for follow programs */
   char *follow_url;
 
@@ -100,6 +96,7 @@ struct _GssStream {
   GssResource *playlist_resource;
 
   /* HLS */
+  GstAdapter *adapter;
   int n_chunks;
   GssHLSSegment chunks[GSS_STREAM_HLS_CHUNKS];
   struct {

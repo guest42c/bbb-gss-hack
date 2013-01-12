@@ -49,7 +49,7 @@ static void gss_push_get_property (GObject * object, guint prop_id,
 static void handle_pipeline_message (GstBus * bus, GstMessage * message,
     gpointer user_data);
 
-static void gss_stream_create_push_pipeline (GssStream * stream);
+static void gss_stream_create_push_pipeline (GssStream * stream, int push_fd);
 static void gss_push_add_resources (GssProgram * program);
 static char *gss_push_get_push_uri (GssPush * push);
 static void gss_push_start (GssProgram * program);
@@ -230,7 +230,7 @@ push_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
 }
 
 static void
-gss_stream_create_push_pipeline (GssStream * stream)
+gss_stream_create_push_pipeline (GssStream * stream, int push_fd)
 {
   GstElement *pipe;
   GstElement *e;
@@ -281,7 +281,7 @@ gss_stream_create_push_pipeline (GssStream * stream)
   e = gst_bin_get_by_name (GST_BIN (pipe), "src");
   g_assert (e != NULL);
   if (push->push_method == GSS_PUSH_METHOD_ICECAST) {
-    g_object_set (e, "fd", stream->push_fd, NULL);
+    g_object_set (e, "fd", push->push_fd, NULL);
   }
   stream->src = e;
   gst_pad_add_data_probe (gst_element_get_pad (e, "src"),
@@ -376,6 +376,7 @@ push_wrote_headers (SoupMessage * msg, void *user_data)
 {
   GssStream *stream = (GssStream *) user_data;
   SoupSocket *socket;
+  int push_fd;
 
   socket =
       soup_client_context_get_socket (GSS_PUSH (stream->program)->push_client);
@@ -383,9 +384,9 @@ push_wrote_headers (SoupMessage * msg, void *user_data)
     GST_WARNING_OBJECT (stream, "Push socket is NULL");
     return;
   }
-  stream->push_fd = soup_socket_get_fd (socket);
+  push_fd = soup_socket_get_fd (socket);
 
-  gss_stream_create_push_pipeline (stream);
+  gss_stream_create_push_pipeline (stream, push_fd);
 
   gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
 }
@@ -470,7 +471,7 @@ gss_push_put_resource (GssTransaction * t)
     stream = program->streams->data;
 
     if (!is_icecast) {
-      gss_stream_create_push_pipeline (stream);
+      gss_stream_create_push_pipeline (stream, -1);
 
       gst_element_set_state (stream->pipeline, GST_STATE_PLAYING);
     }

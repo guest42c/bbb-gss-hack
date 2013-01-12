@@ -58,6 +58,7 @@ struct _GssPush {
   GssPushMethod push_method;
   GssStreamType default_type;
 
+  int push_fd;
   SoupClientContext *push_client;
   GssStreamType push_media_type;
 };
