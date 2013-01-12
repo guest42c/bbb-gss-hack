@@ -330,14 +330,14 @@ gss_html_sanitize_attribute (const char *s)
   len = strlen (s);
   escape_count = 0;
   for (i = 0; i < len; i++) {
-    if (!g_ascii_isalnum (s[i]))
+    if ((s[i] & 0x80) == 0 && !g_ascii_isalnum (s[i]))
       escape_count++;
   }
 
   out = g_malloc (len + escape_count * 5 + 1);
   t = out;
   for (i = 0; i < len; i++) {
-    if (g_ascii_isalnum (s[i])) {
+    if ((s[i] & 0x80) || g_ascii_isalnum (s[i])) {
       t[0] = s[i];
       t++;
     } else {

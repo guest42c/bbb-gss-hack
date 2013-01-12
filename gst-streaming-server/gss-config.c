@@ -196,7 +196,7 @@ gss_config_append_config_block (GObject * object, GssTransaction * t,
     }
     if (!(pspecs[i]->flags & G_PARAM_WRITABLE)) {
       char *safe;
-      safe = gss_html_sanitize_attribute (value);
+      safe = gss_html_sanitize_entity (value);
       g_string_append_printf (s,
           "<span class='input uneditable-input'>%s</span>", safe);
       g_free (safe);
