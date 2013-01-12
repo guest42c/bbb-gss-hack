@@ -594,6 +594,9 @@ gss_server_add_resource (GssServer * server, const char *location,
 {
   GssResource *resource;
 
+  g_return_val_if_fail (strcmp (content_type, "text/html") != 0, NULL);
+  g_return_val_if_fail (strcmp (content_type, "text/plain") != 0, NULL);
+
   resource = g_new0 (GssResource, 1);
   resource->location = g_strdup (location);
   resource->flags = flags;
