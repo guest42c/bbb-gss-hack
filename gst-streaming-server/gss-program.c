@@ -446,7 +446,9 @@ gss_program_set_jpegsink (GssProgram * program, GstElement * jpegsink)
 {
   if (program->jpegsink)
     g_object_unref (program->jpegsink);
-  program->jpegsink = g_object_ref (jpegsink);
+  if (jpegsink)
+    g_object_ref (jpegsink);
+  program->jpegsink = jpegsink;
 }
 
 void
