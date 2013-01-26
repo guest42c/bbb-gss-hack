@@ -348,6 +348,8 @@ gss_html_sanitize_entity (const char *s)
   int len;
   int i;
 
+  g_return_val_if_fail (s != NULL, NULL);
+
   len = strlen (s);
   escape_count = 0;
   for (i = 0; i < len; i++) {
@@ -390,6 +392,8 @@ gss_html_sanitize_url (const char *s)
   int len;
   int i;
 
+  g_return_val_if_fail (s != NULL, NULL);
+
   len = strlen (s);
   escape_count = 0;
   for (i = 0; i < len; i++) {
@@ -421,6 +425,8 @@ gss_html_entity_is_sane (const char *s)
   int i;
   int len;
 
+  g_return_val_if_fail (s != NULL, FALSE);
+
   len = strlen (s);
   for (i = 0; i < len; i++) {
     if (!g_ascii_isalnum (s[i])) {
@@ -436,6 +442,8 @@ gss_html_attribute_is_sane (const char *s)
 {
   int i;
   int len;
+
+  g_return_val_if_fail (s != NULL, FALSE);
 
   len = strlen (s);
   for (i = 0; i < len; i++) {
@@ -453,6 +461,8 @@ gss_html_url_is_sane (const char *s)
 {
   int i;
   int len;
+
+  g_return_val_if_fail (s != NULL, FALSE);
 
   len = strlen (s);
   for (i = 0; i < len; i++) {
