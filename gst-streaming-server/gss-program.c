@@ -596,8 +596,17 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
           GSS_P (" </object>\n");
         } else if (t->server->enable_flowplayer) {
           GSS_P
-              ("<a href='%s' style='display:block;width:%dpx;height:%dpx' id='player'>_</a>\n",
+              ("<a href='%s' style='display:block;width:%dpx;height:%dpx' id='player'>\n",
               stream->location, width, height);
+          GSS_P ("Click to play video.\n");
+#if 0
+          if (program->enable_snapshot) {
+            gss_html_append_image_printf (s,
+                "/%s-snapshot.png", 0, 0, "snapshot image",
+                GSS_OBJECT_NAME (program));
+          }
+#endif
+          GSS_P ("</a>\n");
         }
         break;
       }
