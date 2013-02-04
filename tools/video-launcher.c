@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     fprintf(fp, "%s: %s\n", reply->element[2]->str, reply->element[3]->str);
 
     //TODO: retrieve values from redis
-    char *host = "150.164.192.113";
+    char *host = "webconferencia.hc.ufmg.br"; //"150.164.192.113";
     char *streamId = "0009666694da07ee6363e22df5cdac8e079642eb-1359993137281";
     char *videoId = "640x480185-1359999168732";
 

@@ -59,11 +59,13 @@ int main(int argc, char *argv[]) {
   char *conferenceId = argv[2];
   char *streamId = argv[3]; 
   
-  char *bytes = "rtmp://"
+  char *bytes = "rtmp://";
   char *bytes2 = "/video/";
   char *bytes3 = "/";
   char *bytes4 = " live=1";
-  char *result = calloc(strlen(bytes)+strlen(bytes2)+strlen(bytes3)+strlen(bytes4)+strlen(conferenceId)+strlen(streamId)+1,sizeof(char));
+  char *result = calloc(strlen(bytes)+strlen(bytes2)+strlen(bytes3)
+      +strlen(bytes4)+strlen(conferenceId)+strlen(streamId)+strlen(host)
+      +1,sizeof(char));
   strcat(result, bytes);
   strcat(result, host);
   strcat(result, bytes2);
