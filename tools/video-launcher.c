@@ -7,7 +7,8 @@
 #include <signal.h>
 #include <hiredis/hiredis.h>
 #include <hiredis/async.h>
-
+#include <gst/gst.h>
+#include <stdbool.h>
 
 int main(int argc, char* argv[])
 {
@@ -27,7 +28,7 @@ int main(int argc, char* argv[])
   {
     printf("fork failed!\n");
     // Return failure in exit status
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   
   // PARENT PROCESS. Need to kill it.
@@ -35,7 +36,7 @@ int main(int argc, char* argv[])
   {
     printf("process_id of child process %d \n", process_id);
     // return success in exit status
-    exit(0);
+    exit(EXIT_SUCCESS);
   }
   
   //unmask the file mode
@@ -46,11 +47,13 @@ int main(int argc, char* argv[])
   if(sid < 0)
   {
     // Return failure
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   
   // Change the current working directory to /tmp.
-  chdir("/tmp");
+  if (chdir("/tmp") < 0) {
+    exit(EXIT_FAILURE);
+  }
   
   // Close stdin. stdout and stderr
   close(STDIN_FILENO);
@@ -80,6 +83,26 @@ int main(int argc, char* argv[])
     fflush(fp);
     redisGetReply(c,(void**)&reply);
     fprintf(fp, "%s: %s\n", reply->element[2]->str, reply->element[3]->str);
+   
+    pid_t childPID;
+    childPID = fork();
+    if(childPID >= 0) // fork was successful
+    {
+      if(childPID == 0) // child process
+      {
+          //TODO: create gss push server 
+          //Launch pipeline
+      } 
+      else //Parent process
+      {
+        fprintf(fp, "process_id of gstreamer child process %d \n", childPID);
+      }
+    }
+    else // fork failed
+    {
+      fprintf(fp, "Fork failed, Gstreamer Pipeline not started\n");
+      return 1;
+    }
     freeReplyObject(reply);
   }
   fclose(fp);
