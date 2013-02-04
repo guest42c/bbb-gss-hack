@@ -1,5 +1,6 @@
 #include <gst/gst.h>
- 
+#include <string.h>
+
 void on_pad_added (GstElement *src_element,
            GstPad *pad, // dynamic source pad
                  gpointer target_element)
@@ -53,9 +54,28 @@ int main(int argc, char *argv[]) {
     gst_object_unref (pipeline);
     return -1;
   }
+ 
+  char *host = argv[1];
+  char *conferenceId = argv[2];
+  char *streamId = argv[3]; 
+  
+  char *bytes = "rtmp://"
+  char *bytes2 = "/video/";
+  char *bytes3 = "/";
+  char *bytes4 = " live=1";
+  char *result = calloc(strlen(bytes)+strlen(bytes2)+strlen(bytes3)+strlen(bytes4)+strlen(conferenceId)+strlen(streamId)+1,sizeof(char));
+  strcat(result, bytes);
+  strcat(result, host);
+  strcat(result, bytes2);
+  strcat(result, conferenceId);
+  strcat(result, bytes3);
+  strcat(result, streamId);
+  strcat(result, bytes4);
 
+  printf("%s\n", result);
+  //"rtmp://150.164.192.113/video/0009666694da07ee6363e22df5cdac8e079642eb-1359993137281/640x480185-1359999168732 live=1"
   /* Modify the source's properties */
-  g_object_set (source, "location", "rtmp://150.164.192.113/video/b9f88ecdb171d436578f02890d0f3af563961967-1359930538236/160x120176-1359930548129 live=1", NULL);
+  g_object_set (source, "location", result, NULL);
   g_object_set (mux, "streamable", TRUE, NULL);
   g_object_set (sink, "location", "live.webm", NULL);
   
