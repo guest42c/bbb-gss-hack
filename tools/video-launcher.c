@@ -7,8 +7,9 @@
 #include <signal.h>
 #include <hiredis/hiredis.h>
 #include <hiredis/async.h>
-#include <gst/gst.h>
 #include <stdbool.h>
+#include <glib-object.h>
+#include <json-glib/json-glib.h>
 
 int main(int argc, char* argv[])
 {
@@ -18,6 +19,9 @@ int main(int argc, char* argv[])
 
   redisContext *c; 
   redisReply *reply;
+
+  GError *error = NULL;
+
   //long int i;
 
   // Create child process
@@ -64,7 +68,7 @@ int main(int argc, char* argv[])
   fp = fopen ("Log.txt", "a+");
   
   //Connect to redis
-  c = redisConnect("127.0.0.1", 6379);
+  c = redisConnect("143.54.10.131", 6379); //143.54.10.131
   if (c->err) {
     fprintf(fp, "Error: %s\n", c->errstr);
   }else{
@@ -72,7 +76,7 @@ int main(int argc, char* argv[])
   }
   fflush(fp);
   
-  reply = redisCommand(c,"PSUBSCRIBE bigbluebutton:%s","*");
+  reply = redisCommand(c,"PSUBSCRIBE bigbluebutton:meeting:participants");
   freeReplyObject(reply);
   
   while (1)
@@ -83,14 +87,42 @@ int main(int argc, char* argv[])
     fflush(fp);
     redisGetReply(c,(void**)&reply);
     fprintf(fp, "%s: %s\n", reply->element[2]->str, reply->element[3]->str);
+   
+    const gchar *message_json = reply->element[3]->str;
 
-    //TODO: retrieve values from redis
-    char *host = "webconferencia.hc.ufmg.br"; //"150.164.192.113";
-    char *streamId = "0009666694da07ee6363e22df5cdac8e079642eb-1359993137281";
-    char *videoId = "640x480185-1359999168732";
+    g_type_init ();
 
-    printf("%s\n", host);
+    JsonParser *parser;
+    parser = json_parser_new ();
+    
+    if (!json_parser_load_from_data (parser, message_json, -1, &error)) {
+      fprintf(fp, "%s\n", "Erro ao fazer parser da mensagem json");
+    }
 
+    JsonNode *root, *node_stream, *node_meeting;
+    JsonObject *object;
+    root = json_parser_get_root (parser);
+
+    object = json_node_get_object (root);
+    node_meeting = json_object_get_member (object, "meetingId");
+    node_stream  = json_object_get_member (object, "value");
+   
+    //TODO: retrieve host value from config
+    const char *host = "143.54.10.131"; //"webconferencia.hc.ufmg.br"; //"150.164.192.113";
+    const char *meetingId = json_node_get_string(node_meeting); //"0009666694da07ee6363e22df5cdac8e079642eb-1359993137281";
+    const char *videoId = json_node_get_string(node_stream);//"640x480185-1359999168732";
+
+    //Get the substring, remove the first part
+    //true,stream=1280x720-1360167989810-1360167685014
+    //TODO: should be reviewed
+    int size_id = strlen(videoId)-12; 
+    char *streamId;
+    memcpy( streamId, &videoId[12], size_id);
+    streamId[size_id] = '\0';
+
+    printf("%s %s %s %s\n", host, meetingId, videoId,streamId);
+    fprintf(fp,"%s %s %s %s\n", host, meetingId, videoId, streamId);
+    
     pid_t childPID;
     childPID = fork();
    
@@ -101,7 +133,7 @@ int main(int argc, char* argv[])
         //TODO: create gss push server
         char *chan = "stream0"; 
         //Launch pipeline
-        if (execl("/home/guilherme/workspace/gst-streaming-server/tools/webm", "webm", host, streamId, videoId, chan, NULL) == -1) 
+        if (execl("/home/guilherme/workspace/gst-streaming-server/tools/webm", "webm", host, meetingId, streamId, chan, NULL) == -1) 
         {
           fprintf(stderr,"execl Error!");
           exit(1);
