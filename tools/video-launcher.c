@@ -11,6 +11,8 @@
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
 
+#include <time.h>
+
 int main(int argc, char* argv[])
 {
   FILE *fp= NULL;
@@ -83,7 +85,13 @@ int main(int argc, char* argv[])
   {
     // Dont block context switches, let the process sleep for some time
     sleep(1);
-    fprintf(fp, "Logging info...\n");
+    time_t rawtime;
+    struct tm * timeinfo;
+
+    time ( &rawtime );
+    timeinfo = localtime ( &rawtime );
+    fprintf (fp, "Current local time and date: %s", asctime (timeinfo) );
+
     fflush(fp);
     redisGetReply(c,(void**)&reply);
     fprintf(fp, "%s: %s\n", reply->element[2]->str, reply->element[3]->str);
