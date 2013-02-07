@@ -10,7 +10,7 @@ AM_INIT_AUTOMAKE(1.6)
 GST_MAJORMINOR=0.10
 AC_SUBST(GST_MAJORMINOR)
 
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS(config.h)
 
 dnl CURRENT, REVISION, AGE
 dnl - library source changed -> increment REVISION
