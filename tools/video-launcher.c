@@ -62,9 +62,9 @@ int main(int argc, char* argv[])
   }
   
   // Close stdin. stdout and stderr
-  //close(STDIN_FILENO);
-  //close(STDOUT_FILENO);
-  //close(STDERR_FILENO);
+  close(STDIN_FILENO);
+  close(STDOUT_FILENO);
+  close(STDERR_FILENO);
   
   // Open a log file in write mode.
   fp = fopen ("Log.txt", "a+");
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
 
     fflush(fp);
     redisGetReply(c,(void**)&reply);
-    fprintf(fp, "%s: %s\n", reply->element[2]->str, reply->element[3]->str);
+    //fprintf(fp, "%s: %s\n", reply->element[2]->str, reply->element[3]->str);
    
     const gchar *message_json = reply->element[3]->str;
 
@@ -128,8 +128,8 @@ int main(int argc, char* argv[])
     memcpy( streamId, &videoId[12], size_id);
     streamId[size_id] = '\0';
 
-    printf("%s %s %s %s\n", host, meetingId, videoId,streamId);
-    fprintf(fp,"%s %s %s %s\n", host, meetingId, videoId, streamId);
+    //printf("%s %s %s %s\n", host, meetingId, videoId,streamId);
+    //fprintf(fp,"%s %s %s %s\n", host, meetingId, videoId, streamId);
     
     pid_t childPID;
     childPID = fork();
@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
         //TODO: create gss push server
         char *chan = "stream0"; 
         //Launch pipeline
-        if (execl("/home/guilherme/workspace/gst-streaming-server/tools/webm", "webm", host, meetingId, streamId, chan, NULL) == -1) 
+        if (execl("webm", "webm", host, meetingId, streamId, chan, NULL) == -1) 
         {
           fprintf(stderr,"execl Error!");
           exit(1);

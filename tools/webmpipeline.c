@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   char *host = argv[1];
   char *conferenceId = argv[2];
   char *streamId = argv[3]; 
-  
+  char *chan = argv[4];  
   char *bytes = "rtmp://";
   char *bytes2 = "/video/";
   char *bytes3 = "/";
