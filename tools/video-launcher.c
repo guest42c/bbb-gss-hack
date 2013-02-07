@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
   fp = fopen ("Log.txt", "a+");
   
   //Connect to redis
-  c = redisConnect("143.54.10.131", 6379); //143.54.10.131
+  c = redisConnect("143.54.10.41", 6379); //143.54.10.41
   if (c->err) {
     fprintf(fp, "Error: %s\n", c->errstr);
   }else{
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
     node_stream  = json_object_get_member (object, "value");
    
     //TODO: retrieve host value from config
-    const char *host = "143.54.10.131"; //"webconferencia.hc.ufmg.br"; //"150.164.192.113";
+    const char *host = "143.54.10.41"; //"webconferencia.hc.ufmg.br"; //"150.164.192.113";
     const char *meetingId = json_node_get_string(node_meeting); //"0009666694da07ee6363e22df5cdac8e079642eb-1359993137281";
     const char *videoId = json_node_get_string(node_stream);//"640x480185-1359999168732";
 
