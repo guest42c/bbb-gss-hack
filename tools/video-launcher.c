@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
     const char *meetingId = json_node_get_string(node_meeting); //"0009666694da07ee6363e22df5cdac8e079642eb-1359993137281";
     const char *videoId = json_node_get_string(node_stream);//"640x480185-1359999168732";
 
-    //Get the substring, remove the first part
+    //Get the substring (after equal sign)
     //true,stream=1280x720-1360167989810-1360167685014
     //TODO: should be reviewed
     int size_id = strlen(videoId)-12; 

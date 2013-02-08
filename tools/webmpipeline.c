@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
   enc = gst_element_factory_make ("vp8enc", "enc");
   mux = gst_element_factory_make ("webmmux", "mux");
   sink = gst_element_factory_make ("filesink", "sink");
+  shout_sink = gst_element_factory_make ("shout2send","shout2send");
 
   if (!pipeline || !source || !decode || !enc || !mux || !sink) {
     g_printerr ("One or more elements could not be created. Exiting.\n");
@@ -49,7 +50,7 @@ int main(int argc, char *argv[]) {
     gst_object_unref (pipeline);
     return -1;
   }
-  if (gst_element_link (mux, sink) != TRUE ) {
+  if (gst_element_link (mux, shout_sink) != TRUE ) {
     g_printerr ("Elements mux and sink could not be linked.\n");
     gst_object_unref (pipeline);
     return -1;
@@ -80,6 +81,7 @@ int main(int argc, char *argv[]) {
   g_object_set (source, "location", result, NULL);
   g_object_set (mux, "streamable", TRUE, NULL);
   g_object_set (sink, "location", "live.webm", NULL);
+  g_object_set (shout_sink, "ip", "127.0.0.1", "port", 8080, "mount", chan, NULL);
   
   /* Start playing */
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
