@@ -74,6 +74,27 @@ GTK_DOC_CHECK([1.0])
 # GStreamer stuff
 ########################
 
+PKG_PROG_PKG_CONFIG()
+AC_ARG_WITH(gst-api-version,
+  AC_HELP_STRING([--with-gst-api-version],[0.10,1.0,auto (default auto)]),
+    [], [with_gst_api_version=auto])
+case "${with_gst_api_version}" in
+  0.10|1.0)
+    GST_API_VERSION="${with_gst_api_version}"
+    ;;
+  auto)
+    if ${PKG_CONFIG} --exists gstreamer-1.0 ; then
+      GST_API_VERSION=1.0
+    elif ${PKG_CONFIG} --exists gstreamer-0.10 ; then
+      GST_API_VERSION=0.10
+    else
+      GST_API_VERSION=1.0
+    fi
+    ;;
+  *)
+    echo "Bad gst-api-version: $with_gst_api_version"
+    ;;
+esac
 
 dnl *** check for arguments to configure ***
 
