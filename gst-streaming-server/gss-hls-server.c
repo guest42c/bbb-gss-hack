@@ -38,8 +38,13 @@ static void gss_hls_handle_ts_chunk (GssTransaction * t);
 
 void gss_program_add_hls_chunk (GssStream * stream, SoupBuffer * buf);
 
+#if GST_CHECK_VERSION(1,0,0)
+static GstPadProbeReturn sink_probe_callback (GstPad * pad,
+    GstPadProbeInfo * info, gpointer user_data);
+#else
 static gboolean
 sink_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data);
+#endif
 
 static void gss_hls_update_variant (GssProgram * program);
 
@@ -63,9 +68,13 @@ gss_stream_add_hls (GssStream * stream)
         "video/x-mpegurl", gss_hls_handle_m3u8, NULL, NULL, program);
     g_free (s);
   }
-
-  gst_pad_add_data_probe (gst_element_get_pad (stream->sink, "sink"),
+#if GST_CHECK_VERSION(1,0,0)
+  gst_pad_add_probe (gst_element_get_static_pad (stream->sink, "sink"),
+      GST_PAD_PROBE_TYPE_BUFFER, sink_probe_callback, stream, NULL);
+#else
+  gst_pad_add_data_probe (gst_element_get_static_pad (stream->sink, "sink"),
       G_CALLBACK (sink_data_probe_callback), stream);
+#endif
 
   profile = 0;
   if (stream->type == GSS_STREAM_TYPE_M2TS_H264BASE_AAC) {
@@ -143,6 +152,50 @@ gss_program_add_hls_chunk_callback (gpointer data)
   return FALSE;
 }
 
+#if GST_CHECK_VERSION(1,0,0)
+static GstPadProbeReturn
+sink_probe_callback (GstPad * pad, GstPadProbeInfo * info, gpointer user_data)
+{
+  GssStream *stream = GSS_STREAM (user_data);
+
+  if (info->type == GST_PAD_PROBE_TYPE_BUFFER) {
+    GstBuffer *buffer = GST_BUFFER (info->data);
+    GstMapInfo mapinfo;
+    guint8 *data;
+    gboolean ret;
+
+    ret = gst_buffer_map (buffer, &mapinfo, GST_MAP_READ);
+    if (!ret) {
+      GST_ERROR ("failed map");
+    }
+    data = mapinfo.data;
+
+    if (((data[3] >> 4) & 2) && ((data[5] >> 6) & 1)) {
+      int n;
+
+      n = gst_adapter_available (stream->adapter);
+      if (n < 188 * 100) {
+        /* skipped (too early) */
+      } else {
+        ChunkCallback *chunk_callback;
+
+        chunk_callback = g_malloc0 (sizeof (ChunkCallback));
+        chunk_callback->data = gst_adapter_take (stream->adapter, n);
+        chunk_callback->n = n;
+        chunk_callback->stream = stream;
+
+        g_idle_add (gss_program_add_hls_chunk_callback, chunk_callback);
+      }
+    }
+
+    gst_buffer_unmap (buffer, &mapinfo);
+
+    gst_adapter_push (stream->adapter, gst_buffer_ref (buffer));
+  }
+
+  return GST_PAD_PROBE_OK;
+}
+#else
 static gboolean
 sink_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
 {
@@ -177,6 +230,7 @@ sink_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
 
   return TRUE;
 }
+#endif
 
 void
 gss_program_add_hls_chunk (GssStream * stream, SoupBuffer * buf)
