@@ -1,5 +1,5 @@
 
-lib_LTLIBRARIES = libgss-@GST_MAJORMINOR@.la
+lib_LTLIBRARIES = libgss-@GST_API_VERSION@.la
 if ENABLE_STATIC_LIB
 noinst_LTLIBRARIES = libgss.la
 endif
@@ -7,23 +7,23 @@ endif
 BUILT_SOURCES = gss-content.c gss-content.h
 CLEANFILES = gss-content.c gss-content.h
 
-gss_includedir = $(includedir)/gstreamer-@GST_MAJORMINOR@/gss
+gss_includedir = $(includedir)/gstreamer-@GST_API_VERSION@/gss
 
-libgss_@GST_MAJORMINOR@_la_CFLAGS = \
+libgss_@GST_API_VERSION@_la_CFLAGS = \
 	$(GSS_CFLAGS) \
 	$(GST_CFLAGS) \
 	$(SOUP_CFLAGS) \
 	$(GST_RTSP_SERVER_CFLAGS) \
 	$(JSON_GLIB_CFLAGS)
-libgss_@GST_MAJORMINOR@_la_LIBADD = \
+libgss_@GST_API_VERSION@_la_LIBADD = \
 	$(GST_RTSP_SERVER_LIBS) \
 	$(GST_LIBS) \
 	$(SOUP_LIBS) \
 	$(JSON_GLIB_LIBS)
-libgss_@GST_MAJORMINOR@_la_LDFLAGS = \
+libgss_@GST_API_VERSION@_la_LDFLAGS = \
 	-version-info $(GSS_LIBVERSION) \
 	-no-undefined -export-symbols-regex 'gss_'
-libgss_@GST_MAJORMINOR@_la_SOURCES = \
+libgss_@GST_API_VERSION@_la_SOURCES = \
 	$(sources)
 
 sources = \

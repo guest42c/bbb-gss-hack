@@ -7,8 +7,8 @@ AS_NANO([GSS_UNRELEASED=no],[GSS_UNRELEASED=yes])
 AC_CANONICAL_HOST([])
 AM_INIT_AUTOMAKE(1.6)
 
-GST_MAJORMINOR=0.10
-AC_SUBST(GST_MAJORMINOR)
+GST_API_VERSION=1.0
+AC_SUBST(GST_API_VERSION)
 
 AC_CONFIG_HEADERS(config.h)
 
@@ -84,7 +84,7 @@ if test "$HAVE_GLIB" != yes ; then
   exit 1
 fi
 
-PKG_CHECK_MODULES(GST, gstreamer-$GST_MAJORMINOR gstreamer-base-$GST_MAJORMINOR gstreamer-video-$GST_MAJORMINOR gstreamer-audio-$GST_MAJORMINOR,
+PKG_CHECK_MODULES(GST, gstreamer-$GST_API_VERSION gstreamer-base-$GST_API_VERSION gstreamer-video-$GST_API_VERSION gstreamer-audio-$GST_API_VERSION,
     HAVE_GST=yes, HAVE_GST=no)
 if test "$HAVE_GST" != yes ; then
   echo GStreamer and gst-plugns-base are needed to build
@@ -93,7 +93,7 @@ fi
 AC_SUBST(GST_CFLAGS)
 AC_SUBST(GST_LIBS)
 
-PKG_CHECK_MODULES(GST_RTSP_SERVER, gst-rtsp-server-$GST_MAJORMINOR >= 0.10.1,
+PKG_CHECK_MODULES(GST_RTSP_SERVER, gst-rtsp-server-$GST_API_VERSION >= 0.10.1,
     HAVE_GST_RTSP_SERVER=yes, HAVE_GST_RTSP_SERVER=no)
 if test "$HAVE_GST_RTSP_SERVER" = yes ; then
   AC_DEFINE(ENABLE_RTSP, 1, [Enable RTSP])
@@ -134,7 +134,7 @@ AM_CONDITIONAL(HAVE_FALSE, false)
 GSS_CFLAGS="$GSS_CFLAGS -I\$(top_srcdir)"
 AC_SUBST(GSS_CFLAGS)
 
-GSS_LIBS="\$(top_builddir)/gst-streaming-server/libgss-$GST_MAJORMINOR.la"
+GSS_LIBS="\$(top_builddir)/gst-streaming-server/libgss-$GST_API_VERSION.la"
 AC_SUBST(GSS_LIBS)
 
 
