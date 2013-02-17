@@ -28,6 +28,7 @@
 #include "gss-utils.h"
 
 #include <json-glib/json-glib.h>
+#include <stdlib.h>
 
 #define GST_CAT_DEFAULT gss_debug
 

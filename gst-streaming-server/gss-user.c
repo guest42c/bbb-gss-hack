@@ -26,6 +26,7 @@
 #include "gss-html.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 enum
 {

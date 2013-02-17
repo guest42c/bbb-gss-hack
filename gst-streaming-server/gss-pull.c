@@ -28,6 +28,8 @@
 #include "gss-content.h"
 #include "gss-utils.h"
 
+#include <stdio.h>
+
 enum
 {
   PROP_NONE,
