@@ -38,6 +38,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 #undef USE_EW_CODECS
 
@@ -383,6 +384,11 @@ gss_vts_get_property (GObject * object, guint prop_id,
   }
 }
 
+#if GST_CHECK_VERSION(1,0,0)
+#define RAW_CAPS "video/x-raw,format=I420,width=640,height=360"
+#else
+#define RAW_CAPS "video/x-raw-yuv,format=(fourcc)I420,width=640,height=360"
+#endif
 static void
 gss_vts_start (GssProgram * program)
 {
@@ -395,7 +401,7 @@ gss_vts_start (GssProgram * program)
 
   if (STREAM_TYPE == GSS_STREAM_TYPE_WEBM) {
     s = g_strdup_printf ("videotestsrc is-live=true pattern=%d ! "
-        "video/x-raw-yuv,format=(fourcc)I420,width=640,height=360 ! "
+        RAW_CAPS " ! "
         "timeoverlay ! "
         "vp8enc ! queue ! "
         "webmmux streamable=true name=mux ! %s name=multifdsink "
@@ -405,7 +411,7 @@ gss_vts_start (GssProgram * program)
         vts->pattern, gss_server_get_multifdsink_string ());
   } else if (STREAM_TYPE == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
     s = g_strdup_printf ("videotestsrc is-live=true pattern=%d ! "
-        "video/x-raw-yuv,format=(fourcc)I420,width=640,height=360 ! "
+        RAW_CAPS " ! "
         "timeoverlay ! "
         "theoraenc ! queue ! "
         "oggmux name=mux ! %s name=multifdsink "
@@ -414,8 +420,7 @@ gss_vts_start (GssProgram * program)
         "queue ! mux. ", vts->pattern, gss_server_get_multifdsink_string ());
   } else if (STREAM_TYPE == GSS_STREAM_TYPE_M2TS_H264BASE_AAC) {
     s = g_strdup_printf ("videotestsrc is-live=true pattern=%d ! "
-        "video/x-raw-yuv,format=(fourcc)I420,width=320,height=180,framerate=30/1 ! "
-        "timeoverlay ! "
+        RAW_CAPS " ! " "timeoverlay ! "
 #ifdef USE_EW_CODECS
         "ewh264enc speed=10 profile=baseline queue-size=1 keyframe-interval=300 "
         "bitrate=600000 buffer-size=600000 ! "

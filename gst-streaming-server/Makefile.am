@@ -1,21 +1,32 @@
 
-lib_LTLIBRARIES = libgss-@GST_MAJORMINOR@.la
+lib_LTLIBRARIES = libgss-@GST_API_VERSION@.la
+if ENABLE_STATIC_LIB
 noinst_LTLIBRARIES = libgss.la
+endif
 
 BUILT_SOURCES = gss-content.c gss-content.h
 CLEANFILES = gss-content.c gss-content.h
 
-gss_includedir = $(includedir)/gstreamer-@GST_MAJORMINOR@/gss
+gss_includedir = $(includedir)/gstreamer-@GST_API_VERSION@/gss
 
-libgss_@GST_MAJORMINOR@_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS) $(JSON_GLIB_CFLAGS)
-libgss_@GST_MAJORMINOR@_la_LIBS = $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS) $(JSON_GLIB_LIBS)
-libgss_@GST_MAJORMINOR@_la_LDFLAGS = \
+libgss_@GST_API_VERSION@_la_CFLAGS = \
+	$(GSS_CFLAGS) \
+	$(GST_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(GST_RTSP_SERVER_CFLAGS) \
+	$(JSON_GLIB_CFLAGS)
+libgss_@GST_API_VERSION@_la_LIBADD = \
+	$(GST_RTSP_SERVER_LIBS) \
+	$(GST_LIBS) \
+	$(SOUP_LIBS) \
+	$(JSON_GLIB_LIBS)
+libgss_@GST_API_VERSION@_la_LDFLAGS = \
 	-version-info $(GSS_LIBVERSION) \
 	-no-undefined -export-symbols-regex 'gss_'
-libgss_@GST_MAJORMINOR@_la_LIBADD = libgss.la
-libgss_@GST_MAJORMINOR@_la_SOURCES = null.c
+libgss_@GST_API_VERSION@_la_SOURCES = \
+	$(sources)
 
-libgss_la_SOURCES = \
+sources = \
 	gss-hls-server.c \
 	gss-server.c \
 	gss-session.c \
@@ -39,12 +50,22 @@ libgss_la_SOURCES = \
 	gss-websocket.c
 
 if ENABLE_RTSP
-libgss_la_SOURCES += \
+sources += \
 	gss-rtsp.c
 endif
 
-libgss_la_CFLAGS = $(GSS_CFLAGS) $(GST_CFLAGS) $(SOUP_CFLAGS) $(GST_RTSP_SERVER_CFLAGS) $(JSON_GLIB_CFLAGS)
-libgss_la_LIBS = $(GST_LIBS) $(SOUP_LIBS) $(GST_RTSP_SERVER_LIBS) $(JSON_GLIB_LIBS)
+libgss_la_CFLAGS = \
+	$(GSS_CFLAGS) \
+	$(GST_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(GST_RTSP_SERVER_CFLAGS) \
+	$(JSON_GLIB_CFLAGS)
+libgss_la_LIBS = \
+	$(GST_RTSP_SERVER_LIBS) \
+	$(GST_LIBS) \
+	$(SOUP_LIBS) \
+	$(JSON_GLIB_LIBS)
+libgss_la_SOURCES = $(sources)
 
 gss_include_HEADERS = \
 	gss-server.h \

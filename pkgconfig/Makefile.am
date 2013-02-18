@@ -1,15 +1,15 @@
 pcfiles = \
-	gst-streaming-server-@GST_MAJORMINOR@.pc
+	gst-streaming-server-@GST_API_VERSION@.pc
 
 pcfiles_uninstalled = \
-	gst-streaming-server-@GST_MAJORMINOR@-uninstalled.pc
+	gst-streaming-server-@GST_API_VERSION@-uninstalled.pc
 
 all-local: $(pcfiles) $(pcfiles_uninstalled)
 
 ### how to generate pc files
-%-@GST_MAJORMINOR@.pc: %.pc
+%-@GST_API_VERSION@.pc: %.pc
 	cp $< $@
-%-@GST_MAJORMINOR@-uninstalled.pc: %-uninstalled.pc
+%-@GST_API_VERSION@-uninstalled.pc: %-uninstalled.pc
 	cp $< $@
 
 pkgconfigdir = $(libdir)/pkgconfig

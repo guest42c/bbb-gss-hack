@@ -749,10 +749,22 @@ gss_program_png_resource (GssTransaction * t)
   }
 
   if (buffer) {
+#if GST_CHECK_VERSION(1,0,0)
+    GstMapInfo mapinfo;
+
+    soup_message_set_status (t->msg, SOUP_STATUS_OK);
+
+    gst_buffer_map (buffer, &mapinfo, GST_MAP_READ);
+    soup_message_set_response (t->msg, "image/png", SOUP_MEMORY_COPY,
+        (char *) mapinfo.data, mapinfo.size);
+
+    gst_buffer_unmap (buffer, &mapinfo);
+#else
     soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
     soup_message_set_response (t->msg, "image/png", SOUP_MEMORY_COPY,
-        (void *) GST_BUFFER_DATA (buffer), GST_BUFFER_SIZE (buffer));
+        (char *) GST_BUFFER_DATA (buffer), GST_BUFFER_SIZE (buffer));
+#endif
 
     gst_buffer_unref (buffer);
   } else {
@@ -777,10 +789,22 @@ gss_program_jpeg_resource (GssTransaction * t)
   }
 
   if (buffer) {
+#if GST_CHECK_VERSION(1,0,0)
+    GstMapInfo mapinfo;
+
+    soup_message_set_status (t->msg, SOUP_STATUS_OK);
+
+    gst_buffer_map (buffer, &mapinfo, GST_MAP_READ);
+    soup_message_set_response (t->msg, "image/jpeg", SOUP_MEMORY_COPY,
+        (char *) mapinfo.data, mapinfo.size);
+
+    gst_buffer_unmap (buffer, &mapinfo);
+#else
     soup_message_set_status (t->msg, SOUP_STATUS_OK);
 
     soup_message_set_response (t->msg, "image/jpeg", SOUP_MEMORY_COPY,
-        (void *) GST_BUFFER_DATA (buffer), GST_BUFFER_SIZE (buffer));
+        (char *) GST_BUFFER_DATA (buffer), GST_BUFFER_SIZE (buffer));
+#endif
 
     gst_buffer_unref (buffer);
   } else {

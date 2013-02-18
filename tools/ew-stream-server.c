@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 #define GETTEXT_PACKAGE "ew-stream-server"

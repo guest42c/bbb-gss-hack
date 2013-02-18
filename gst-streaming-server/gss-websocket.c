@@ -25,6 +25,8 @@
 
 #include "gss-websocket.h"
 
+#include <string.h>
+
 G_DEFINE_TYPE (GssWebsocket, gss_websocket, G_TYPE_OBJECT);
 
 enum

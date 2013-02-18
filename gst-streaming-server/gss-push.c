@@ -222,13 +222,6 @@ gss_push_start (GssProgram * program)
 }
 
 
-static gboolean
-push_data_probe_callback (GstPad * pad, GstMiniObject * mo, gpointer user_data)
-{
-
-  return TRUE;
-}
-
 static void
 gss_stream_create_push_pipeline (GssStream * stream, int push_fd)
 {
@@ -284,8 +277,6 @@ gss_stream_create_push_pipeline (GssStream * stream, int push_fd)
     g_object_set (e, "fd", push->push_fd, NULL);
   }
   stream->src = e;
-  gst_pad_add_data_probe (gst_element_get_pad (e, "src"),
-      G_CALLBACK (push_data_probe_callback), stream);
 
   e = gst_bin_get_by_name (GST_BIN (pipe), "sink");
   g_assert (e != NULL);
@@ -494,10 +485,17 @@ gss_push_put_resource (GssTransaction * t)
     if (t->msg->request_body) {
       GstBuffer *buffer;
       GstFlowReturn flow_ret;
+#if GST_CHECK_VERSION(1,0,0)
+      void *data;
 
+      data = g_malloc (t->msg->request_body->length);
+      memcpy (data, t->msg->request_body->data, t->msg->request_body->length);
+      buffer = gst_buffer_new_wrapped (data, t->msg->request_body->length);
+#else
       buffer = gst_buffer_new_and_alloc (t->msg->request_body->length);
       memcpy (GST_BUFFER_DATA (buffer), t->msg->request_body->data,
           t->msg->request_body->length);
+#endif
 
       g_signal_emit_by_name (stream->src, "push-buffer", buffer, &flow_ret);
       gst_buffer_unref (buffer);
