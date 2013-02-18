@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <oberon xmlns:ew="http://entropywave.com/oberon/1.0/">
+  <ew:manager>
+    <ew:name>admin.manager</ew:name>
+    <ew:follow-hosts></ew:follow-hosts>
+  </ew:manager>
   <ew:user>
     <ew:name>admin.user</ew:name>
     <ew:users></ew:users>
@@ -21,7 +25,6 @@
     <ew:enable-html5-video>true</ew:enable-html5-video>
     <ew:enable-cortado>false</ew:enable-cortado>
     <ew:enable-flash>true</ew:enable-flash>
-    <ew:enable-rtsp>false</ew:enable-rtsp>
     <ew:archive-dir>/mnt/sdb1</ew:archive-dir>
   </ew:server>
 </oberon>

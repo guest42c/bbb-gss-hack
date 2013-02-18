@@ -1,4 +1,24 @@
 
+DISCLAIMER: Everything here is under development and experiment. There are a lots of hard coded information and other non usual or non good approaches to a production environment.
+
+This is a project that contains some hacks experiments to pull BigBlueButton video stream into GStreamer Streaming Server.
+
+So far there are the following programs built to do it:
+
+* tools/video-launcher.c
+It creates a daemon that subscribe to bigbluebutton:meeting:participants channel at the redis server used by BigBlueButton.
+When it receivas a redis message informing that a video stream started, it launches another program that uses GStreamer to launch the pipeline with the appropriate parameters obtained in the redis message.
+
+* tools/simplepipeline.c
+Its a simple gstreamer program to launch a pipeline
+
+* tools/webmpipeline.c
+It's a more elaborated program to launch a pipeline in a more reliable way.
+i
+
+
+--------------------------------------
+
 GStreamer Streaming Server
 
 

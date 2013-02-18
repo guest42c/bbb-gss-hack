@@ -95,8 +95,8 @@ main (int argc, char *argv[])
   enc = gst_element_factory_make ("vp8enc", "enc");
   mux = gst_element_factory_make ("webmmux", "mux");
   //sink = gst_element_factory_make ("filesink", "sink");
-  shout_sink = gst_element_factory_make ("shout2send", "shout2send");
-
+  //shout_sink = gst_element_factory_make ("shout2send", "shout_sink");
+  shout_sink = gst_element_factory_make ("xvimagesink", "shout_sink");
   if (!pipeline || !source || !decode || !enc || !mux || !shout_sink) {
     //if (!pipeline || !source || !decode || !enc || !mux || !sink) {
     g_printerr ("One or more elements could not be created. Exiting.\n");
@@ -156,6 +156,7 @@ main (int argc, char *argv[])
   printf ("%s\n", result);
   //"rtmp://150.164.192.113/video/0009666694da07ee6363e22df5cdac8e079642eb-1359993137281/640x480185-1359999168732 live=1"
   /* Modify the source's properties */
+
   g_object_set (source, "location", result, NULL);
   g_object_set (mux, "streamable", TRUE, NULL);
   //g_object_set (sink, "location", "/tmp/live.webm", NULL);
@@ -193,15 +194,4 @@ main (int argc, char *argv[])
   gst_object_unref (pipeline);
   return 0;
 
-  /* Wait until error or EOS */
-  //bus = gst_element_get_bus (pipeline);
-  //msg = gst_bus_timed_pop_filtered (bus, GST_CLOCK_TIME_NONE, GST_MESSAGE_ERROR | GST_MESSAGE_EOS);
-
-  /* Free resources */
-  //if (msg != NULL)
-  //  gst_message_unref (msg);
-  //gst_object_unref (bus);
-  //gst_element_set_state (pipeline, GST_STATE_NULL);
-  //gst_object_unref (pipeline);
-  //return 0;
 }
