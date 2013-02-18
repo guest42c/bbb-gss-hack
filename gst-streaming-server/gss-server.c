@@ -796,7 +796,7 @@ gss_server_add_program_simple (GssServer * server, GssProgram * program)
   GssProgramClass *program_class;
 
   server->programs = g_list_append (server->programs, program);
-  program->server = server;
+  GSS_OBJECT_SERVER (program) = server;
 
   program_class = GSS_PROGRAM_GET_CLASS (program);
   if (program_class->add_resources) {
@@ -821,7 +821,7 @@ gss_server_remove_program (GssServer * server, GssProgram * program)
 
   gss_server_remove_resources_by_priv (server, program);
   server->programs = g_list_remove (server->programs, program);
-  program->server = NULL;
+  GSS_OBJECT_SERVER (program) = NULL;
 }
 
 void

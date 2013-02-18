@@ -41,10 +41,13 @@ struct _GssObject {
   GObject object;
 
   GssServer *server;
+
+  /* properties */
   char *name;
 };
 
 #define GSS_OBJECT_NAME(obj) (((GssObject *)(obj))->name)
+#define GSS_OBJECT_SERVER(obj) (((GssObject *)(obj))->server)
 
 
 struct _GssObjectClass {

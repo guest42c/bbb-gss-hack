@@ -227,28 +227,28 @@ gss_program_add_resources (GssProgram * program)
 
   s = g_strdup_printf ("/%s", GSS_OBJECT_NAME (program));
   program->resource =
-      gss_server_add_resource (program->server, s, GSS_RESOURCE_UI,
+      gss_server_add_resource (GSS_OBJECT_SERVER (program), s, GSS_RESOURCE_UI,
       GSS_TEXT_HTML, gss_program_get_resource, NULL, gss_config_post_resource,
       program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.frag", GSS_OBJECT_NAME (program));
-  gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, GSS_TEXT_PLAIN,
-      gss_program_frag_resource, NULL, NULL, program);
+  gss_server_add_resource (GSS_OBJECT_SERVER (program), s, GSS_RESOURCE_UI,
+      GSS_TEXT_PLAIN, gss_program_frag_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s.list", GSS_OBJECT_NAME (program));
-  gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, GSS_TEXT_PLAIN,
-      gss_program_list_resource, NULL, NULL, program);
+  gss_server_add_resource (GSS_OBJECT_SERVER (program), s, GSS_RESOURCE_UI,
+      GSS_TEXT_PLAIN, gss_program_list_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.png", GSS_OBJECT_NAME (program));
-  gss_server_add_resource (program->server, s, GSS_RESOURCE_UI, "image/png",
-      gss_program_png_resource, NULL, NULL, program);
+  gss_server_add_resource (GSS_OBJECT_SERVER (program), s, GSS_RESOURCE_UI,
+      "image/png", gss_program_png_resource, NULL, NULL, program);
   g_free (s);
 
   s = g_strdup_printf ("/%s-snapshot.jpeg", GSS_OBJECT_NAME (program));
-  gss_server_add_resource (program->server, s, 0,
+  gss_server_add_resource (GSS_OBJECT_SERVER (program), s, 0,
       "image/jpeg", gss_program_jpeg_resource, NULL, NULL, program);
   g_free (s);
 }
@@ -311,7 +311,7 @@ idle_state_enable (gpointer ptr)
 
   program->state_idle = 0;
 
-  enabled = (program->enabled && program->server->enable_programs);
+  enabled = (program->enabled && GSS_OBJECT_SERVER (program)->enable_programs);
   if (program->state == GSS_PROGRAM_STATE_STOPPED && enabled) {
     gss_program_start (program);
   } else if (program->state == GSS_PROGRAM_STATE_RUNNING && !enabled) {
@@ -326,7 +326,7 @@ gss_program_set_state (GssProgram * program, GssProgramState state)
 {
   gboolean enabled;
 
-  enabled = (program->enabled && program->server->enable_programs);
+  enabled = (program->enabled && GSS_OBJECT_SERVER (program)->enable_programs);
   program->state = state;
   if ((program->state == GSS_PROGRAM_STATE_STOPPED && enabled) ||
       (program->state == GSS_PROGRAM_STATE_RUNNING && !enabled)) {
@@ -398,7 +398,7 @@ gss_program_start (GssProgram * program)
       program->state == GSS_PROGRAM_STATE_STOPPING) {
     return;
   }
-  if (!program->enabled || !program->server->enable_programs) {
+  if (!program->enabled || !GSS_OBJECT_SERVER (program)->enable_programs) {
     return;
   }
   GST_DEBUG_OBJECT (program, "start");
@@ -521,7 +521,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
     width = max_width;
   }
 
-  if (program->server->enable_html5_video && !flash_only) {
+  if (GSS_OBJECT_SERVER (program)->enable_html5_video && !flash_only) {
     GSS_P ("<video controls=\"controls\" autoplay=\"autoplay\" "
         "id=video width=\"%d\" height=\"%d\">\n", width, height);
 
@@ -554,7 +554,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
 
   }
 
-  if (program->server->enable_cortado) {
+  if (GSS_OBJECT_SERVER (program)->enable_cortado) {
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
@@ -567,7 +567,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
     }
   }
 
-  if (program->server->enable_flash) {
+  if (GSS_OBJECT_SERVER (program)->enable_flash) {
     for (g = program->streams; g; g = g_list_next (g)) {
       GssStream *stream = g->data;
       if (stream->type == GSS_STREAM_TYPE_FLV_H264BASE_AAC) {
@@ -620,7 +620,7 @@ gss_program_add_video_block (GssProgram * program, GssTransaction * t,
     }
   }
 
-  if (program->server->enable_html5_video && !flash_only) {
+  if (GSS_OBJECT_SERVER (program)->enable_html5_video && !flash_only) {
     GSS_A ("</video>\n");
   }
 

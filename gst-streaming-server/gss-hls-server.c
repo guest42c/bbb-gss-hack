@@ -64,7 +64,7 @@ gss_stream_add_hls (GssStream * stream)
     program->enable_hls = TRUE;
 
     s = g_strdup_printf ("/%s.m3u8", GSS_OBJECT_NAME (program));
-    gss_server_add_resource (program->server, s, 0,
+    gss_server_add_resource (GSS_OBJECT_SERVER (program), s, 0,
         "video/x-mpegurl", gss_hls_handle_m3u8, NULL, NULL, program);
     g_free (s);
   }
@@ -120,7 +120,7 @@ gss_stream_add_hls (GssStream * stream)
   s = g_strdup_printf ("/%s-%dx%d-%dkbps%s.m3u8", GSS_OBJECT_NAME (program),
       stream->width, stream->height, stream->bitrate / 1000,
       gss_stream_type_get_mod (stream->type));
-  gss_server_add_resource (program->server, s, 0,
+  gss_server_add_resource (GSS_OBJECT_SERVER (program), s, 0,
       "video/x-mpegurl", gss_hls_handle_stream_m3u8, NULL, NULL, stream);
   g_free (s);
 
@@ -240,7 +240,8 @@ gss_program_add_hls_chunk (GssStream * stream, SoupBuffer * buf)
   segment = &stream->chunks[stream->n_chunks % GSS_STREAM_HLS_CHUNKS];
 
   if (segment->buffer) {
-    gss_server_remove_resource (stream->program->server, segment->location);
+    gss_server_remove_resource (GSS_OBJECT_SERVER (stream->program),
+        segment->location);
     g_free (segment->location);
     soup_buffer_free (segment->buffer);
   }
@@ -254,8 +255,9 @@ gss_program_add_hls_chunk (GssStream * stream, SoupBuffer * buf)
 
   stream->hls.need_index_update = TRUE;
 
-  gss_server_add_resource (stream->program->server, segment->location,
-      0, "video/mp2t", gss_hls_handle_ts_chunk, NULL, NULL, segment);
+  gss_server_add_resource (GSS_OBJECT_SERVER (stream->program),
+      segment->location, 0, "video/mp2t", gss_hls_handle_ts_chunk, NULL, NULL,
+      segment);
 
   stream->n_chunks++;
   stream->program->n_hls_chunks = stream->n_chunks;
@@ -306,7 +308,8 @@ gss_hls_update_index (GssStream * stream)
     g_string_append_printf (s,
         "#EXTINF:%d,\n"
         "%s%s\n",
-        segment->duration, program->server->base_url, segment->location);
+        segment->duration, GSS_OBJECT_SERVER (program)->base_url,
+        segment->location);
   }
 
   if (stream->hls.at_eos) {
@@ -345,7 +348,7 @@ gss_hls_update_variant (GssProgram * program)
         stream->program_id,
         stream->bitrate, stream->codecs, stream->width, stream->height);
     g_string_append_printf (s, "%s/%s-%dx%d-%dkbps%s.m3u8\n",
-        program->server->base_url,
+        GSS_OBJECT_SERVER (program)->base_url,
         GSS_OBJECT_NAME (program),
         stream->width, stream->height, stream->bitrate / 1000,
         gss_stream_type_get_mod (stream->type));
@@ -411,7 +414,8 @@ gss_stream_handle_m3u8 (GssTransaction * t)
   content = g_strdup_printf ("#EXTM3U\n"
       "#EXT-X-TARGETDURATION:10\n"
       "#EXTINF:10,\n"
-      "%s/%s\n", stream->program->server->base_url, GSS_OBJECT_NAME (stream));
+      "%s/%s\n", GSS_OBJECT_SERVER (stream->program)->base_url,
+      GSS_OBJECT_NAME (stream));
 
   soup_message_set_status (t->msg, SOUP_STATUS_OK);
 

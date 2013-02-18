@@ -394,7 +394,7 @@ gss_pull_get_list (GssPull * pull)
 
   message = soup_message_new ("GET", pull->pull_uri);
 
-  soup_session_queue_message (pull->program.server->client_session, message,
+  soup_session_queue_message (GSS_OBJECT_SERVER (pull)->client_session, message,
       follow_callback, pull);
 }
 

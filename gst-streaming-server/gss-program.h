@@ -57,7 +57,6 @@ typedef enum {
 struct _GssProgram {
   GssObject object;
 
-  GssServer *server;
   GssResource *resource;
 
   /* properties */
@@ -107,6 +106,8 @@ struct _GssProgramClass
   void (*stop) (GssProgram *program);
   void (*start) (GssProgram *program);
 };
+
+
 
 GType gss_program_get_type (void);
 
