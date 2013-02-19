@@ -23,15 +23,18 @@
 #include "gss-types.h"
 #include "gss-object.h"
 #include "gss-utils.h"
+#include "gss-html.h"
 
 enum
 {
   PROP_NAME = 1,
+  PROP_TITLE,
   PROP_UUID,
   PROP_DESCRIPTION
 };
 
 #define DEFAULT_NAME NULL
+#define DEFAULT_TITLE NULL
 #define DEFAULT_UUID "00000000-0000-0000-0000-000000000000"
 #define DEFAULT_DESCRIPTION ""
 
@@ -71,6 +74,10 @@ gss_object_class_init (GssObjectClass * object_class)
           "Name", DEFAULT_NAME,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
   g_object_class_install_property (G_OBJECT_CLASS (object_class),
+      PROP_TITLE, g_param_spec_string ("title", "Title",
+          "Title", DEFAULT_TITLE,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (object_class),
       PROP_UUID, g_param_spec_string ("uuid", "UUID",
           "Unique Identifier", DEFAULT_UUID,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
@@ -88,8 +95,11 @@ gss_object_finalize (GObject * gobject)
   GssObject *object = GSS_OBJECT (gobject);
 
   g_free (object->name);
+  g_free (object->title);
   g_free (object->description);
   g_free (object->uuid);
+
+  g_free (object->safe_title);
 
   parent_class->finalize (gobject);
 }
@@ -105,6 +115,9 @@ gss_object_set_property (GObject * object, guint prop_id,
   switch (prop_id) {
     case PROP_NAME:
       gss_object_set_name (gssobject, g_value_get_string (value));
+      break;
+    case PROP_TITLE:
+      gss_object_set_title (gssobject, g_value_get_string (value));
       break;
     case PROP_DESCRIPTION:
       g_free (gssobject->description);
@@ -132,6 +145,9 @@ gss_object_get_property (GObject * object, guint prop_id,
     case PROP_NAME:
       g_value_set_string (value, gssobject->name);
       break;
+    case PROP_TITLE:
+      g_value_set_string (value, gssobject->title);
+      break;
     case PROP_DESCRIPTION:
       g_value_set_string (value, gssobject->description);
       break;
@@ -150,5 +166,18 @@ gss_object_set_name (GssObject * object, const char *name)
   g_return_if_fail (GSS_IS_OBJECT (object));
   g_return_if_fail (name != NULL);
 
+  g_free (object->name);
   object->name = g_strdup (name);
+}
+
+void
+gss_object_set_title (GssObject * object, const char *title)
+{
+  g_return_if_fail (GSS_IS_OBJECT (object));
+  g_return_if_fail (title != NULL);
+
+  g_free (object->title);
+  object->title = g_strdup (title);
+  g_free (object->safe_title);
+  object->safe_title = gss_html_sanitize_entity (object->title);
 }

@@ -622,7 +622,7 @@ gss_program_get_resource (GssTransaction * t)
 
   gss_html_header (t);
 
-  GSS_P ("<h1>%s</h1>\n", GSS_OBJECT_NAME (program));
+  GSS_P ("<h1>%s</h1>\n", GSS_OBJECT_SAFE_TITLE (program));
 
   gss_program_add_video_block (program, t, 0);
 

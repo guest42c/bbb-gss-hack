@@ -63,7 +63,6 @@ struct _GssServer
   int http_port;
   int https_port;
   char *server_hostname;
-  char *title;
   int max_connections;
   int max_rate;
   char *admin_hosts_allow;
