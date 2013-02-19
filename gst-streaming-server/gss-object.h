@@ -44,10 +44,14 @@ struct _GssObject {
 
   /* properties */
   char *name;
+  char *uuid;
+  char *description;
 };
 
 #define GSS_OBJECT_NAME(obj) (((GssObject *)(obj))->name)
 #define GSS_OBJECT_SERVER(obj) (((GssObject *)(obj))->server)
+#define GSS_OBJECT_DESCRIPTION(obj) (((GssObject *)(obj))->description)
+#define GSS_OBJECT_UUID(obj) (((GssObject *)(obj))->uuid)
 
 
 struct _GssObjectClass {
