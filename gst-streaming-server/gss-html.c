@@ -89,7 +89,6 @@ gss_html_header (GssTransaction * t)
   GString *s = t->s;
   gchar *session_id;
   GList *g;
-  char *safe_title;
 
   if (t->session) {
     session_id = g_strdup_printf ("?session_id=%s", t->session->session_id);
@@ -97,10 +96,10 @@ gss_html_header (GssTransaction * t)
     session_id = g_strdup ("");
   }
 
-  safe_title = gss_html_sanitize_entity (t->server->title);
   GSS_P ("<!DOCTYPE html>\n"
       "<html lang='en'>\n"
-      "<head>\n" "<meta charset='utf-8'>\n" "<title>%s</title>\n", safe_title);
+      "<head>\n" "<meta charset='utf-8'>\n" "<title>%s</title>\n",
+      GSS_OBJECT_SAFE_TITLE (t->server));
   GSS_A
       ("<meta name='viewport' content='width=device-width, initial-scale=1.0'>\n");
 #if 0
@@ -138,8 +137,8 @@ gss_html_header (GssTransaction * t)
       "<span class='icon-bar'></span>\n"
       "<span class='icon-bar'></span>\n" "</a>\n");
   GSS_P ("<a class='brand' href='/%s'>%s</a>\n"
-      "<div class='btn-group pull-right'>\n", session_id, safe_title);
-  g_free (safe_title);
+      "<div class='btn-group pull-right'>\n", session_id,
+      GSS_OBJECT_SAFE_TITLE (t->server));
 
   if (t->session) {
     GSS_P
@@ -188,7 +187,8 @@ gss_html_header (GssTransaction * t)
       continue;
     GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
         (program->resource == t->resource) ? "class='active'" : "",
-        program->resource->location, session_id, GSS_OBJECT_NAME (program));
+        program->resource->location, session_id,
+        GSS_OBJECT_SAFE_TITLE (program));
   };
 
   GSS_A ("<li class='nav-header'>Archive</li>\n");
@@ -198,7 +198,8 @@ gss_html_header (GssTransaction * t)
       continue;
     GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
         (program->resource == t->resource) ? "class='active'" : "",
-        program->resource->location, session_id, GSS_OBJECT_NAME (program));
+        program->resource->location, session_id,
+        GSS_OBJECT_SAFE_TITLE (program));
   };
 
   if (t->session) {

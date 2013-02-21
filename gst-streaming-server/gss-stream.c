@@ -373,7 +373,7 @@ client_removed (GstElement * e, int fd, int status, gpointer user_data)
     if (stream) {
       gss_metrics_remove_client (stream->metrics, stream->bitrate);
       gss_metrics_remove_client (stream->program->metrics, stream->bitrate);
-      gss_metrics_remove_client (stream->program->server->metrics,
+      gss_metrics_remove_client (GSS_OBJECT_SERVER (stream->program)->metrics,
           stream->bitrate);
     }
   }
@@ -464,7 +464,8 @@ msg_wrote_headers (SoupMessage * msg, void *user_data)
 
     gss_metrics_add_client (stream->metrics, stream->bitrate);
     gss_metrics_add_client (stream->program->metrics, stream->bitrate);
-    gss_metrics_add_client (stream->program->server->metrics, stream->bitrate);
+    gss_metrics_add_client (GSS_OBJECT_SERVER (stream->program)->metrics,
+        stream->bitrate);
   } else {
     soup_socket_disconnect (sock);
   }
@@ -500,7 +501,7 @@ gss_stream_add_resources (GssStream * stream)
 {
 
 #ifdef ENABLE_RTSP
-  if (stream->program->server->enable_rtsp) {
+  if (GSS_OBJECT_SERVER (stream->program)->enable_rtsp) {
     if (stream->type == GSS_STREAM_TYPE_OGG_THEORA_VORBIS) {
       stream->rtsp_stream = gss_rtsp_stream_new (stream);
       gss_rtsp_stream_start (stream->rtsp_stream);
@@ -518,10 +519,11 @@ gss_stream_add_resources (GssStream * stream)
       stream->bitrate / 1000,
       gss_stream_type_get_mod (stream->type),
       gss_stream_type_get_ext (stream->type));
-  stream->resource = gss_server_add_resource (stream->program->server,
+  stream->resource =
+      gss_server_add_resource (GSS_OBJECT_SERVER (stream->program),
       stream->location, GSS_RESOURCE_HTTP_ONLY,
-      gss_stream_type_get_content_type (stream->type),
-      stream_resource, NULL, NULL, stream);
+      gss_stream_type_get_content_type (stream->type), stream_resource, NULL,
+      NULL, stream);
 
   g_free (stream->playlist_location);
   stream->playlist_location =
@@ -532,7 +534,7 @@ gss_stream_add_resources (GssStream * stream)
       gss_stream_type_get_mod (stream->type),
       gss_stream_type_get_ext (stream->type));
   stream->playlist_resource =
-      gss_server_add_resource (stream->program->server,
+      gss_server_add_resource (GSS_OBJECT_SERVER (stream->program),
       stream->playlist_location, 0, "application/x-mpegurl",
       gss_stream_handle_m3u8, NULL, NULL, stream);
 
@@ -543,10 +545,10 @@ void
 gss_stream_remove_resources (GssStream * stream)
 {
   if (stream->resource)
-    gss_server_remove_resource (stream->program->server,
+    gss_server_remove_resource (GSS_OBJECT_SERVER (stream->program),
         stream->resource->location);
   if (stream->playlist_resource)
-    gss_server_remove_resource (stream->program->server,
+    gss_server_remove_resource (GSS_OBJECT_SERVER (stream->program),
         stream->playlist_resource->location);
 }
 

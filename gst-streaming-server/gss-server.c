@@ -44,7 +44,6 @@ enum
   PROP_HTTP_PORT,
   PROP_HTTPS_PORT,
   PROP_SERVER_HOSTNAME,
-  PROP_TITLE,
   PROP_MAX_CONNECTIONS,
   PROP_MAX_RATE,
   PROP_ADMIN_HOSTS_ALLOW,
@@ -63,7 +62,6 @@ enum
 #define DEFAULT_HTTP_PORT 80
 #define DEFAULT_HTTPS_PORT 443
 #define DEFAULT_SERVER_HOSTNAME ""
-#define DEFAULT_TITLE "GStreamer Streaming Server"
 #define DEFAULT_MAX_CONNECTIONS 10000
 #define DEFAULT_MAX_RATE 100000
 #define DEFAULT_ADMIN_HOSTS_ALLOW "0.0.0.0/0"
@@ -225,7 +223,7 @@ gss_server_init (GssServer * server)
   s = gss_utils_gethostname ();
   gss_server_set_server_hostname (server, s);
   g_free (s);
-  server->title = g_strdup (DEFAULT_TITLE);
+  gss_object_set_title (GSS_OBJECT (server), "GStreamer Streaming Server");
   server->max_connections = DEFAULT_MAX_CONNECTIONS;
   server->max_rate = DEFAULT_MAX_RATE;
   server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_HOSTS_ALLOW);
@@ -279,7 +277,6 @@ gss_server_finalize (GObject * object)
   g_free (server->base_url);
   g_free (server->base_url_https);
   g_free (server->server_hostname);
-  g_free (server->title);
   g_free (server->realm);
   g_free (server->admin_hosts_allow);
   g_free (server->admin_token);
@@ -319,9 +316,11 @@ gss_server_class_init (GssServerClass * server_class)
       PROP_SERVER_HOSTNAME, g_param_spec_string ("server-hostname",
           "Server Hostname", "Server Hostname", DEFAULT_SERVER_HOSTNAME,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+#if 0
   g_object_class_install_property (G_OBJECT_CLASS (server_class), PROP_TITLE,
       g_param_spec_string ("title", "Title", "Title", DEFAULT_TITLE,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+#endif
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_MAX_CONNECTIONS, g_param_spec_int ("max-connections",
           "Maximum number of connections", "Maximum number of connections", 0,
@@ -423,9 +422,6 @@ gss_server_set_property (GObject * object, guint prop_id,
     case PROP_SERVER_HOSTNAME:
       gss_server_set_server_hostname (server, g_value_get_string (value));
       break;
-    case PROP_TITLE:
-      gss_server_set_title (server, g_value_get_string (value));
-      break;
     case PROP_MAX_CONNECTIONS:
       server->max_connections = g_value_get_int (value);
       break;
@@ -494,9 +490,6 @@ gss_server_get_property (GObject * object, guint prop_id,
     case PROP_SERVER_HOSTNAME:
       g_value_set_string (value, server->server_hostname);
       break;
-    case PROP_TITLE:
-      g_value_set_string (value, server->title);
-      break;
     case PROP_MAX_CONNECTIONS:
       g_value_set_int (value, server->max_connections);
       break;
@@ -550,8 +543,7 @@ gss_server_set_footer_html (GssServer * server, GssFooterHtml footer_html,
 void
 gss_server_set_title (GssServer * server, const char *title)
 {
-  g_free (server->title);
-  server->title = g_strdup (title);
+  gss_object_set_title (GSS_OBJECT (server), title);
 }
 
 void
@@ -796,7 +788,7 @@ gss_server_add_program_simple (GssServer * server, GssProgram * program)
   GssProgramClass *program_class;
 
   server->programs = g_list_append (server->programs, program);
-  program->server = server;
+  GSS_OBJECT_SERVER (program) = server;
 
   program_class = GSS_PROGRAM_GET_CLASS (program);
   if (program_class->add_resources) {
@@ -821,7 +813,7 @@ gss_server_remove_program (GssServer * server, GssProgram * program)
 
   gss_server_remove_resources_by_priv (server, program);
   server->programs = g_list_remove (server->programs, program);
-  program->server = NULL;
+  GSS_OBJECT_SERVER (program) = NULL;
 }
 
 void
@@ -1024,7 +1016,7 @@ gss_server_resource_main_page (GssTransaction * t)
         t->session ? t->session->session_id : "");
     gss_program_add_jpeg_block (program, t);
     GSS_P ("</a>\n");
-    GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_NAME (program));
+    GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_SAFE_TITLE (program));
     GSS_P ("</div>\n");
     GSS_P ("</li>\n");
   }
@@ -1047,7 +1039,7 @@ gss_server_resource_main_page (GssTransaction * t)
         t->session ? t->session->session_id : "");
     gss_program_add_jpeg_block (program, t);
     GSS_P ("</a>\n");
-    GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_NAME (program));
+    GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_SAFE_TITLE (program));
     GSS_P ("</div>\n");
     GSS_P ("</li>\n");
   }

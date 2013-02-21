@@ -151,7 +151,8 @@ gss_vod_setup (GssServer * server)
         g_free (s);
 
         s = g_strdup_printf ("/%s", GSS_OBJECT_NAME (stream));
-        gss_server_add_resource (program->server, s, GSS_RESOURCE_HTTP_ONLY,
+        gss_server_add_resource (GSS_OBJECT_SERVER (program), s,
+            GSS_RESOURCE_HTTP_ONLY,
             gss_stream_type_get_content_type (stream->type),
             vod_resource_chunked, NULL, NULL, program);
         g_free (s);

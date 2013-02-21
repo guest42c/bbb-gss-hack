@@ -194,7 +194,7 @@ gss_push_new (void)
 static char *
 gss_push_get_push_uri (GssPush * push)
 {
-  return g_strdup_printf ("%s/%s", push->program.server->base_url,
+  return g_strdup_printf ("%s/%s", GSS_OBJECT_SERVER (push)->base_url,
       GSS_OBJECT_NAME (push));
 }
 
@@ -514,7 +514,7 @@ gss_push_add_resources (GssProgram * program)
 
   s = g_strdup_printf ("/%s", GSS_OBJECT_NAME (program));
   program->resource =
-      gss_server_add_resource (program->server, s, GSS_RESOURCE_UI,
+      gss_server_add_resource (GSS_OBJECT_SERVER (program), s, GSS_RESOURCE_UI,
       GSS_TEXT_HTML, gss_push_get_resource, gss_push_put_resource,
       gss_config_post_resource, program);
   g_free (s);

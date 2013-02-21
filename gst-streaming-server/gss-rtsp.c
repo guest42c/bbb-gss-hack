@@ -46,7 +46,7 @@ gss_rtsp_stream_new (GssStream * stream)
   rtsp_stream = g_new0 (GssRtspStream, 1);
 
   rtsp_stream->stream = stream;
-  rtsp_stream->server = stream->program->server->rtsp_server;
+  rtsp_stream->server = GSS_OBJECT_SERVER (stream->program)->rtsp_server;
 
   return rtsp_stream;
 }
