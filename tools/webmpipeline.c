@@ -95,8 +95,7 @@ main (int argc, char *argv[])
   enc = gst_element_factory_make ("vp8enc", "enc");
   mux = gst_element_factory_make ("webmmux", "mux");
   //sink = gst_element_factory_make ("filesink", "sink");
-  //shout_sink = gst_element_factory_make ("shout2send", "shout_sink");
-  shout_sink = gst_element_factory_make ("xvimagesink", "shout_sink");
+  shout_sink = gst_element_factory_make ("shout2send", "shout_sink");
   if (!pipeline || !source || !decode || !enc || !mux || !shout_sink) {
     //if (!pipeline || !source || !decode || !enc || !mux || !sink) {
     g_printerr ("One or more elements could not be created. Exiting.\n");

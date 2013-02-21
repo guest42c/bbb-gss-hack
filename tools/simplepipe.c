@@ -34,9 +34,9 @@ main (int argc, char *argv[])
   strcat (result, streamId);
   strcat (result, live);
 
-  char *start = "gst-launch-0.10 rtmpsrc location='";
+  char *start = "rtmpsrc location='";
   char *end =
-      "' ! decodebin name=demux ! vp8enc ! webmmux streamable=true name=mux ! shout2send ip=127.0.0.1 port=8080 mount=stream1";
+      "' ! decodebin name=demux ! vp8enc ! webmmux streamable=true name=mux ! shout2send ip=localhost port=8080 mount=stream1";
   char *pipe = calloc (strlen (result) + strlen (start) + strlen (end) + 1,
       sizeof (char));
 
