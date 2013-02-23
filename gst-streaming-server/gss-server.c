@@ -342,15 +342,15 @@ gss_server_class_init (GssServerClass * server_class)
       PROP_REALM, g_param_spec_string ("realm",
           "Realm", "Realm",
           DEFAULT_REALM,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (1 <<
-                  29))));
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+              GSS_PARAM_HIDE)));
 #endif
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_ADMIN_TOKEN, g_param_spec_string ("admin-token",
           "Admin Token", "Admin Token",
           DEFAULT_ADMIN_TOKEN,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (1 <<
-                  29))));
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+              GSS_PARAM_HIDE)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_ARCHIVE_DIR, g_param_spec_string ("archive-dir", "Archive Directory",
           "Archive Directory", DEFAULT_ARCHIVE_DIR,
