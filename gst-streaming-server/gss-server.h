@@ -66,6 +66,7 @@ struct _GssServer
   int max_connections;
   int max_rate;
   char *admin_hosts_allow;
+  char *kiosk_hosts_allow;
   char *realm;
   char *cas_server;
   gboolean enable_html5_video;
@@ -110,6 +111,7 @@ struct _GssServer
   void *add_warnings_priv;
 
   GssAddrRangeList *admin_arl;
+  GssAddrRangeList *kiosk_arl;
 };
 
 struct _GssServerClass

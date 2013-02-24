@@ -47,6 +47,7 @@ enum
   PROP_MAX_CONNECTIONS,
   PROP_MAX_RATE,
   PROP_ADMIN_HOSTS_ALLOW,
+  PROP_KIOSK_HOSTS_ALLOW,
   PROP_REALM,
   PROP_ADMIN_TOKEN,
   PROP_ENABLE_HTML5_VIDEO,
@@ -65,6 +66,7 @@ enum
 #define DEFAULT_MAX_CONNECTIONS 10000
 #define DEFAULT_MAX_RATE 100000
 #define DEFAULT_ADMIN_HOSTS_ALLOW "0.0.0.0/0"
+#define DEFAULT_KIOSK_HOSTS_ALLOW ""
 /* This is the result of soup_auth_domain_digest_encode_password ("admin",
  * "GStreamer Streaming Server", "admin"); */
 #define DEFAULT_ADMIN_TOKEN "f09e5ebc80c348d2ccf8a59a8cd37827"
@@ -230,6 +232,10 @@ gss_server_init (GssServer * server)
   server->admin_arl =
       gss_addr_range_list_new_from_string (server->admin_hosts_allow, TRUE,
       TRUE);
+  server->kiosk_hosts_allow = g_strdup (DEFAULT_KIOSK_HOSTS_ALLOW);
+  server->kiosk_arl =
+      gss_addr_range_list_new_from_string (server->kiosk_hosts_allow, FALSE,
+      FALSE);
   server->admin_token = g_strdup (DEFAULT_ADMIN_TOKEN);
   server->realm = g_strdup (DEFAULT_REALM);
   server->enable_html5_video = DEFAULT_ENABLE_HTML5_VIDEO;
@@ -282,6 +288,7 @@ gss_server_finalize (GObject * object)
   g_free (server->server_hostname);
   g_free (server->realm);
   g_free (server->admin_hosts_allow);
+  g_free (server->kiosk_hosts_allow);
   g_free (server->admin_token);
   g_free (server->archive_dir);
   g_free (server->cas_server);
@@ -338,6 +345,12 @@ gss_server_class_init (GssServerClass * server_class)
       PROP_ADMIN_HOSTS_ALLOW, g_param_spec_string ("admin-hosts-allow",
           "Allowed Hosts (admin)", "Allowed Hosts (admin)",
           DEFAULT_ADMIN_HOSTS_ALLOW,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_KIOSK_HOSTS_ALLOW, g_param_spec_string ("kiosk-hosts-allow",
+          "Allowed Hosts (kiosk)", "IP addresses or address ranges listed "
+          "here will automatically be given access to the kiosk group.",
+          DEFAULT_KIOSK_HOSTS_ALLOW,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 #if 0
   /* Don't want to expose this yet */
@@ -440,6 +453,15 @@ gss_server_set_property (GObject * object, guint prop_id,
             TRUE, TRUE);
       }
       break;
+    case PROP_KIOSK_HOSTS_ALLOW:
+      if (strcmp (server->kiosk_hosts_allow, g_value_get_string (value))) {
+        g_free (server->kiosk_hosts_allow);
+        server->kiosk_hosts_allow = g_value_dup_string (value);
+        server->kiosk_arl =
+            gss_addr_range_list_new_from_string (server->kiosk_hosts_allow,
+            FALSE, FALSE);
+      }
+      break;
     case PROP_ADMIN_TOKEN:
       g_free (server->admin_token);
       server->admin_token = g_value_dup_string (value);
@@ -506,6 +528,9 @@ gss_server_get_property (GObject * object, guint prop_id,
       break;
     case PROP_ADMIN_HOSTS_ALLOW:
       g_value_set_string (value, server->admin_hosts_allow);
+      break;
+    case PROP_KIOSK_HOSTS_ALLOW:
+      g_value_set_string (value, server->kiosk_hosts_allow);
       break;
     case PROP_ADMIN_TOKEN:
       g_value_set_string (value, server->admin_token);
