@@ -108,6 +108,8 @@ struct _GssServer
 
   void (*add_warnings) (GssTransaction *t, void *priv);
   void *add_warnings_priv;
+
+  GssAddrRangeList *admin_arl;
 };
 
 struct _GssServerClass

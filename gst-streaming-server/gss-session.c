@@ -550,6 +550,11 @@ session_login_post_resource (GssTransaction * t)
         (strcmp (hash, server->admin_token) == 0);
     g_free (hash);
 
+    if (!gss_addr_range_list_check_address (server->admin_arl,
+            soup_client_context_get_address (t->client))) {
+      valid = FALSE;
+    }
+
     if (valid) {
       GssSession *login_session;
       gchar *location;

@@ -227,6 +227,9 @@ gss_server_init (GssServer * server)
   server->max_connections = DEFAULT_MAX_CONNECTIONS;
   server->max_rate = DEFAULT_MAX_RATE;
   server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_HOSTS_ALLOW);
+  server->admin_arl =
+      gss_addr_range_list_new_from_string (server->admin_hosts_allow, TRUE,
+      TRUE);
   server->admin_token = g_strdup (DEFAULT_ADMIN_TOKEN);
   server->realm = g_strdup (DEFAULT_REALM);
   server->enable_html5_video = DEFAULT_ENABLE_HTML5_VIDEO;
@@ -429,8 +432,13 @@ gss_server_set_property (GObject * object, guint prop_id,
       server->max_rate = g_value_get_int (value);
       break;
     case PROP_ADMIN_HOSTS_ALLOW:
-      g_free (server->admin_hosts_allow);
-      server->admin_hosts_allow = g_value_dup_string (value);
+      if (strcmp (server->admin_hosts_allow, g_value_get_string (value))) {
+        g_free (server->admin_hosts_allow);
+        server->admin_hosts_allow = g_value_dup_string (value);
+        server->admin_arl =
+            gss_addr_range_list_new_from_string (server->admin_hosts_allow,
+            TRUE, TRUE);
+      }
       break;
     case PROP_ADMIN_TOKEN:
       g_free (server->admin_token);
@@ -917,7 +925,9 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
   }
 
   if (resource->flags & GSS_RESOURCE_ADMIN) {
-    if (session == NULL || !session->is_admin) {
+    if (session == NULL || !session->is_admin ||
+        !gss_addr_range_list_check_address (server->admin_arl,
+            soup_client_context_get_address (client))) {
       gss_html_error_404 (server, msg);
       return;
     }
