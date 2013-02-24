@@ -41,15 +41,6 @@ static void append_login_html_browserid (GssServer * server,
     GssTransaction * t);
 static void append_login_html_cas (GssServer * server, GssTransaction * t);
 
-typedef struct _AddrRange AddrRange;
-struct _AddrRange
-{
-  struct in6_addr addr;
-  int mask;
-};
-AddrRange *hosts_allow;
-int n_hosts_allow;
-
 static GssSessionAuthorizationFunc _gss_session_authorization_func;
 static gpointer _gss_session_authorization_priv;
 
@@ -71,168 +62,15 @@ gss_session_add_session_callbacks (GssServer * server)
       session_login_get_resource, NULL, session_login_post_resource, NULL);
   gss_server_add_resource (server, "/logout", GSS_RESOURCE_HTTPS_ONLY,
       GSS_TEXT_HTML, session_logout_resource, NULL, NULL, NULL);
-
-  gss_session_notify_hosts_allow ("hosts_allow", server);
-}
-
-void
-gss_session_notify_hosts_allow (const char *key, void *priv)
-{
-  char **chunks;
-  char *end;
-  const char *s;
-  int n;
-  int i;
-
-  g_free (hosts_allow);
-  n_hosts_allow = 0;
-
-  /* FIXME */
-  //s = gss_config_get (server->config, "hosts_allow");
-  s = "";
-  chunks = g_strsplit (s, " ", 0);
-  n = g_strv_length (chunks);
-
-  hosts_allow = g_malloc0 ((n + 1) * sizeof (AddrRange));
-  for (i = 0; i < n; i++) {
-    if (strcmp (chunks[i], "all") == 0) {
-      n_hosts_allow = 1;
-      memset (&hosts_allow[0], 0, sizeof (AddrRange));
-      break;
-    } else if (strcmp (chunks[i], "segment") == 0) {
-      /* IPv6 link local */
-      memset (&hosts_allow[n_hosts_allow], 0, sizeof (struct in6_addr));
-      hosts_allow[n_hosts_allow].addr.s6_addr[0] = 0xfe;
-      hosts_allow[n_hosts_allow].addr.s6_addr[1] = 0x80;
-      hosts_allow[n_hosts_allow].mask = 64;
-      n_hosts_allow++;
-
-    } else {
-      char **d;
-      int bits;
-
-      d = g_strsplit (chunks[i], "/", 0);
-      if (d[0] && d[1]) {
-        bits = strtol (d[1], &end, 0);
-        if (end != d[1]) {
-          int len = strlen (d[0]);
-
-          if (inet_pton (AF_INET, d[0],
-                  &hosts_allow[n_hosts_allow].addr.s6_addr)) {
-            hosts_allow[n_hosts_allow].addr.s6_addr[10] = 0xff;
-            hosts_allow[n_hosts_allow].addr.s6_addr[11] = 0xff;
-            hosts_allow[n_hosts_allow].addr.s6_addr[12] =
-                hosts_allow[n_hosts_allow].addr.s6_addr[0];
-            hosts_allow[n_hosts_allow].addr.s6_addr[13] =
-                hosts_allow[n_hosts_allow].addr.s6_addr[1];
-            hosts_allow[n_hosts_allow].addr.s6_addr[14] =
-                hosts_allow[n_hosts_allow].addr.s6_addr[2];
-            hosts_allow[n_hosts_allow].addr.s6_addr[15] =
-                hosts_allow[n_hosts_allow].addr.s6_addr[3];
-            memset (hosts_allow[n_hosts_allow].addr.s6_addr, 0, 10);
-            hosts_allow[n_hosts_allow].mask = 96 + bits;
-            n_hosts_allow++;
-          } else if (d[0][0] == '[' && d[0][len - 1] == ']') {
-            d[0][len - 1] = 0;
-            if (inet_pton (AF_INET6, d[0] + 1,
-                    &hosts_allow[n_hosts_allow].addr.s6_addr)) {
-              hosts_allow[n_hosts_allow].mask = bits;
-              n_hosts_allow++;
-            }
-          }
-        }
-      }
-      g_strfreev (d);
-    }
-  }
-
-  if (n_hosts_allow == 0) {
-    n_hosts_allow = 1;
-    hosts_allow = g_realloc (hosts_allow, 2 * sizeof (AddrRange));
-    memset (&hosts_allow[0], 0, sizeof (AddrRange));
-  }
-
-  /* always allow localhost */
-  hosts_allow[n_hosts_allow].addr.s6_addr[10] = 0xff;
-  hosts_allow[n_hosts_allow].addr.s6_addr[11] = 0xff;
-  hosts_allow[n_hosts_allow].addr.s6_addr[12] = 127;
-  hosts_allow[n_hosts_allow].addr.s6_addr[13] = 0;
-  hosts_allow[n_hosts_allow].addr.s6_addr[14] = 0;
-  hosts_allow[n_hosts_allow].addr.s6_addr[15] = 1;
-  memset (hosts_allow[n_hosts_allow].addr.s6_addr, 0, 10);
-  hosts_allow[n_hosts_allow].mask = 96 + 8;
-  n_hosts_allow++;
-
-  g_strfreev (chunks);
-}
-
-static gboolean
-host_validate (const struct in6_addr *in6a)
-{
-  int i;
-  int j;
-
-  for (i = 0; i < n_hosts_allow; i++) {
-    int mask = hosts_allow[i].mask;
-
-    for (j = 0; j < 16; j++) {
-      if (mask >= 8) {
-        if (hosts_allow[i].addr.s6_addr[j] != in6a->s6_addr[j]) {
-          break;
-        }
-      } else if (mask <= 0) {
-        return TRUE;
-      } else {
-        int maskbits = 0xff & (0xff00 >> mask);
-        if ((hosts_allow[i].addr.s6_addr[j] & maskbits) !=
-            (in6a->s6_addr[j] & maskbits)) {
-          break;
-        }
-      }
-      mask -= 8;
-    }
-    if (mask <= 0) {
-      return TRUE;
-    }
-  }
-
-  return FALSE;
 }
 
 gboolean
-gss_addr_address_check (SoupClientContext * context)
+gss_addr_address_check (GssServer * server, SoupClientContext * context)
 {
   SoupAddress *addr;
-  struct sockaddr *sa;
-  int len;
 
   addr = soup_client_context_get_address (context);
-  sa = soup_address_get_sockaddr (addr, &len);
-
-  if (sa) {
-    if (sa->sa_family == AF_INET) {
-      struct sockaddr_in *sin = (struct sockaddr_in *) sa;
-      struct in6_addr in6a;
-      guint32 addr = ntohl (sin->sin_addr.s_addr);
-
-      memset (&in6a.s6_addr[0], 0, 10);
-      in6a.s6_addr[10] = 0xff;
-      in6a.s6_addr[11] = 0xff;
-      in6a.s6_addr[12] = (addr >> 24) & 0xff;
-      in6a.s6_addr[13] = (addr >> 16) & 0xff;
-      in6a.s6_addr[14] = (addr >> 8) & 0xff;
-      in6a.s6_addr[15] = addr & 0xff;
-
-      return host_validate (&in6a);
-    } else if (sa->sa_family == AF_INET6) {
-      struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) sa;
-      struct in6_addr *in6a = &sin6->sin6_addr;
-
-      return host_validate (in6a);
-    }
-  }
-
-  return FALSE;
+  return gss_addr_range_list_check_address (server->admin_arl, addr);
 }
 
 gboolean
@@ -957,4 +795,203 @@ append_login_html_cas (GssServer * server, GssTransaction * t)
       t->server->cas_server, t->server->base_url_https);
 
   g_free (base_url);
+}
+
+
+/* GssAddrRangeList */
+
+typedef struct _GssAddrRange GssAddrRange;
+struct _GssAddrRangeList
+{
+  int n_ranges;
+  GssAddrRange *ranges;
+};
+
+struct _GssAddrRange
+{
+  struct in6_addr addr;
+  int mask;
+};
+
+
+
+void
+gss_addr_range_list_free (GssAddrRangeList * addr_range_list)
+{
+  g_free (addr_range_list->ranges);
+  g_free (addr_range_list);
+}
+
+GssAddrRangeList *
+gss_addr_range_list_new (int n_entries)
+{
+  GssAddrRangeList *addr_range_list;
+
+  addr_range_list = g_malloc0 (sizeof (GssAddrRangeList));
+  addr_range_list->ranges = g_malloc0 ((n_entries + 1) * sizeof (GssAddrRange));
+
+  return addr_range_list;
+}
+
+GssAddrRangeList *
+gss_addr_range_list_new_from_string (const char *str, gboolean default_all,
+    gboolean allow_localhost)
+{
+  char **chunks;
+  char *end;
+  const char *s;
+  int n;
+  int i;
+  GssAddrRangeList *addr_range_list;
+  GssAddrRange *range;
+
+  s = g_strdup (str);
+  chunks = g_strsplit (s, " ", 0);
+  n = g_strv_length (chunks);
+
+  addr_range_list = gss_addr_range_list_new (n);
+  for (i = 0; i < n; i++) {
+    if (strcmp (chunks[i], "all") == 0) {
+      range = &addr_range_list->ranges[0];
+      memset (range, 0, sizeof (*range));
+      addr_range_list->n_ranges = 1;
+      break;
+    } else if (strcmp (chunks[i], "segment") == 0) {
+      /* IPv6 link local */
+      range = &addr_range_list->ranges[addr_range_list->n_ranges];
+      memset (range, 0, sizeof (*range));
+      range->addr.s6_addr[0] = 0xfe;
+      range->addr.s6_addr[1] = 0x80;
+      range->mask = 64;
+      addr_range_list->n_ranges++;
+
+    } else {
+      char **d;
+      int bits;
+
+      d = g_strsplit (chunks[i], "/", 0);
+      if (d[0] && d[1]) {
+        bits = strtol (d[1], &end, 0);
+        if (end != d[1]) {
+          int len = strlen (d[0]);
+
+          range = &addr_range_list->ranges[addr_range_list->n_ranges];
+
+          if (inet_pton (AF_INET, d[0], &range->addr.s6_addr)) {
+            range->addr.s6_addr[10] = 0xff;
+            range->addr.s6_addr[11] = 0xff;
+            range->addr.s6_addr[12] = range->addr.s6_addr[0];
+            range->addr.s6_addr[13] = range->addr.s6_addr[1];
+            range->addr.s6_addr[14] = range->addr.s6_addr[2];
+            range->addr.s6_addr[15] = range->addr.s6_addr[3];
+            memset (range->addr.s6_addr, 0, 10);
+            range->mask = 96 + bits;
+            addr_range_list->n_ranges++;
+          } else if (d[0][0] == '[' && d[0][len - 1] == ']') {
+            d[0][len - 1] = 0;
+            if (inet_pton (AF_INET6, d[0] + 1, &range->addr.s6_addr)) {
+              range->mask = bits;
+              addr_range_list->n_ranges++;
+            }
+          }
+        }
+      }
+      g_strfreev (d);
+    }
+  }
+
+  if (default_all && addr_range_list->n_ranges == 0) {
+    addr_range_list->n_ranges = 1;
+    addr_range_list->ranges =
+        g_realloc (addr_range_list->ranges, 2 * sizeof (GssAddrRange));
+    memset (&addr_range_list->ranges[0], 0, sizeof (GssAddrRange));
+  }
+
+  if (allow_localhost) {
+    /* always allow localhost */
+    range = &addr_range_list->ranges[addr_range_list->n_ranges];
+    range->addr.s6_addr[10] = 0xff;
+    range->addr.s6_addr[11] = 0xff;
+    range->addr.s6_addr[12] = 127;
+    range->addr.s6_addr[13] = 0;
+    range->addr.s6_addr[14] = 0;
+    range->addr.s6_addr[15] = 1;
+    memset (range->addr.s6_addr, 0, 10);
+    range->mask = 96 + 8;
+    addr_range_list->n_ranges++;
+  }
+
+  g_strfreev (chunks);
+
+  return addr_range_list;
+}
+
+static gboolean
+gss_addr_range_list_check_in6 (const GssAddrRangeList * addr_range_list,
+    const struct in6_addr *in6a)
+{
+  int i;
+  int j;
+
+  for (i = 0; i < addr_range_list->n_ranges; i++) {
+    const GssAddrRange *range = addr_range_list->ranges + i;
+    int mask = range->mask;
+
+    for (j = 0; j < 16; j++) {
+      if (mask >= 8) {
+        if (range->addr.s6_addr[j] != in6a->s6_addr[j]) {
+          break;
+        }
+      } else if (mask <= 0) {
+        return TRUE;
+      } else {
+        int maskbits = 0xff & (0xff00 >> mask);
+        if ((range->addr.s6_addr[j] & maskbits) !=
+            (in6a->s6_addr[j] & maskbits)) {
+          break;
+        }
+      }
+      mask -= 8;
+    }
+    if (mask <= 0) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+gboolean
+gss_addr_range_list_check_address (const GssAddrRangeList * addr_range_list,
+    SoupAddress * addr)
+{
+  struct sockaddr *sa;
+  int len;
+
+  sa = soup_address_get_sockaddr (addr, &len);
+
+  if (sa) {
+    if (sa->sa_family == AF_INET) {
+      struct sockaddr_in *sin = (struct sockaddr_in *) sa;
+      struct in6_addr in6a;
+      guint32 addr = ntohl (sin->sin_addr.s_addr);
+
+      memset (&in6a.s6_addr[0], 0, 10);
+      in6a.s6_addr[10] = 0xff;
+      in6a.s6_addr[11] = 0xff;
+      in6a.s6_addr[12] = (addr >> 24) & 0xff;
+      in6a.s6_addr[13] = (addr >> 16) & 0xff;
+      in6a.s6_addr[14] = (addr >> 8) & 0xff;
+      in6a.s6_addr[15] = addr & 0xff;
+
+      return gss_addr_range_list_check_in6 (addr_range_list, &in6a);
+    } else if (sa->sa_family == AF_INET6) {
+      struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) sa;
+      struct in6_addr *in6a = &sin6->sin6_addr;
+
+      return gss_addr_range_list_check_in6 (addr_range_list, in6a);
+    }
+  }
+
+  return FALSE;
 }
