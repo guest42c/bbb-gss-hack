@@ -926,6 +926,19 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
       gss_html_error_404 (server, msg);
       return;
     }
+
+    if (gss_addr_range_list_check_address (server->kiosk_arl,
+            soup_client_context_get_address (client)) &&
+        !(resource->flags & GSS_RESOURCE_KIOSK)) {
+      GssTransaction t;
+
+      /* This is kind of a hack */
+      memset (&t, 0, sizeof (t));
+      t.msg = msg;
+      gss_transaction_redirect (&t, "/kiosk");
+
+      return;
+    }
   }
 
   if (resource->flags & GSS_RESOURCE_HTTPS_ONLY) {

@@ -36,6 +36,7 @@ typedef enum {
   GSS_RESOURCE_HTTPS_ONLY = (1<<3),
   GSS_RESOURCE_ONETIME = (1<<4),
   GSS_RESOURCE_USER = (1<<5),
+  GSS_RESOURCE_KIOSK = (1<<6),
 } GssResourceFlags;
 
 struct _GssResource {
