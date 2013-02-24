@@ -987,7 +987,6 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
   transaction->client = client;
   transaction->resource = resource;
   transaction->session = session;
-  transaction->done = FALSE;
 
   if (resource->flags & GSS_RESOURCE_HTTP_ONLY) {
     if (soupserver != server->server) {

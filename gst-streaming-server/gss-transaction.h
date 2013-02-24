@@ -39,7 +39,6 @@ struct _GssTransaction {
   SoupClientContext *client;
   GssResource *resource;
   GssSession *session;
-  gboolean done;
   GString *s;
   GString *script;
   int id;
