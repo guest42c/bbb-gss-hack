@@ -900,6 +900,29 @@ gss_addr_range_list_new_from_string (const char *str, gboolean default_all,
             }
           }
         }
+      } else if (d[0] && d[1] == NULL) {
+        int len = strlen (d[0]);
+
+        /* FIXME merge with above code */
+        range = &addr_range_list->ranges[addr_range_list->n_ranges];
+
+        if (inet_pton (AF_INET, d[0], &range->addr.s6_addr)) {
+          range->addr.s6_addr[10] = 0xff;
+          range->addr.s6_addr[11] = 0xff;
+          range->addr.s6_addr[12] = range->addr.s6_addr[0];
+          range->addr.s6_addr[13] = range->addr.s6_addr[1];
+          range->addr.s6_addr[14] = range->addr.s6_addr[2];
+          range->addr.s6_addr[15] = range->addr.s6_addr[3];
+          memset (range->addr.s6_addr, 0, 10);
+          range->mask = 96 + 32;
+          addr_range_list->n_ranges++;
+        } else if (d[0][0] == '[' && d[0][len - 1] == ']') {
+          d[0][len - 1] = 0;
+          if (inet_pton (AF_INET6, d[0] + 1, &range->addr.s6_addr)) {
+            range->mask = 32;
+            addr_range_list->n_ranges++;
+          }
+        }
       }
       g_strfreev (d);
     }
