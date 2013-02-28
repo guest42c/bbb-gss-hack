@@ -74,6 +74,7 @@ struct _GssServer
   gboolean enable_flash;
   gboolean enable_rtsp;
   gboolean enable_rtmp;
+  gboolean enable_vod;
 
   gboolean enable_osplayer;
   gboolean enable_flowplayer;

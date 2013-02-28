@@ -55,6 +55,7 @@ enum
   PROP_ENABLE_FLASH,
   PROP_ENABLE_RTSP,
   PROP_ENABLE_RTMP,
+  PROP_ENABLE_VOD,
   PROP_ARCHIVE_DIR,
   PROP_CAS_SERVER
 };
@@ -76,6 +77,7 @@ enum
 #define DEFAULT_ENABLE_FLASH TRUE
 #define DEFAULT_ENABLE_RTSP FALSE
 #define DEFAULT_ENABLE_RTMP FALSE
+#define DEFAULT_ENABLE_VOD FALSE
 #ifdef USE_LOCAL
 #define DEFAULT_ARCHIVE_DIR "."
 #else
@@ -243,6 +245,7 @@ gss_server_init (GssServer * server)
   server->enable_flash = DEFAULT_ENABLE_FLASH;
   server->enable_rtsp = DEFAULT_ENABLE_RTSP;
   server->enable_rtmp = DEFAULT_ENABLE_RTMP;
+  server->enable_vod = DEFAULT_ENABLE_VOD;
 
   server->enable_flowplayer = TRUE;
   server->enable_programs = TRUE;
@@ -405,6 +408,16 @@ gss_server_class_init (GssServerClass * server_class)
       g_param_spec_boolean ("enable-rtmp", "Enable RTMP",
           "Enable RTMP", DEFAULT_ENABLE_RTMP,
           (GParamFlags) (RTMP_FLAGS | G_PARAM_STATIC_STRINGS)));
+#ifdef ENABLE_VOD
+#define VOD_FLAGS G_PARAM_READWRITE
+#else
+#define VOD_FLAGS G_PARAM_READABLE
+#endif
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ENABLE_VOD,
+      g_param_spec_boolean ("enable-rtmp", "Enable VOD",
+          "Enable VOD", DEFAULT_ENABLE_VOD,
+          (GParamFlags) (VOD_FLAGS | G_PARAM_STATIC_STRINGS)));
 #ifdef ENABLE_CAS
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_CAS_SERVER, g_param_spec_string ("cas-server", "CAS Server",
@@ -489,6 +502,9 @@ gss_server_set_property (GObject * object, guint prop_id,
     case PROP_ENABLE_RTMP:
       server->enable_rtmp = g_value_get_boolean (value);
       break;
+    case PROP_ENABLE_VOD:
+      server->enable_vod = g_value_get_boolean (value);
+      break;
     case PROP_CAS_SERVER:
       g_free (server->cas_server);
       server->cas_server = g_value_dup_string (value);
@@ -555,6 +571,9 @@ gss_server_get_property (GObject * object, guint prop_id,
       break;
     case PROP_ENABLE_RTMP:
       g_value_set_boolean (value, server->enable_rtmp);
+      break;
+    case PROP_ENABLE_VOD:
+      g_value_set_boolean (value, server->enable_vod);
       break;
     case PROP_CAS_SERVER:
       g_value_set_string (value, server->cas_server);
