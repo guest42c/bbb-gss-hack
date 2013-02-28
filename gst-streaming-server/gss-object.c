@@ -33,8 +33,8 @@ enum
   PROP_DESCRIPTION
 };
 
-#define DEFAULT_NAME NULL
-#define DEFAULT_TITLE NULL
+#define DEFAULT_NAME ""
+#define DEFAULT_TITLE ""
 #define DEFAULT_UUID "00000000-0000-0000-0000-000000000000"
 #define DEFAULT_DESCRIPTION ""
 
@@ -57,6 +57,7 @@ gss_object_init (GssObject * object)
   guint8 uuid[16];
 
   object->name = g_strdup (DEFAULT_NAME);
+  object->title = g_strdup (DEFAULT_TITLE);
   object->description = g_strdup (DEFAULT_DESCRIPTION);
   gss_uuid_create (uuid);
   object->uuid = gss_uuid_to_string (uuid);
