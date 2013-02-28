@@ -200,22 +200,24 @@ gss_html_header (GssTransaction * t)
         GSS_OBJECT_SAFE_TITLE (program));
   };
 
-  GSS_A ("<li class='nav-header'>Archive</li>\n");
-  for (g = t->server->programs; g; g = g_list_next (g)) {
-    GssProgram *program = g->data;
-    if (!program->is_archive)
-      continue;
-    GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
-        (program->resource == t->resource) ? "class='active'" : "",
-        program->resource->location, session_id,
-        GSS_OBJECT_SAFE_TITLE (program));
-  };
+  if (t->server->enable_vod) {
+    GSS_A ("<li class='nav-header'>Archive</li>\n");
+    for (g = t->server->programs; g; g = g_list_next (g)) {
+      GssProgram *program = g->data;
+      if (!program->is_archive)
+        continue;
+      GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
+          (program->resource == t->resource) ? "class='active'" : "",
+          program->resource->location, session_id,
+          GSS_OBJECT_SAFE_TITLE (program));
+    };
 
-  if (t->session) {
-    GSS_P ("<li class='nav-header'>User</li>\n"
-        "<li><a href='/add_program%s'>Add Program</a></li>\n"
-        "<li><a href='/dashboard%s'>Dashboard</a></li>\n",
-        session_id, session_id);
+    if (t->session) {
+      GSS_P ("<li class='nav-header'>User</li>\n"
+          "<li><a href='/add_program%s'>Add Program</a></li>\n"
+          "<li><a href='/dashboard%s'>Dashboard</a></li>\n",
+          session_id, session_id);
+    }
   }
   if (t->session && t->session->is_admin) {
     GList *g;

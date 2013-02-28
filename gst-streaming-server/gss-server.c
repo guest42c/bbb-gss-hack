@@ -1088,28 +1088,30 @@ gss_server_resource_main_page (GssTransaction * t)
   }
   GSS_P ("</ul>\n");
 
-  GSS_P ("<h2>Archived Media</h2>\n");
+  if (t->server->enable_vod) {
+    GSS_P ("<h2>Archived Media</h2>\n");
 
-  GSS_P ("<ul class='thumbnails'>\n");
-  for (g = t->server->programs; g; g = g_list_next (g)) {
-    GssProgram *program = g->data;
+    GSS_P ("<ul class='thumbnails'>\n");
+    for (g = t->server->programs; g; g = g_list_next (g)) {
+      GssProgram *program = g->data;
 
-    if (!program->is_archive)
-      continue;
+      if (!program->is_archive)
+        continue;
 
-    GSS_P ("<li class='span4'>\n");
-    GSS_P ("<div class='thumbnail'>\n");
-    GSS_P ("<a href=\"/%s%s%s\">",
-        GSS_OBJECT_NAME (program),
-        t->session ? "?session_id=" : "",
-        t->session ? t->session->session_id : "");
-    gss_program_add_jpeg_block (program, t);
-    GSS_P ("</a>\n");
-    GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_SAFE_TITLE (program));
-    GSS_P ("</div>\n");
-    GSS_P ("</li>\n");
+      GSS_P ("<li class='span4'>\n");
+      GSS_P ("<div class='thumbnail'>\n");
+      GSS_P ("<a href=\"/%s%s%s\">",
+          GSS_OBJECT_NAME (program),
+          t->session ? "?session_id=" : "",
+          t->session ? t->session->session_id : "");
+      gss_program_add_jpeg_block (program, t);
+      GSS_P ("</a>\n");
+      GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_SAFE_TITLE (program));
+      GSS_P ("</div>\n");
+      GSS_P ("</li>\n");
+    }
+    GSS_P ("</ul>\n");
   }
-  GSS_P ("</ul>\n");
 
   gss_html_footer (t);
 }
