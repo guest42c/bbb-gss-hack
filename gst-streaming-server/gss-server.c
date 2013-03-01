@@ -408,16 +408,11 @@ gss_server_class_init (GssServerClass * server_class)
       g_param_spec_boolean ("enable-rtmp", "Enable RTMP",
           "Enable RTMP", DEFAULT_ENABLE_RTMP,
           (GParamFlags) (RTMP_FLAGS | G_PARAM_STATIC_STRINGS)));
-#ifdef ENABLE_VOD
-#define VOD_FLAGS G_PARAM_READWRITE
-#else
-#define VOD_FLAGS G_PARAM_READABLE
-#endif
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_ENABLE_VOD,
-      g_param_spec_boolean ("enable-rtmp", "Enable VOD",
+      g_param_spec_boolean ("enable-vod", "Enable VOD",
           "Enable VOD", DEFAULT_ENABLE_VOD,
-          (GParamFlags) (VOD_FLAGS | G_PARAM_STATIC_STRINGS)));
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 #ifdef ENABLE_CAS
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_CAS_SERVER, g_param_spec_string ("cas-server", "CAS Server",
