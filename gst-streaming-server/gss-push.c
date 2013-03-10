@@ -274,7 +274,7 @@ gss_stream_create_push_pipeline (GssStream * stream, int push_fd)
   e = gst_bin_get_by_name (GST_BIN (pipe), "src");
   g_assert (e != NULL);
   if (push->push_method == GSS_PUSH_METHOD_ICECAST) {
-    g_object_set (e, "fd", push->push_fd, NULL);
+    g_object_set (e, "fd", push_fd, NULL);
   }
   stream->src = e;
 
