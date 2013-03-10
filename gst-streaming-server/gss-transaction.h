@@ -46,6 +46,7 @@ struct _GssTransaction {
 
 void gss_transaction_redirect (GssTransaction * t, const char *target);
 void gss_transaction_error (GssTransaction * t, const char *message);
+void gss_transaction_delay (GssTransaction *t, int msec);
 
 
 G_END_DECLS
