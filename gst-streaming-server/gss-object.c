@@ -28,16 +28,11 @@
 enum
 {
   PROP_NAME = 1,
-  PROP_TITLE,
-  PROP_UUID,
-  PROP_DESCRIPTION
+  PROP_TITLE
 };
 
 #define DEFAULT_NAME ""
 #define DEFAULT_TITLE ""
-#define DEFAULT_UUID "00000000-0000-0000-0000-000000000000"
-#define DEFAULT_DESCRIPTION ""
-
 
 
 static void gss_object_finalize (GObject * object);
@@ -54,13 +49,9 @@ G_DEFINE_TYPE (GssObject, gss_object, G_TYPE_OBJECT);
 static void
 gss_object_init (GssObject * object)
 {
-  guint8 uuid[16];
 
   object->name = g_strdup (DEFAULT_NAME);
   object->title = g_strdup (DEFAULT_TITLE);
-  object->description = g_strdup (DEFAULT_DESCRIPTION);
-  gss_uuid_create (uuid);
-  object->uuid = gss_uuid_to_string (uuid);
 }
 
 static void
@@ -78,14 +69,6 @@ gss_object_class_init (GssObjectClass * object_class)
       PROP_TITLE, g_param_spec_string ("title", "Title",
           "Title", DEFAULT_TITLE,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
-  g_object_class_install_property (G_OBJECT_CLASS (object_class),
-      PROP_UUID, g_param_spec_string ("uuid", "UUID",
-          "Unique Identifier", DEFAULT_UUID,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
-  g_object_class_install_property (G_OBJECT_CLASS (object_class),
-      PROP_DESCRIPTION, g_param_spec_string ("description", "Description",
-          "Description", DEFAULT_DESCRIPTION,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   parent_class = g_type_class_peek_parent (object_class);
 }
@@ -97,8 +80,6 @@ gss_object_finalize (GObject * gobject)
 
   g_free (object->name);
   g_free (object->title);
-  g_free (object->description);
-  g_free (object->uuid);
 
   g_free (object->safe_title);
 
@@ -120,14 +101,6 @@ gss_object_set_property (GObject * object, guint prop_id,
     case PROP_TITLE:
       gss_object_set_title (gssobject, g_value_get_string (value));
       break;
-    case PROP_DESCRIPTION:
-      g_free (gssobject->description);
-      gssobject->description = g_value_dup_string (value);
-      break;
-    case PROP_UUID:
-      g_free (gssobject->uuid);
-      gssobject->uuid = g_value_dup_string (value);
-      break;
     default:
       g_assert_not_reached ();
       break;
@@ -148,12 +121,6 @@ gss_object_get_property (GObject * object, guint prop_id,
       break;
     case PROP_TITLE:
       g_value_set_string (value, gssobject->title);
-      break;
-    case PROP_DESCRIPTION:
-      g_value_set_string (value, gssobject->description);
-      break;
-    case PROP_UUID:
-      g_value_set_string (value, gssobject->uuid);
       break;
     default:
       g_assert_not_reached ();

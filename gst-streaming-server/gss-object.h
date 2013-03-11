@@ -45,8 +45,6 @@ struct _GssObject {
   /* properties */
   char *name;
   char *title;
-  char *uuid;
-  char *description;
 
   char *safe_title;
 };
@@ -54,8 +52,6 @@ struct _GssObject {
 #define GSS_OBJECT_NAME(obj) (((GssObject *)(obj))->name)
 #define GSS_OBJECT_TITLE(obj) (((GssObject *)(obj))->title)
 #define GSS_OBJECT_SERVER(obj) (((GssObject *)(obj))->server)
-#define GSS_OBJECT_DESCRIPTION(obj) (((GssObject *)(obj))->description)
-#define GSS_OBJECT_UUID(obj) (((GssObject *)(obj))->uuid)
 #define GSS_OBJECT_SAFE_TITLE(obj) (((GssObject *)(obj))->safe_title)
 
 

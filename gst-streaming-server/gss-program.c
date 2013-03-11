@@ -31,11 +31,15 @@ enum
 {
   PROP_NONE,
   PROP_ENABLED,
-  PROP_STATE
+  PROP_STATE,
+  PROP_UUID,
+  PROP_DESCRIPTION
 };
 
 #define DEFAULT_ENABLED FALSE
 #define DEFAULT_STATE GSS_PROGRAM_STATE_STOPPED
+#define DEFAULT_UUID "00000000-0000-0000-0000-000000000000"
+#define DEFAULT_DESCRIPTION ""
 
 
 static void gss_program_get_resource (GssTransaction * transaction);
@@ -92,12 +96,17 @@ gss_program_state_get_name (GssProgramState state)
 static void
 gss_program_init (GssProgram * program)
 {
+  guint8 uuid[16];
+
   program->metrics = gss_metrics_new ();
 
   program->enable_streaming = TRUE;
 
   program->state = DEFAULT_STATE;
   program->enabled = DEFAULT_ENABLED;
+  gss_uuid_create (uuid);
+  program->uuid = gss_uuid_to_string (uuid);
+  program->description = g_strdup (DEFAULT_DESCRIPTION);
 }
 
 static void
@@ -115,6 +124,14 @@ gss_program_class_init (GssProgramClass * program_class)
       PROP_STATE, g_param_spec_enum ("state", "State",
           "State", gss_program_state_get_type (), DEFAULT_STATE,
           (GParamFlags) (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (program_class),
+      PROP_UUID, g_param_spec_string ("uuid", "UUID",
+          "Unique Identifier", DEFAULT_UUID,
+          (GParamFlags) (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (program_class),
+      PROP_DESCRIPTION, g_param_spec_string ("description", "Description",
+          "Description", DEFAULT_DESCRIPTION,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 
   program_class->add_resources = gss_program_add_resources;
 
@@ -141,6 +158,8 @@ gss_program_finalize (GObject * object)
   gss_metrics_free (program->metrics);
   g_free (program->follow_uri);
   g_free (program->follow_host);
+  g_free (program->description);
+  g_free (program->uuid);
 
   parent_class->finalize (object);
 }
@@ -156,6 +175,10 @@ gss_program_set_property (GObject * object, guint prop_id,
   switch (prop_id) {
     case PROP_ENABLED:
       gss_program_set_enabled (program, g_value_get_boolean (value));
+      break;
+    case PROP_DESCRIPTION:
+      g_free (program->description);
+      program->description = g_value_dup_string (value);
       break;
     default:
       g_assert_not_reached ();
@@ -177,6 +200,12 @@ gss_program_get_property (GObject * object, guint prop_id,
       break;
     case PROP_STATE:
       g_value_set_enum (value, program->state);
+      break;
+    case PROP_DESCRIPTION:
+      g_value_set_string (value, program->description);
+      break;
+    case PROP_UUID:
+      g_value_set_string (value, program->uuid);
       break;
     default:
       g_assert_not_reached ();
