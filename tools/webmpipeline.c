@@ -149,7 +149,7 @@ main (int argc, char *argv[])
   strcat (result, streamId);
   strcat (result, live);
 
-  //fprintf(fp, "%s %s %s %s\n",host,conferenceId,streamId,chan);
+  fprintf (fp, "%s %s %s %s\n", host, conferenceId, streamId, chan);
   fprintf (fp, "%s\n", result);
 
   printf ("%s\n", result);

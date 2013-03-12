@@ -8,9 +8,6 @@ main (int argc, char *argv[])
   GstBus *bus;
   GstMessage *msg;
 
-  FILE *fp = NULL;
-  fp = fopen ("/tmp/livelog.txt", "a+");
-
   /* Initialize GStreamer */
   gst_init (&argc, &argv);
 
@@ -36,7 +33,7 @@ main (int argc, char *argv[])
 
   char *start = "rtmpsrc location='";
   char *end =
-      "' ! decodebin name=demux ! vp8enc ! webmmux streamable=true name=mux ! shout2send ip=localhost port=8080 mount=stream1";
+      "' ! decodebin name=demux ! x264enc bitrate=600 key-int-max=90 ! mpegtsmux ! souphttpclientsink location=http://143.54.10.78:8080/stream1";
   char *pipe = calloc (strlen (result) + strlen (start) + strlen (end) + 1,
       sizeof (char));
 
@@ -44,14 +41,11 @@ main (int argc, char *argv[])
   strcat (pipe, result);
   strcat (pipe, end);
 
-  fprintf (fp, "Pipeline: %s\n", pipe);
-//rtmpsrc location='rtmp://143.54.31.81/video/430cd080c4cef065a1f03d3fb69a8ec23eeac5ce-1356804012139/160x1201329-1356804097953 live=1' ! decodebin name=demux ! vp8enc ! webmmux streamable=true name=mux ! shout2send ip=192.168.1.108 port=8080 mount=stream1
-
+  g_print ("Pipe:%s\n", pipe);
 
   /* Build the pipeline */
   pipeline = gst_parse_launch (pipe, NULL);
 
-  fprintf (fp, "SUCCESSFULY LAUNCHED\n");
   /* Start playing */
   gst_element_set_state (pipeline, GST_STATE_PLAYING);
 
