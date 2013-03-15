@@ -135,26 +135,33 @@ main (int argc, char *argv[])
         if (childPID == 0)      // child process
         {
           //TODO: create gss push server
-          char *chanwebm = "webm";
-          char *chanhls = "hls";
+          const char *chanwebm = "webm";
+          const char *chanhls = "hls";
+
+          //Launch pipeline
+          fprintf (fp, "Before hls\n");
+          fflush (fp);
+          if (execl
+              ("/home/mconf/bbb-gss-hack/tools/hls",
+                  "hls", host, meetingId, streamId, chanhls, NULL) == -1) {
+            fprintf (fp, "execl error\n");
+            fflush (fp);
+            exit (1);
+          };
+          fprintf (fp, "after hls");
+          fflush (fp);
+
+          fprintf (fp, "Before webm\n");
+          fflush (fp);
           //Launch pipeline
           if (execl
               ("/home/mconf/bbb-gss-hack/tools/webm",
                   "webm", host, meetingId, streamId, chanwebm, NULL) == -1) {
-            fprintf (stderr, "execl Error!");
             fprintf (fp, "execl error\n");
             fflush (fp);
             exit (1);
-          }
-          //Launch pipeline
-          if (execl
-              ("/home/mconf/bbb-gss-hack/tools/hls",
-                  "hls", host, meetingId, streamId, chanhls, NULL) == -1) {
-            fprintf (stderr, "execl Error!");
-            fprintf (fp, "execl error\n");
-            fflush (fp);
-            exit (1);
-          }
+          };
+
         } else                  //Parent process
         {
           fprintf (fp, "process_id of gstreamer child process %d \n", childPID);

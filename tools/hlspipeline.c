@@ -99,11 +99,9 @@ main (int argc, char *argv[])
   strcat (result, streamId);
   strcat (result, live);
 
-
-
   //fprintf(fp, "%s %s %s %s\n",host,conferenceId,streamId,chan);
   //fprintf (fp, "%s\n", result);
-
+  //fflush(fp);
   //printf ("%s\n", result);
   //"rtmp://150.164.192.113/video/0009666694da07ee6363e22df5cdac8e079642eb-1359993137281/640x480185-1359999168732 live=1"
 
@@ -125,6 +123,7 @@ main (int argc, char *argv[])
   if (!pipeline || !source || !decode || !vrate || !filter || !enc || !mux
       || !sink) {
     g_printerr ("One or more elements could not be created. Exiting.\n");
+    //fprintf(fp, "One or more elements could not be created.\n");
     return -1;
   }
 
@@ -132,7 +131,9 @@ main (int argc, char *argv[])
   gst_bin_add_many (GST_BIN (pipeline), source, decode, vrate, filter, enc, mux,
       sink, NULL);
 
-  filtercaps = gst_caps_new_simple ("video/x-raw-yuv",
+  //fprintf(fp, "Binded elements...\n");
+  //fflush(fp);
+  filtercaps = gst_caps_new_simple ("video/x-raw",
       //"width", G_TYPE_INT, 640,
       //"height", G_TYPE_INT, 480,
       "framerate", GST_TYPE_FRACTION, 30000, 1001, NULL);
@@ -168,7 +169,8 @@ main (int argc, char *argv[])
     gst_object_unref (pipeline);
     return -1;
   }
-
+  //fprintf(fp, "All elements linked..\n");
+  //fflush(fp);
   /* Modify the source's properties */
 
   char *server = "http://localhost:8080/";
@@ -177,11 +179,10 @@ main (int argc, char *argv[])
   strcat (location, chan);
 
   g_object_set (source, "location", result, NULL);
-  g_object_set (mux, "streamable", TRUE, NULL);
-  g_object_set (enc, "tune", "zerolatency", NULL);
-  g_object_set (enc, "profile", "baseline", NULL);
+  ///g_object_set (enc, "tune", "zerolatency", NULL);
+  //g_object_set (enc, "profile", "baseline", NULL);
   g_object_set (enc, "sync-lookahead", 0, NULL);
-  g_object_set (enc, "pass", "cbr", NULL);
+  //g_object_set (enc, "pass", "cbr", NULL);
   g_object_set (enc, "rc-lookahead", 0, NULL);
   g_object_set (enc, "bitrate", 600, NULL);
   g_object_set (enc, "key-int-max", 4000, NULL);
