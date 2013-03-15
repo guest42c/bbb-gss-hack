@@ -49,7 +49,6 @@ cb_message (GstBus * bus, GstMessage * msg, CustomData * data)
         break;
 
       gst_message_parse_buffering (msg, &percent);
-      printf ("Buffering (%3d%%)\r", percent);
       g_print ("Buffering (%3d%%)\r", percent);
       /* Wait until buffering is complete before start/resume playing */
       if (percent < 100)
@@ -72,62 +71,14 @@ cb_message (GstBus * bus, GstMessage * msg, CustomData * data)
 int
 main (int argc, char *argv[])
 {
-  GstElement *pipeline, *source, *decode, *enc, *mux, *sink, *shout_sink;
+  GstElement *pipeline, *source, *decode, *vrate, *filter, *enc, *mux, *sink,
+      *shout_sink;
   GstBus *bus;
+  GstCaps *filtercaps;
   GstMessage *msg;
   GstStateChangeReturn ret;
   GMainLoop *main_loop;
   CustomData data;
-
-  FILE *fp = NULL;
-  fp = fopen ("/tmp/livelog.txt", "a+");
-
-  /* Initialize GStreamer */
-  gst_init (&argc, &argv);
-
-  /* Initialize our data structure */
-  memset (&data, 0, sizeof (data));
-
-  /* Build the pipeline */
-  pipeline = gst_pipeline_new ("pipeline");
-  source = gst_element_factory_make ("rtmpsrc", "source");
-  decode = gst_element_factory_make ("decodebin", "decode");
-  enc = gst_element_factory_make ("vp8enc", "enc");
-  mux = gst_element_factory_make ("webmmux", "mux");
-  //sink = gst_element_factory_make ("filesink", "sink");
-  shout_sink = gst_element_factory_make ("shout2send", "shout_sink");
-  if (!pipeline || !source || !decode || !enc || !mux || !shout_sink) {
-    //if (!pipeline || !source || !decode || !enc || !mux || !sink) {
-    g_printerr ("One or more elements could not be created. Exiting.\n");
-    return -1;
-  }
-
-  /* Build the pipeline */
-  gst_bin_add_many (GST_BIN (pipeline), source, decode, enc, mux, shout_sink,
-      NULL);
-  //gst_bin_add_many (GST_BIN (pipeline), source, decode, enc, mux, sink, NULL);
-
-  if (gst_element_link (source, decode) != TRUE) {
-    g_printerr ("Elements source and decode could not be linked.\n");
-    gst_object_unref (pipeline);
-    return -1;
-  }
-
-  g_signal_connect (decode, "pad-added", G_CALLBACK (on_pad_added), enc);
-
-  if (gst_element_link (enc, mux) != TRUE) {
-    g_printerr ("Elements enc and mux could not be linked.\n");
-    gst_object_unref (pipeline);
-    return -1;
-  }
-
-  if (gst_element_link (mux, shout_sink) != TRUE) {
-    //if (gst_element_link (mux, sink) != TRUE ) {
-    g_printerr ("Elements mux and sink could not be linked.\n");
-    gst_object_unref (pipeline);
-    return -1;
-  }
-
 
   char *host = argv[1];
   char *conferenceId = argv[2];
@@ -149,11 +100,77 @@ main (int argc, char *argv[])
   strcat (result, streamId);
   strcat (result, live);
 
-  fprintf (fp, "%s %s %s %s\n", host, conferenceId, streamId, chan);
-  fprintf (fp, "%s\n", result);
+  //fprintf(fp, "%s %s %s %s\n",host,conferenceId,streamId,chan);
+  //fprintf (fp, "%s\n", result);
 
-  printf ("%s\n", result);
+  //printf ("%s\n", result);
   //"rtmp://150.164.192.113/video/0009666694da07ee6363e22df5cdac8e079642eb-1359993137281/640x480185-1359999168732 live=1"
+
+  /* Initialize GStreamer */
+  gst_init (&argc, &argv);
+
+  /* Initialize our data structure */
+  memset (&data, 0, sizeof (data));
+
+  /* Build the pipeline */
+  pipeline = gst_pipeline_new ("pipeline");
+  source = gst_element_factory_make ("rtmpsrc", "source");
+  decode = gst_element_factory_make ("decodebin", "decode");
+  vrate = gst_element_factory_make ("videorate", "video-rate");
+  filter = gst_element_factory_make ("capsfilter", "filter");
+  enc = gst_element_factory_make ("vp8enc", "enc");
+  mux = gst_element_factory_make ("webmmux", "mux");
+  sink = gst_element_factory_make ("filesink", "sink");
+  shout_sink = gst_element_factory_make ("shout2send", "shout_sink");
+  if (!pipeline || !source || !decode || !enc || !mux || !shout_sink) {
+    //if (!pipeline || !source || !decode || !enc || !mux || !sink) {
+    g_printerr ("One or more elements could not be created. Exiting.\n");
+    return -1;
+  }
+
+  /* Build the pipeline */
+  gst_bin_add_many (GST_BIN (pipeline), source, decode, vrate, filter, enc, mux,
+      shout_sink, NULL);
+  //gst_bin_add_many (GST_BIN (pipeline), source, decode, enc, mux, sink, NULL);
+
+  filtercaps = gst_caps_new_simple ("video/x-raw",
+      //"width", G_TYPE_INT, 640,
+      //"height", G_TYPE_INT, 480,
+      "framerate", GST_TYPE_FRACTION, 30, 1, NULL);
+
+  if (gst_element_link (source, decode) != TRUE) {
+    g_printerr ("Elements source and decode could not be linked.\n");
+    gst_object_unref (pipeline);
+    return -1;
+  }
+
+  g_signal_connect (decode, "pad-added", G_CALLBACK (on_pad_added), vrate);
+
+  if (gst_element_link (vrate, filter) != TRUE) {
+    g_printerr ("Elements vrate and filter could not be linked.\n");
+    gst_object_unref (pipeline);
+    return -1;
+  }
+
+  if (gst_element_link (filter, enc) != TRUE) {
+    g_printerr ("Elements filter and enc could not be linked.\n");
+    gst_object_unref (pipeline);
+    return -1;
+  }
+
+  if (gst_element_link (enc, mux) != TRUE) {
+    g_printerr ("Elements enc and mux could not be linked.\n");
+    gst_object_unref (pipeline);
+    return -1;
+  }
+
+  if (gst_element_link (mux, shout_sink) != TRUE) {
+    //if (gst_element_link (mux, sink) != TRUE ) {
+    g_printerr ("Elements mux and sink could not be linked.\n");
+    gst_object_unref (pipeline);
+    return -1;
+  }
+
   /* Modify the source's properties */
 
   g_object_set (source, "location", result, NULL);
@@ -162,6 +179,9 @@ main (int argc, char *argv[])
   g_object_set (shout_sink, "ip", "localhost", NULL);
   g_object_set (shout_sink, "port", 8080, NULL);
   g_object_set (shout_sink, "mount", chan, NULL);
+
+  g_object_set (G_OBJECT (filter), "caps", filtercaps, NULL);
+  gst_caps_unref (filtercaps);
 
   /* Start playing */
   ret = gst_element_set_state (pipeline, GST_STATE_PLAYING);
@@ -183,7 +203,6 @@ main (int argc, char *argv[])
   gst_bus_add_signal_watch (bus);
   g_signal_connect (bus, "message", G_CALLBACK (cb_message), &data);
 
-  fprintf (fp, "Gstreamer Main Loop Started\n");
   g_main_loop_run (main_loop);
 
   /* Free resources */
