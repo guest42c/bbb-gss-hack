@@ -56,3 +56,28 @@ gss_transaction_error (GssTransaction * t, const char *message)
   gss_html_footer (t);
   soup_message_set_status (t->msg, SOUP_STATUS_BAD_REQUEST);
 }
+
+static gboolean
+unpause (gpointer priv)
+{
+  GssTransaction *t = (GssTransaction *) priv;
+
+  soup_server_unpause_message (t->soupserver, t->msg);
+  g_free (t);
+
+  return FALSE;
+}
+
+void
+gss_transaction_delay (GssTransaction * t, int msec)
+{
+  GssTransaction *new_t;
+
+  /* FIXME this is pure evil */
+
+  new_t = g_malloc0 (sizeof (GssTransaction));
+  memcpy (new_t, t, sizeof (GssTransaction));
+
+  soup_server_pause_message (t->soupserver, t->msg);
+  g_timeout_add (msec, unpause, new_t);
+}

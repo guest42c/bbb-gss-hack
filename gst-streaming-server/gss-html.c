@@ -82,19 +82,10 @@ gss_html_append_image_printf (GString * s, const char *url_format, int width,
   g_free (url);
 }
 
-
 void
-gss_html_header (GssTransaction * t)
+gss_html_header_bare (GssTransaction * t)
 {
   GString *s = t->s;
-  gchar *session_id;
-  GList *g;
-
-  if (t->session) {
-    session_id = g_strdup_printf ("?session_id=%s", t->session->session_id);
-  } else {
-    session_id = g_strdup ("");
-  }
 
   GSS_P ("<!DOCTYPE html>\n"
       "<html lang='en'>\n"
@@ -127,8 +118,26 @@ gss_html_header (GssTransaction * t)
       "<link rel='apple-touch-icon-precomposed' sizes='72x72' href='../assets/ico/apple-touch-icon-72-precomposed.png'>\n"
       "<link rel='apple-touch-icon-precomposed' href='../assets/ico/apple-touch-icon-57-precomposed.png'>\n");
 #endif
-  GSS_A ("</head>\n" "<body>\n");
+  GSS_A ("</head>\n");
+}
 
+
+void
+gss_html_header (GssTransaction * t)
+{
+  GString *s = t->s;
+  gchar *session_id;
+  GList *g;
+
+  if (t->session) {
+    session_id = g_strdup_printf ("?session_id=%s", t->session->session_id);
+  } else {
+    session_id = g_strdup ("");
+  }
+
+  gss_html_header_bare (t);
+
+  GSS_A ("<body>\n");
   GSS_A ("<div class='navbar navbar-fixed-top'>\n"
       "<div class='navbar-inner'>\n"
       "<div class='container-fluid'>\n"
@@ -191,22 +200,24 @@ gss_html_header (GssTransaction * t)
         GSS_OBJECT_SAFE_TITLE (program));
   };
 
-  GSS_A ("<li class='nav-header'>Archive</li>\n");
-  for (g = t->server->programs; g; g = g_list_next (g)) {
-    GssProgram *program = g->data;
-    if (!program->is_archive)
-      continue;
-    GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
-        (program->resource == t->resource) ? "class='active'" : "",
-        program->resource->location, session_id,
-        GSS_OBJECT_SAFE_TITLE (program));
-  };
+  if (t->server->enable_vod) {
+    GSS_A ("<li class='nav-header'>Archive</li>\n");
+    for (g = t->server->programs; g; g = g_list_next (g)) {
+      GssProgram *program = g->data;
+      if (!program->is_archive)
+        continue;
+      GSS_P ("<li %s><a href='%s%s'>%s</a></li>\n",
+          (program->resource == t->resource) ? "class='active'" : "",
+          program->resource->location, session_id,
+          GSS_OBJECT_SAFE_TITLE (program));
+    };
 
-  if (t->session) {
-    GSS_P ("<li class='nav-header'>User</li>\n"
-        "<li><a href='/add_program%s'>Add Program</a></li>\n"
-        "<li><a href='/dashboard%s'>Dashboard</a></li>\n",
-        session_id, session_id);
+    if (t->session) {
+      GSS_P ("<li class='nav-header'>User</li>\n"
+          "<li><a href='/add_program%s'>Add Program</a></li>\n"
+          "<li><a href='/dashboard%s'>Dashboard</a></li>\n",
+          session_id, session_id);
+    }
   }
   if (t->session && t->session->is_admin) {
     GList *g;
@@ -247,7 +258,6 @@ void
 gss_html_footer (GssTransaction * t)
 {
   GString *s = t->s;
-  char *base_https;
 
   GSS_A ("</div><!--/span-->\n" "</div><!--/row-->\n");
 
@@ -258,9 +268,20 @@ gss_html_footer (GssTransaction * t)
         "<p>&copy; Entropy Wave Inc 2012</p>\n" "</div>\n");
   }
 
-  GSS_A ("</div><!--/.fluid-container-->\n"
-      "<script src='/bootstrap/js/jquery.js'></script>\n"
-      "<script src='/bootstrap/js/bootstrap.js'></script>\n");
+  GSS_A ("</div><!--/.fluid-container-->\n");
+  GSS_A ("</body>\n");
+
+  gss_html_footer_bare (t);
+}
+
+void
+gss_html_footer_bare (GssTransaction * t)
+{
+  GString *s = t->s;
+  char *base_https;
+
+  GSS_A ("<script src='/bootstrap/js/jquery.js'></script>\n");
+  GSS_A ("<script src='/bootstrap/js/bootstrap.js'></script>\n");
 #ifdef use_internal_include_js
   GSS_A ("<script src=\"/include.js\" type=\"text/javascript\"></script>\n");
 #else

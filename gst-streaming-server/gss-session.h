@@ -31,6 +31,8 @@
 G_BEGIN_DECLS
 
 struct _GssServer;
+struct _GssAddrRangeList;
+typedef struct _GssAddrRangeList GssAddrRangeList;
 
 struct _GssSession {
   gint refcount;
@@ -52,8 +54,8 @@ GList * gss_session_get_list (void);
 void gss_session_invalidate (GssSession *session);
 void gss_session_unref (GssSession *session);
 void gss_session_add_session_callbacks (struct _GssServer * server);
-void gss_session_notify_hosts_allow (const char *key, void *priv);
-gboolean gss_addr_address_check (SoupClientContext *context);
+void gss_session_set_hosts_allow (GssServer *server);
+gboolean gss_addr_address_check (GssServer *server, SoupClientContext * context);
 gboolean gss_addr_is_localhost (SoupClientContext *context);
 char * gss_session_create_id (void);
 GssSession * gss_session_lookup (const char *session_id);
@@ -68,6 +70,15 @@ void gss_session_logout_callback (SoupServer *server, SoupMessage *msg,
 gboolean gss_session_is_valid (GssSession * session);
 void gss_session_set_authorization_function (GssSessionAuthorizationFunc func,
     gpointer priv);
+
+/* GstAddrRangeList */
+
+void gss_addr_range_list_free (GssAddrRangeList *addr_range_list);
+GssAddrRangeList *gss_addr_range_list_new (int n_entries);
+GssAddrRangeList *gss_addr_range_list_new_from_string (const char *str,
+    gboolean default_all, gboolean allow_localhost);
+gboolean gss_addr_range_list_check_address (const GssAddrRangeList
+    *addr_range_list, SoupAddress *addr);
 
 
 G_END_DECLS

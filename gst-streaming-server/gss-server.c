@@ -47,6 +47,7 @@ enum
   PROP_MAX_CONNECTIONS,
   PROP_MAX_RATE,
   PROP_ADMIN_HOSTS_ALLOW,
+  PROP_KIOSK_HOSTS_ALLOW,
   PROP_REALM,
   PROP_ADMIN_TOKEN,
   PROP_ENABLE_HTML5_VIDEO,
@@ -54,6 +55,7 @@ enum
   PROP_ENABLE_FLASH,
   PROP_ENABLE_RTSP,
   PROP_ENABLE_RTMP,
+  PROP_ENABLE_VOD,
   PROP_ARCHIVE_DIR,
   PROP_CAS_SERVER
 };
@@ -65,6 +67,7 @@ enum
 #define DEFAULT_MAX_CONNECTIONS 10000
 #define DEFAULT_MAX_RATE 100000
 #define DEFAULT_ADMIN_HOSTS_ALLOW "0.0.0.0/0"
+#define DEFAULT_KIOSK_HOSTS_ALLOW ""
 /* This is the result of soup_auth_domain_digest_encode_password ("admin",
  * "GStreamer Streaming Server", "admin"); */
 #define DEFAULT_ADMIN_TOKEN "f09e5ebc80c348d2ccf8a59a8cd37827"
@@ -74,6 +77,7 @@ enum
 #define DEFAULT_ENABLE_FLASH TRUE
 #define DEFAULT_ENABLE_RTSP FALSE
 #define DEFAULT_ENABLE_RTMP FALSE
+#define DEFAULT_ENABLE_VOD FALSE
 #ifdef USE_LOCAL
 #define DEFAULT_ARCHIVE_DIR "."
 #else
@@ -227,6 +231,13 @@ gss_server_init (GssServer * server)
   server->max_connections = DEFAULT_MAX_CONNECTIONS;
   server->max_rate = DEFAULT_MAX_RATE;
   server->admin_hosts_allow = g_strdup (DEFAULT_ADMIN_HOSTS_ALLOW);
+  server->admin_arl =
+      gss_addr_range_list_new_from_string (server->admin_hosts_allow, TRUE,
+      TRUE);
+  server->kiosk_hosts_allow = g_strdup (DEFAULT_KIOSK_HOSTS_ALLOW);
+  server->kiosk_arl =
+      gss_addr_range_list_new_from_string (server->kiosk_hosts_allow, FALSE,
+      FALSE);
   server->admin_token = g_strdup (DEFAULT_ADMIN_TOKEN);
   server->realm = g_strdup (DEFAULT_REALM);
   server->enable_html5_video = DEFAULT_ENABLE_HTML5_VIDEO;
@@ -234,6 +245,7 @@ gss_server_init (GssServer * server)
   server->enable_flash = DEFAULT_ENABLE_FLASH;
   server->enable_rtsp = DEFAULT_ENABLE_RTSP;
   server->enable_rtmp = DEFAULT_ENABLE_RTMP;
+  server->enable_vod = DEFAULT_ENABLE_VOD;
 
   server->enable_flowplayer = TRUE;
   server->enable_programs = TRUE;
@@ -279,6 +291,7 @@ gss_server_finalize (GObject * object)
   g_free (server->server_hostname);
   g_free (server->realm);
   g_free (server->admin_hosts_allow);
+  g_free (server->kiosk_hosts_allow);
   g_free (server->admin_token);
   g_free (server->archive_dir);
   g_free (server->cas_server);
@@ -336,21 +349,27 @@ gss_server_class_init (GssServerClass * server_class)
           "Allowed Hosts (admin)", "Allowed Hosts (admin)",
           DEFAULT_ADMIN_HOSTS_ALLOW,
           (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_KIOSK_HOSTS_ALLOW, g_param_spec_string ("kiosk-hosts-allow",
+          "Allowed Hosts (kiosk)", "IP addresses or address ranges listed "
+          "here will automatically be given access to the kiosk group.",
+          DEFAULT_KIOSK_HOSTS_ALLOW,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 #if 0
   /* Don't want to expose this yet */
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_REALM, g_param_spec_string ("realm",
           "Realm", "Realm",
           DEFAULT_REALM,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (1 <<
-                  29))));
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+              GSS_PARAM_HIDE)));
 #endif
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_ADMIN_TOKEN, g_param_spec_string ("admin-token",
           "Admin Token", "Admin Token",
           DEFAULT_ADMIN_TOKEN,
-          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (1 <<
-                  29))));
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS |
+              GSS_PARAM_HIDE)));
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_ARCHIVE_DIR, g_param_spec_string ("archive-dir", "Archive Directory",
           "Archive Directory", DEFAULT_ARCHIVE_DIR,
@@ -389,6 +408,11 @@ gss_server_class_init (GssServerClass * server_class)
       g_param_spec_boolean ("enable-rtmp", "Enable RTMP",
           "Enable RTMP", DEFAULT_ENABLE_RTMP,
           (GParamFlags) (RTMP_FLAGS | G_PARAM_STATIC_STRINGS)));
+  g_object_class_install_property (G_OBJECT_CLASS (server_class),
+      PROP_ENABLE_VOD,
+      g_param_spec_boolean ("enable-vod", "Enable VOD",
+          "Enable VOD", DEFAULT_ENABLE_VOD,
+          (GParamFlags) (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS)));
 #ifdef ENABLE_CAS
   g_object_class_install_property (G_OBJECT_CLASS (server_class),
       PROP_CAS_SERVER, g_param_spec_string ("cas-server", "CAS Server",
@@ -429,8 +453,22 @@ gss_server_set_property (GObject * object, guint prop_id,
       server->max_rate = g_value_get_int (value);
       break;
     case PROP_ADMIN_HOSTS_ALLOW:
-      g_free (server->admin_hosts_allow);
-      server->admin_hosts_allow = g_value_dup_string (value);
+      if (strcmp (server->admin_hosts_allow, g_value_get_string (value))) {
+        g_free (server->admin_hosts_allow);
+        server->admin_hosts_allow = g_value_dup_string (value);
+        server->admin_arl =
+            gss_addr_range_list_new_from_string (server->admin_hosts_allow,
+            TRUE, TRUE);
+      }
+      break;
+    case PROP_KIOSK_HOSTS_ALLOW:
+      if (strcmp (server->kiosk_hosts_allow, g_value_get_string (value))) {
+        g_free (server->kiosk_hosts_allow);
+        server->kiosk_hosts_allow = g_value_dup_string (value);
+        server->kiosk_arl =
+            gss_addr_range_list_new_from_string (server->kiosk_hosts_allow,
+            FALSE, FALSE);
+      }
       break;
     case PROP_ADMIN_TOKEN:
       g_free (server->admin_token);
@@ -458,6 +496,9 @@ gss_server_set_property (GObject * object, guint prop_id,
       break;
     case PROP_ENABLE_RTMP:
       server->enable_rtmp = g_value_get_boolean (value);
+      break;
+    case PROP_ENABLE_VOD:
+      server->enable_vod = g_value_get_boolean (value);
       break;
     case PROP_CAS_SERVER:
       g_free (server->cas_server);
@@ -499,6 +540,9 @@ gss_server_get_property (GObject * object, guint prop_id,
     case PROP_ADMIN_HOSTS_ALLOW:
       g_value_set_string (value, server->admin_hosts_allow);
       break;
+    case PROP_KIOSK_HOSTS_ALLOW:
+      g_value_set_string (value, server->kiosk_hosts_allow);
+      break;
     case PROP_ADMIN_TOKEN:
       g_value_set_string (value, server->admin_token);
       break;
@@ -522,6 +566,9 @@ gss_server_get_property (GObject * object, guint prop_id,
       break;
     case PROP_ENABLE_RTMP:
       g_value_set_boolean (value, server->enable_rtmp);
+      break;
+    case PROP_ENABLE_VOD:
+      g_value_set_boolean (value, server->enable_vod);
       break;
     case PROP_CAS_SERVER:
       g_value_set_string (value, server->cas_server);
@@ -893,6 +940,19 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
       gss_html_error_404 (server, msg);
       return;
     }
+
+    if (gss_addr_range_list_check_address (server->kiosk_arl,
+            soup_client_context_get_address (client)) &&
+        !(resource->flags & GSS_RESOURCE_KIOSK)) {
+      GssTransaction t;
+
+      /* This is kind of a hack */
+      memset (&t, 0, sizeof (t));
+      t.msg = msg;
+      gss_transaction_redirect (&t, "/kiosk");
+
+      return;
+    }
   }
 
   if (resource->flags & GSS_RESOURCE_HTTPS_ONLY) {
@@ -917,7 +977,9 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
   }
 
   if (resource->flags & GSS_RESOURCE_ADMIN) {
-    if (session == NULL || !session->is_admin) {
+    if (session == NULL || !session->is_admin ||
+        !gss_addr_range_list_check_address (server->admin_arl,
+            soup_client_context_get_address (client))) {
       gss_html_error_404 (server, msg);
       return;
     }
@@ -952,7 +1014,6 @@ gss_server_resource_callback (SoupServer * soupserver, SoupMessage * msg,
   transaction->client = client;
   transaction->resource = resource;
   transaction->session = session;
-  transaction->done = FALSE;
 
   if (resource->flags & GSS_RESOURCE_HTTP_ONLY) {
     if (soupserver != server->server) {
@@ -1022,28 +1083,30 @@ gss_server_resource_main_page (GssTransaction * t)
   }
   GSS_P ("</ul>\n");
 
-  GSS_P ("<h2>Archived Media</h2>\n");
+  if (t->server->enable_vod) {
+    GSS_P ("<h2>Archived Media</h2>\n");
 
-  GSS_P ("<ul class='thumbnails'>\n");
-  for (g = t->server->programs; g; g = g_list_next (g)) {
-    GssProgram *program = g->data;
+    GSS_P ("<ul class='thumbnails'>\n");
+    for (g = t->server->programs; g; g = g_list_next (g)) {
+      GssProgram *program = g->data;
 
-    if (!program->is_archive)
-      continue;
+      if (!program->is_archive)
+        continue;
 
-    GSS_P ("<li class='span4'>\n");
-    GSS_P ("<div class='thumbnail'>\n");
-    GSS_P ("<a href=\"/%s%s%s\">",
-        GSS_OBJECT_NAME (program),
-        t->session ? "?session_id=" : "",
-        t->session ? t->session->session_id : "");
-    gss_program_add_jpeg_block (program, t);
-    GSS_P ("</a>\n");
-    GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_SAFE_TITLE (program));
-    GSS_P ("</div>\n");
-    GSS_P ("</li>\n");
+      GSS_P ("<li class='span4'>\n");
+      GSS_P ("<div class='thumbnail'>\n");
+      GSS_P ("<a href=\"/%s%s%s\">",
+          GSS_OBJECT_NAME (program),
+          t->session ? "?session_id=" : "",
+          t->session ? t->session->session_id : "");
+      gss_program_add_jpeg_block (program, t);
+      GSS_P ("</a>\n");
+      GSS_P ("<h5>%s</h5>\n", GSS_OBJECT_SAFE_TITLE (program));
+      GSS_P ("</div>\n");
+      GSS_P ("</li>\n");
+    }
+    GSS_P ("</ul>\n");
   }
-  GSS_P ("</ul>\n");
 
   gss_html_footer (t);
 }
