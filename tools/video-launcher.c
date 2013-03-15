@@ -139,18 +139,20 @@ main (int argc, char *argv[])
           char *chanhls = "hls";
           //Launch pipeline
           if (execl
-              ("/home/mconf/gst-streaming-server/tools/webm",
+              ("/home/mconf/bbb-gss-hack/tools/webm",
                   "webm", host, meetingId, streamId, chanwebm, NULL) == -1) {
             fprintf (stderr, "execl Error!");
             fprintf (fp, "execl error\n");
+            fflush (fp);
             exit (1);
           }
           //Launch pipeline
           if (execl
-              ("/home/mconf/gst-streaming-server/tools/hls",
+              ("/home/mconf/bbb-gss-hack/tools/hls",
                   "hls", host, meetingId, streamId, chanhls, NULL) == -1) {
             fprintf (stderr, "execl Error!");
             fprintf (fp, "execl error\n");
+            fflush (fp);
             exit (1);
           }
         } else                  //Parent process
