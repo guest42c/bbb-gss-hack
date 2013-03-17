@@ -303,9 +303,10 @@ gss_config_get_post_hash (GssTransaction * t)
       "Content-Type");
 
   hash = NULL;
-  if (g_str_equal (content_type, "application/x-www-form-urlencoded")) {
+  if (g_ascii_strncasecmp (content_type, "application/x-www-form-urlencoded",
+          33)) {
     hash = soup_form_decode (t->msg->request_body->data);
-  } else if (g_str_has_prefix (content_type, "multipart/form-data")) {
+  } else if (g_ascii_strncasecmp (content_type, "multipart/form-data", 19)) {
     SoupBuffer *buffer;
 
     hash = soup_form_decode_multipart (t->msg, "none", NULL, NULL, &buffer);
