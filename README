@@ -9,13 +9,111 @@ So far there are the following programs built to do it:
 It creates a daemon that subscribe to bigbluebutton:meeting:participants channel at the redis server used by BigBlueButton.
 When it receivas a redis message informing that a video stream started, it launches another program that uses GStreamer to launch the pipeline with the appropriate parameters obtained in the redis message.
 
-* tools/simplepipeline.c
+* tools/webmpipeline.c
+It's a program to launch a WebM pipeline in a more reliable way.
+
+* tools/hlspipeline.c
+It's a program to launch a HLS pipeline in a more reliable way.
+
+* tools/simplepipeline.c [deprecated]
 Its a simple gstreamer program to launch a pipeline
 
-* tools/webmpipeline.c
-It's a more elaborated program to launch a pipeline in a more reliable way.
-i
 
+
+
+
+== Setup ==
+
+Setup the BBB Environment as described here: http://code.google.com/p/bigbluebutton/wiki/HTML5DevEnvironmentSetup
+*You could stop before Running steps
+
+With Ubuntu 12.04
+
+# dependencies
+sudo apt-get install git autoconf autopoint libtool libglib2.0-dev bison flex gtk-doc-tools make graphviz libsoup2.4-dev libjson-glib-dev liborc-0.4-dev check
+
+sudo apt-get install libgst.*-dev libgss.*-dev haveged
+cd ~/
+git clone git://github.com/guilhermeka/bbb-gss-hack.git
+cd bbb-gss-hack/
+./autogen.sh
+./configure --with-gst-api-version=0.10
+make
+!!!!! Do not execute make install !!!
+
+cd tools/
+./genkey.sh
+export GST_DEBUG=2
+./ew-streaming-server
+
+== Compiling ==
+
+=== Daemon ===
+
+You should have hiredis installed
+
+git clone https://github.com/redis/hiredis
+cd hiredis
+make
+sudo make install
+
+gcc video-launcher.c -o daemon `pkg-config --cflags --libs gstreamer-1.0 json-glib-1.0` -lhiredis -I.. -I/usr/include/libsoup-2.4
+
+*** !!! There are lots of things hardcoded here that you should change:
+    * c = redisConnect ("143.54.10.96", 6379);       It is the ip of BBB server, where you should connect to the redis server
+    * const char *host = "143.54.10.96";             Same here, ip of BBB server, in order to pull out the video from red5
+    * execl("/home/mconf/bbb-gss-hack/tools/hls"...  Here is the absolute path to call the HLS pipeline program
+    * execl("/home/mconf/bbb-gss-hack/tools/webm"... Here is the absolute path to call the WebM pipeline program
+
+
+=== WebM Pipeline ===
+
+* In order to get around a bug that doesnt link webmmux with shout2send I followed the steps in this link: http://current.workingdirectory.net/posts/2012/vp8-and-debian/
+
+gcc webmpipeline.c -o webm `pkg-config --cflags --libs gstreamer-1.0 json-glib-1.0`
+
+=== HLS Pipeline ===
+
+gcc hlspipeline.c -o hls `pkg-config --cflags --libs gstreamer-0.10 json-glib-1.0`
+
+== Setup GSS Server ==
+
+1) Sign In
+2) Administration -> Manager -> Add Push Channel
+Add both webm and hls, they will show under Programs
+3) webm
+* check enabled
+* change push method to: icecast
+* Default stream format: WebM
+* Save
+4) hls
+* check enabled
+* change push method to: http-put
+* Default stream format: MPEG-TS/H.264 Baseline/AAC
+* Save
+
+== Start daemon ==
+
+./daemon
+
+== It's done ALMOST ==
+
+You should change the html5 client adding source tags with the streams url from GSS streams into the video tag
+/home/mconf/dev/bigbluebutton/labs/bbb-html5-client/public/templates/session_video.html
+
+<source src="http://143.54.10.78:8080/hls.m3u8" type="application/vnd.apple.mpegURL">
+<source src="http://143.54.10.78:8080/webm/streams/stream0-640x360-600kbps.webm" type="video/webm">
+
+Now if you open a meeting and start a video, it will pull the video from red5 e push into the channels.
+When you log in the html5 client, it will open the source which has the right Mime Type. If you are already logged, refresh the page.
+
+
+== Next Improvements ==
+
+* HLS is not showing in iPad, i discovered that you have to change the server host name, so it will generate the correct m3u8 files. Not sure if it fix, working on it right now...
+* Create push channels on demand, using information about video stream and session id to make it unique.
+
+  
 
 --------------------------------------
 
