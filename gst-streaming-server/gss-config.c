@@ -304,14 +304,14 @@ gss_config_get_post_hash (GssTransaction * t)
 
   hash = NULL;
   if (g_ascii_strncasecmp (content_type, "application/x-www-form-urlencoded",
-          33)) {
+          33) == 0) {
     hash = soup_form_decode (t->msg->request_body->data);
-  } else if (g_ascii_strncasecmp (content_type, "multipart/form-data", 19)) {
-    SoupBuffer *buffer;
+  } else if (g_ascii_strncasecmp (content_type, "multipart/form-data", 19) == 0) {
+    SoupBuffer *buffer = NULL;
 
     hash = soup_form_decode_multipart (t->msg, "none", NULL, NULL, &buffer);
 
-    if (buffer && buffer->length > 0) {
+    if (buffer) {
       soup_buffer_free (buffer);
     }
   }
