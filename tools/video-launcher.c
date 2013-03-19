@@ -137,10 +137,8 @@ main (int argc, char *argv[])
           //TODO: create gss push server
           const char *chanwebm = "webm";
           const char *chanhls = "hls";
-
+/*
           //Launch pipeline
-          fprintf (fp, "Before hls\n");
-          fflush (fp);
           if (execl
               ("/home/mconf/bbb-gss-hack/tools/hls",
                   "hls", host, meetingId, streamId, chanhls, NULL) == -1) {
@@ -148,11 +146,7 @@ main (int argc, char *argv[])
             fflush (fp);
             exit (1);
           };
-          fprintf (fp, "after hls");
-          fflush (fp);
-
-          fprintf (fp, "Before webm\n");
-          fflush (fp);
+*/
           //Launch pipeline
           if (execl
               ("/home/mconf/bbb-gss-hack/tools/webm",

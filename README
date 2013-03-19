@@ -68,7 +68,7 @@ gcc video-launcher.c -o daemon `pkg-config --cflags --libs gstreamer-1.0 json-gl
 
 === WebM Pipeline ===
 
-* In order to get around a bug that doesnt link webmmux with shout2send I followed the steps in this link: http://current.workingdirectory.net/posts/2012/vp8-and-debian/
+* In order to get around a bug that doesnt link webmmux with shout2send I followed the steps in this link(WATCH OUT FOR TYPOS IN THIS PAGE, there are commands that copy and past wouldn't work): http://current.workingdirectory.net/posts/2012/vp8-and-debian/
 
 gcc webmpipeline.c -o webm `pkg-config --cflags --libs gstreamer-1.0 json-glib-1.0`
 
@@ -110,7 +110,7 @@ When you log in the html5 client, it will open the source which has the right Mi
 
 == Next Improvements ==
 
-* HLS is not showing in iPad, i discovered that you have to change the server host name, so it will generate the correct m3u8 files. Not sure if it fix, working on it right now...
+* HLS is not showing in iPad, i discovered that you have to change the server host name (Administration > Server), so it will generate the correct m3u8 files. Not sure if it fix, working on it right now... Update: the link that would play is something like http://host:8080/stream0-640x360-600kbps.m3u8
 * Create push channels on demand, using information about video stream and session id to make it unique.
 
   
