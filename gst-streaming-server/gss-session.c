@@ -442,23 +442,9 @@ session_login_post_resource (GssTransaction * t)
   GHashTable *query_hash;
   const char *username = NULL;
   const char *password = NULL;
-  const char *content_type;
   char *s;
 
-  content_type = soup_message_headers_get_one (t->msg->request_headers,
-      "Content-Type");
-
-  query_hash = NULL;
-  if (g_str_equal (content_type, "application/x-www-form-urlencoded")) {
-    query_hash = soup_form_decode (t->msg->request_body->data);
-  } else if (g_str_has_prefix (content_type, "multipart/form-data")) {
-    char *filename;
-    char *media_type;
-    SoupBuffer *buffer;
-
-    query_hash = soup_form_decode_multipart (t->msg, "dont_care",
-        &filename, &media_type, &buffer);
-  }
+  query_hash = gss_config_get_post_hash (t);
 
   if (query_hash) {
     const char *assertion;
