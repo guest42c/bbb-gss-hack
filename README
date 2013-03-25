@@ -57,6 +57,10 @@ cd hiredis
 make
 sudo make install
 
+Change the redis configuration to listen all interfaces for incoming connections:
+sudo vim /etc/redis/redis.conf
+* change the line where says 'bind 127.0.0.1' to 'bind 0.0.0.0'
+
 gcc video-launcher.c -o daemon `pkg-config --cflags --libs gstreamer-1.0 json-glib-1.0` -lhiredis -I.. -I/usr/include/libsoup-2.4
 
 *** !!! There are lots of things hardcoded here that you should change:
